@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<article>
+<header class="page-head"><p class="kicker">2028 cycle</p><h1>2028 election calendar</h1>
+<p class="sub">Key milestones from the first nominating contests to Inauguration Day. Exact primary dates are set by each party and state; this page is updated as they are published.</p></header>
+<section>
+<table class="table"><thead><tr><th>When</th><th>What</th><th>Notes</th></tr></thead>
+<tbody>{% for when, what, note in calendar %}<tr><td class="nowrap"><b>{{ when }}</b></td><td>{{ what }}</td><td class="muted">{{ note }}</td></tr>{% endfor %}</tbody></table>
+</section>
+<section class="section prose"><p>See also the <a href="/countdown/">countdown to Election Day</a> and the <a href="/2028/democratic-primary/">Democratic</a> and <a href="/2028/republican-primary/">Republican</a> primary polling averages.</p></section>
+</article>
+{% endblock %}

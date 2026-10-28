@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Dataset","name":"ElectionsUSA polls dataset","description":"Every poll tracked by ElectionsUSA for the 2028 U.S. presidential election, the 2028 primaries, presidential approval and the generic ballot, in long CSV format with source links.","url":"{{ site.url }}/data/","license":"https://creativecommons.org/licenses/by/4.0/","dateModified":"{{ build_iso }}","creator":{"@type":"Organization","name":"{{ site.name }}"},"distribution":[{"@type":"DataDownload","encodingFormat":"text/csv","contentUrl":"{{ site.url }}/data/polls.csv"},{"@type":"DataDownload","encodingFormat":"text/csv","contentUrl":"{{ site.url }}/data/markets.csv"}]}
+</script>
+{% endblock %}
+{% block content %}
+<article class="prose">
+<header class="page-head"><p class="kicker">Open data</p><h1>Download the data</h1>
+<p class="sub">Everything on this site, as plain CSV and JSON, licensed CC BY 4.0. Cite "ElectionsUSA" with a link. Updated {{ build_date }}.</p></header>
+<table class="table">
+<thead><tr><th>File</th><th>What's in it</th><th>Size</th></tr></thead>
+<tbody>
+<tr><td><a href="/data/polls.csv">polls.csv</a></td><td>One row per poll per candidate: pollster, sponsor, fieldwork dates, sample size and population, percentage, source URL, notes.</td><td>{{ n_polls }} polls · {{ n_rows }} rows</td></tr>
+<tr><td><a href="/data/markets.csv">markets.csv</a></td><td>Prediction-market snapshots: date, platform, outcome, implied probability, source.</td><td>{{ n_markets }} rows</td></tr>
+<tr><td><a href="/data/pollster-scorecard.csv">pollster-scorecard.csv</a></td><td>The pollster accuracy table as shown on the <a href="/pollsters/">scorecard</a>.</td><td></td></tr>
+</tbody></table>
+<h2>JSON API</h2>
+<p>Each average is also published as a JSON document with the current values, the full trend series and every underlying poll:</p>
+<ul>{% for r in races %}<li><code><a href="/api/{{ r.id }}.json">/api/{{ r.id }}.json</a></code> — {{ r.title }}</li>{% endfor %}</ul>
+<p>Files are static and cached at the CDN edge; there are no rate limits and no keys. Please set a descriptive User-Agent if you poll them automatically.</p>
+<h2>Embed</h2>
+<p>You may embed our SVG charts or reproduce tables with attribution and a link. A copy-paste embed widget is planned.</p>
+<h2>Schema</h2>
+<pre><code>poll_id, race_id, pollster, sponsor, start_date, end_date, sample_size, population,
+candidate, pct, source_url, source_type, notes, fetched_at</code></pre>
+<p><code>population</code> is A (adults), RV (registered voters) or LV (likely voters). <code>source_type</code> is <i>seed</i> (entered by hand from a cited report), <i>wikipedia</i> (parsed from a compilation table that cites the pollster) or <i>manual</i>.</p>
+</article>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="prose">
+<header class="page-head"><p class="kicker">Legal</p><h1>Privacy policy</h1><p class="sub">Last updated {{ build_date }}</p></header>
+<p>ElectionsUSA ({{ site.domain }}) is a static website. We do not require accounts and do not collect names, email addresses or other personal information unless you email us.</p>
+<h2>Advertising</h2>
+<p>We use Google AdSense to display advertisements. Google and its partners may use cookies and similar technologies, including the DoubleClick cookie, to serve ads based on your prior visits to this and other websites. You can opt out of personalised advertising at <a href="https://adssettings.google.com" rel="noopener">Google Ads Settings</a> or <a href="https://www.aboutads.info" rel="noopener">aboutads.info</a>. Visitors in the European Economic Area, the United Kingdom and Switzerland are shown a consent dialog before any advertising cookies are set.</p>
+<h2>Analytics</h2>
+<p>{% if site.analytics_snippet %}We use a privacy-focused analytics service that records aggregate page views without cookies or personal identifiers.{% else %}We do not currently run analytics.{% endif %}</p>
+<h2>Third-party links</h2>
+<p>Poll rows link to pollsters' and publishers' websites, which have their own privacy policies.</p>
+<h2>Contact</h2>
+<p>Questions: <a href="mailto:{{ site.contact_email }}">{{ site.contact_email }}</a>.</p>
+<p class="muted small"><!-- TODO: have this reviewed for your jurisdiction (GDPR/CCPA) before launch; add a CMP (e.g. Google's certified consent management) for EEA/UK traffic as AdSense requires. --></p>
+</article>
+{% endblock %}

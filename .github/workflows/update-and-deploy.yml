@@ -1,0 +1,64 @@
+name: Update data and post
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 hours (UTC)
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Fetch latest polls and market prices
+        run: python -m pipeline.run_pipeline
+        continue-on-error: true   # a source outage must never block a deploy
+
+      - name: Commit refreshed data
+        run: |
+          git config user.name "electionsusa-bot"
+          git config user.email "bot@electionsusa.org"
+          git add data/polls.csv data/markets.csv
+          git diff --cached --quiet || git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push || true
+
+      - name: Post new polls to X
+        # Enable with repository variable BOT_ENABLED=true and the four X_* secrets.
+        # Runs on the schedule and manual runs only, never on pushes, so a code push cannot double-post.
+        if: ${{ vars.BOT_ENABLED == 'true' && github.event_name != 'push' }}
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: |
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true   # latest bot_state.json
+          python -m pipeline.run_bot --live
+        continue-on-error: true
+
+      - name: Save bot state
+        if: ${{ vars.BOT_ENABLED == 'true' && github.event_name != 'push' }}
+        run: |
+          git add data/bot_state.json 2>/dev/null || exit 0
+          git diff --cached --quiet || git commit -m "bot: update posted state"
+          git push || true
+
+      - name: Run tests
+        run: python -m pytest -q tests
+
+      # Vercel redeploys the site automatically on every push to main.

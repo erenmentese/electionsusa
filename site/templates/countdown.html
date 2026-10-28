@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Event","name":"2028 United States presidential election","startDate":"2028-11-07","eventStatus":"https://schema.org/EventScheduled","location":{"@type":"Country","name":"United States"},"description":"General election for President of the United States, held on Tuesday, November 7, 2028."}
+</script>
+{% endblock %}
+{% block content %}
+<article>
+<header class="page-head">
+  <p class="kicker">Countdown</p>
+  <h1>How many days until the 2028 election?</h1>
+</header>
+<section class="count-hero" data-target="{{ election_day.isoformat() }}">
+  <div class="big-count"><span data-days>{{ days_to_election }}</span><small>days</small></div>
+  <p class="sub">The next United States presidential election is on <b>Tuesday, November 7, 2028</b>. That is {{ days_to_election }} days from {{ build_date }}. The live counter below updates every second in your browser: <span class="live" data-live>—</span></p>
+</section>
+
+{% if days_to_midterm >= 0 %}
+<section class="count-secondary" data-target="{{ midterm_day.isoformat() }}">
+  <h2>{{ days_to_midterm }} days until the 2026 midterm elections</h2>
+  <p>All 435 House seats, 35 Senate seats and 36 governorships are on the ballot on <b>Tuesday, November 3, 2026</b>. Follow the <a href="/2026/generic-ballot/">generic ballot average</a>.</p>
+</section>
+{% endif %}
+
+{{ ad("countdown-mid") }}
+
+<section class="section prose">
+  <h2>Why November 7?</h2>
+  <p>Federal law sets presidential elections on "the Tuesday next after the first Monday in November" every fourth year. In 2028 the first Monday is November 6, so Election Day is Tuesday, November 7, 2028. Electors meet in December 2028 and Congress counts their votes on January 6, 2029; the next president is inaugurated on January 20, 2029.</p>
+  <h2>Other dates to know</h2>
+  <ul>
+    <li>Nominating contests begin in early 2028; see the <a href="/2028/calendar/">2028 calendar</a>.</li>
+    <li>National conventions are held in July and August 2028.</li>
+    <li>Voter registration deadlines vary by state, from Election Day itself to about 30 days before.</li>
+  </ul>
+</section>
+</article>
+{% endblock %}

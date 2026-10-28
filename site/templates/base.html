@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% set page_title = (title ~ " | " ~ site.name) if title else (site.name ~ " – " ~ site.tagline) %}
+<title>{{ page_title }}</title>
+<meta name="description" content="{{ description or site.description }}">
+<link rel="canonical" href="{{ site.url }}{{ path }}">
+<meta property="og:site_name" content="{{ site.name }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ page_title }}">
+<meta property="og:description" content="{{ description or site.description }}">
+<meta property="og:url" content="{{ site.url }}{{ path }}">
+<meta property="og:image" content="{{ site.url }}/static/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+{% if site.twitter %}<meta name="twitter:site" content="{{ site.twitter }}">{% endif %}
+<link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+{% if site.adsense_client %}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ site.adsense_client }}" crossorigin="anonymous"></script>
+{% endif %}
+{{ site.analytics_snippet | safe }}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"{{ site.name }}","url":"{{ site.url }}","description":"{{ site.description }}","publisher":{"@type":"Organization","name":"{{ site.name }}","url":"{{ site.url }}"}}
+</script>
+{% block head %}{% endblock %}
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ribbon" aria-hidden="true"></div>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="/" aria-label="{{ site.name }} home">Elections<em>USA</em></a>
+    <nav class="nav" aria-label="Primary">
+      {% for label, href in nav %}<a href="{{ href }}" {% if path == href %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+    </nav>
+    {% if path != "/" %}
+    <div class="hdr-search finder" data-finder>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" placeholder="Ask about 2028…" aria-label="Search the site" autocomplete="off" data-finder-input>
+      <div class="finder-results" data-finder-results role="listbox"></div>
+    </div>
+    {% endif %}
+  </div>
+</header>
+
+<main id="main" class="wrap">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <p class="brand-foot">Elections<em class="muted">USA</em></p>
+      <p class="muted">{{ site.tagline }}. Updated {{ build_date }}.</p>
+      <p class="muted small">Poll numbers are facts reported by each pollster and are credited to their source on every row. Historical accuracy data derived from FiveThirtyEight's open dataset (CC BY 4.0). Independent; not affiliated with any campaign, party, pollster or government body.</p>
+    </div>
+    <div>
+      <h4>Averages</h4>
+      {% for r in races %}<a href="/{{ r.slug }}/">{{ r.short_title }}</a>{% endfor %}
+    </div>
+    <div>
+      <h4>Site</h4>
+      <a href="/methodology/">Methodology</a><a href="/pollsters/">Pollster scorecard</a><a href="/markets/">Prediction markets</a><a href="/countdown/">Countdown</a><a href="/2028/calendar/">2028 calendar</a><a href="/data/">Open data &amp; API</a><a href="/about/">About &amp; corrections</a><a href="/privacy/">Privacy</a>
+    </div>
+  </div>
+  <div class="wrap copyright muted small">© {{ year }} {{ site.name }} · {{ site.domain }}</div>
+</footer>
+<script src="/static/js/site.js" defer></script>
+</body>
+</html>

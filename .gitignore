@@ -1,0 +1,7 @@
+dist/
+__pycache__/
+*.pyc
+.cache/
+node_modules/
+dist-artifact/
+out/

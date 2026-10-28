@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad %}
+{% block content %}
+<article>
+<header class="page-head">
+  <p class="kicker">Pollster scorecard</p>
+  <h1>How accurate is each pollster?</h1>
+  <p class="sub">We recompute simple, explainable accuracy statistics for every pollster with at least ten polls in the final three weeks of a race since 2016, using FiveThirtyEight's open archive of 11,000+ polls matched to results. FiveThirtyEight's final letter grade (2023) is shown alongside for reference; it is no longer updated since the site closed in 2025.</p>
+</header>
+
+<section class="section prose">
+  <h2>How to read this table</h2>
+  <ul>
+    <li><b>Avg error</b>: mean absolute difference, in points, between the poll's margin and the actual margin. Lower is better. A typical final-three-weeks poll misses by about 5 points.</li>
+    <li><b>Adjusted error</b>: the same figure shrunk toward the field average (k = 15 polls), so pollsters with few polls aren't ranked on luck. Rows are sorted by this column.</li>
+    <li><b>Bias</b>: average signed error. <b>D+</b> means the pollster's polls were, on average, more favourable to Democrats than the result; <b>R+</b> more favourable to Republicans.</li>
+    <li><b>Right call</b>: share of polls whose leader won.</li>
+  </ul>
+</section>
+
+{{ ad("scorecard-top") }}
+
+<section class="section">
+  <div class="table-scroll">
+  <table class="table sortable" id="scorecard">
+    <thead><tr><th>#</th><th>Pollster</th><th>Method</th><th class="num">Polls</th><th>Cycles</th><th class="num">Avg error</th><th class="num">Adjusted</th><th class="num">Bias</th><th class="num">Right call</th><th>538 grade</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr><td class="muted">{{ loop.index }}</td><td>{{ r.pollster }}</td><td class="muted small">{{ r.methodology }}</td><td class="num">{{ r.n_polls }}</td><td class="nowrap muted">{{ r.cycles }}</td>
+        <td class="num">{{ "%.1f" % r.mean_abs_error }}</td><td class="num"><b>{{ "%.2f" % r.adj_error }}</b></td>
+        <td class="num {{ 'bias-d' if r.mean_bias > 0.3 else 'bias-r' if r.mean_bias < -0.3 else '' }}">{{ r.bias_label }}</td>
+        <td class="num">{{ "%.0f%%" % r.right_call_pct }}</td><td>{{ r.grade_538 or "—" }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted small">Source data: FiveThirtyEight <i>raw-polls</i> and <i>pollster-ratings</i> (2023 release), CC BY 4.0. Polls from 1998–2015 are excluded from the statistics above because methodology has changed too much to be comparable. <a href="/data/pollster-scorecard.csv">Download this table (CSV)</a>.</p>
+</section>
+
+<section class="section prose" id="2026">
+  <h2>2026 midterm scorecard</h2>
+  {% if cycle_rows %}
+  <p>Final-three-weeks polls of the November 3, 2026 elections compared with certified results.</p>
+  <table class="table"><thead><tr><th>Race</th><th>Pollster</th><th>Poll end</th><th class="num">Poll margin</th><th class="num">Actual</th><th class="num">Error</th><th>Right call</th></tr></thead>
+  <tbody>{% for r in cycle_rows %}<tr><td>{{ r.race_id }}</td><td>{{ r.pollster }}</td><td>{{ r.end_date }}</td><td class="num">{{ "%+.1f" % r.poll_margin }}</td><td class="num">{{ "%+.1f" % r.actual_margin }}</td><td class="num">{{ r.error }}</td><td>{{ "✓" if r.right_call else "✗" }}</td></tr>{% endfor %}</tbody></table>
+  {% else %}
+  <p>The 2026 midterms are on November 3, 2026. Once results are certified we score every final-three-weeks poll against them, which makes this the first independent pollster rating built since FiveThirtyEight stopped publishing. Results are added as a small CSV in the open dataset; the table appears here automatically.</p>
+  {% endif %}
+</section>
+
+{{ ad("scorecard-bottom") }}
+</article>
+{% endblock %}

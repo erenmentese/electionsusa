@@ -1,0 +1,11 @@
+snapshot_date,market_id,platform,outcome,price,source_url,source_type,notes,fetched_at
+2026-05-07,pres-2028-winner,polymarket,JD Vance,19.6,https://www.coloradopolitics.com/2026/05/07/rubio-jumps-vance-as-most-likely-to-win-2028-presidential-race-on-kalshi/,seed,Press snapshot.,2026-10-25T00:00:00Z
+2026-05-07,pres-2028-winner,polymarket,Gavin Newsom,16.7,https://www.coloradopolitics.com/2026/05/07/rubio-jumps-vance-as-most-likely-to-win-2028-presidential-race-on-kalshi/,seed,Press snapshot.,2026-10-25T00:00:00Z
+2026-05-07,pres-2028-winner,polymarket,Marco Rubio,15.0,https://www.coloradopolitics.com/2026/05/07/rubio-jumps-vance-as-most-likely-to-win-2028-presidential-race-on-kalshi/,seed,Press snapshot.,2026-10-25T00:00:00Z
+2026-03-18,pres-2028-winner,polymarket,JD Vance,18.0,https://casinobeats.com/2026/03/18/gavin-newsom-jd-vance-see-chances-leading-parties-2028-sharply-decline/,seed,Press snapshot.,2026-10-25T00:00:00Z
+2026-03-18,pres-2028-winner,polymarket,Gavin Newsom,17.0,https://casinobeats.com/2026/03/18/gavin-newsom-jd-vance-see-chances-leading-parties-2028-sharply-decline/,seed,Press snapshot.,2026-10-25T00:00:00Z
+2026-03-18,pres-2028-winner,polymarket,Marco Rubio,11.0,https://casinobeats.com/2026/03/18/gavin-newsom-jd-vance-see-chances-leading-parties-2028-sharply-decline/,seed,Press snapshot.,2026-10-25T00:00:00Z
+2026-03-18,pres-2028-winner,kalshi,JD Vance,19.2,https://casinobeats.com/2026/03/18/gavin-newsom-jd-vance-see-chances-leading-parties-2028-sharply-decline/,seed,Press snapshot.,2026-10-25T00:00:00Z
+2026-03-18,pres-2028-winner,kalshi,Gavin Newsom,18.3,https://casinobeats.com/2026/03/18/gavin-newsom-jd-vance-see-chances-leading-parties-2028-sharply-decline/,seed,Press snapshot.,2026-10-25T00:00:00Z
+2026-10-04,gop-nominee-2028,kalshi,JD Vance,45.0,https://defirate.com/odds/republican-nominee/,seed,Aggregator quote flagged as possibly stale.,2026-10-25T00:00:00Z
+2026-10-04,gop-nominee-2028,polymarket,JD Vance,50.0,https://defirate.com/odds/republican-nominee/,seed,Aggregator quote flagged as possibly stale.,2026-10-25T00:00:00Z

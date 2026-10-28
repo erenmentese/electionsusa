@@ -1,0 +1,35 @@
+{% macro ad(slot, label="Advertisement") %}
+<aside class="ad" aria-label="{{ label }}">
+{% if site.adsense_client %}
+  <ins class="adsbygoogle" style="display:block" data-ad-client="{{ site.adsense_client }}" data-ad-slot="{{ slot }}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+{% else %}
+  <div class="ad-placeholder">{{ label }}</div>
+{% endif %}
+</aside>
+{% endmacro %}
+
+{% macro figure(s) %}
+{% set race = s.race %}{% set avg = s.avg %}
+<a class="figure" href="{{ s.path }}">
+  <p class="label">{{ race.short_title }}</p>
+  {% if avg.values %}
+  <div class="fig-row">
+    {% if race.kind == "primary" %}
+      {% for c, v in (avg.values.items() | list | sort(attribute=1, reverse=True))[:3] if c != "Other/Undecided" %}
+      <div class="fig {{ 'sm' if not loop.first }}" style="--c: {{ s.colors[c] }}"><span class="who">{{ c | short }}</span><span class="val">{{ "%.1f" % v }}%</span></div>
+      {% endfor %}
+    {% else %}
+      {% for c in race.candidates if c in avg.values %}
+      <div class="fig" style="--c: {{ s.colors[c] }}"><span class="who">{{ c | short }}</span><span class="val">{{ "%.1f" % avg.values[c] }}%</span></div>
+      {% endfor %}
+    {% endif %}
+  </div>
+  {% if avg.margin is not none %}<p class="fig-lead">{{ avg.margin | signed(race.candidates[0] | short, race.candidates[1] | short) }}</p>{% endif %}
+  <p class="fig-meta">{{ avg.n_polls }} poll{{ "s" if avg.n_polls != 1 }} weighted · latest {{ avg.latest_end_date.strftime("%b %-d, %Y") }}</p>
+  {% else %}
+  <p class="fig-meta">No qualifying polls yet. Fills in automatically when a pollster tests this matchup.</p>
+  {% endif %}
+  <span class="fig-link">{{ race.title | replace("2028 Presidential Election Polls: ", "") }} →</span>
+</a>
+{% endmacro %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="prose">
+<header class="page-head"><p class="kicker">About</p><h1>About ElectionsUSA</h1></header>
+<p>ElectionsUSA is an independent, non-partisan reference for United States election polling. It launched in October 2026, ahead of the midterms and the start of the 2028 presidential cycle, to fill a specific gap: a free, open-data polling average with a published method and a pollster scorecard that anyone can check.</p>
+<h2>Who runs it</h2>
+<p>ElectionsUSA is produced by {{ site.author }}. <!-- TODO: add a named editor with a short bio and links; Google and readers both weight this heavily for political content. --> Contact: <a href="mailto:{{ site.contact_email }}">{{ site.contact_email }}</a>.</p>
+<h2>Independence and funding</h2>
+<p>The site has no affiliation with any candidate, party, campaign, PAC or polling firm and accepts no money from them. It is funded by display advertising. Advertisers have no influence over which polls are included or how they are weighted.</p>
+<h2 id="corrections">Corrections</h2>
+<p>If a number on this site doesn't match the pollster's release, tell us: email <a href="mailto:{{ site.contact_email }}">{{ site.contact_email }}</a> with the page URL, the pollster and the correct figure. Corrections are made in the underlying dataset, so they flow through to every chart, table and the API, and material corrections are noted on the affected page.</p>
+<h2>Data and reuse</h2>
+<p>Our compiled polls and market snapshots are published under CC BY 4.0 on the <a href="/data/">data page</a>. Poll results themselves are facts published by each pollster and credited on every row. Historical accuracy statistics derive from FiveThirtyEight's open dataset (CC BY 4.0). Wikipedia is used as one compilation source for locating polls; its text is CC BY-SA 4.0.</p>
+<h2>Editorial standards</h2>
+<ul>
+  <li>We publish what pollsters publish. We do not run or commission polls.</li>
+  <li>We do not forecast or declare winners, and we do not report election results; official results come from state election authorities.</li>
+  <li>Every change to the method is documented on the <a href="/methodology/">methodology page</a> with its date.</li>
+</ul>
+</article>
+{% endblock %}

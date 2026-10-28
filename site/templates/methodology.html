@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="prose">
+<header class="page-head"><p class="kicker">Methodology</p><h1>How the ElectionsUSA average works</h1>
+<p class="sub">Short version: recent, large, historically accurate polls count more; no pollster can flood the average; and the whole thing is reproducible from the <a href="/data/">downloadable data</a> and <a href="{{ site.github_repo and ('https://github.com/' ~ site.github_repo) or '/data/' }}">open-source code</a>.</p></header>
+
+<h2>1. Which polls are included</h2>
+<p>Any publicly released poll of the relevant population (national adults, registered or likely voters, or a party's primary voters) with a stated pollster and fieldwork dates. We don't exclude partisan or internal polls, but they are rarely graded well and so carry low weight. Polls are collected from pollsters' releases and from community-maintained compilations that cite them; the row's link always points to the source we used.</p>
+
+<h2>2. Weights</h2>
+<p>Each poll's weight is the product of four factors:</p>
+<ol>
+  <li><b>Recency.</b> <code>0.5 ^ (age_in_days / half_life)</code>. The half-life is 14 days for approval and the generic ballot, 45 days for 2028 general-election matchups and 60 days for the 2028 primaries while polling is sparse; these shorten as Election Day approaches and every change is logged here. A poll two half-lives old counts a quarter as much as one released today.</li>
+  <li><b>Sample size.</b> <code>min(sqrt(n / 600), 1.5)</code>. Unknown n is treated as 600. Error falls with the square root of sample size, not linearly, and above ~1,350 respondents design effects dominate, so the bonus is capped.</li>
+  <li><b>Pollster quality.</b> FiveThirtyEight's final letter grade mapped to a weight from 1.0 (A+) to 0.1 (F); unrated pollsters get 0.6. We will switch to our own grades once the <a href="/pollsters/#2026">2026 scorecard</a> has enough polls.</li>
+  <li><b>Frequency damping.</b> If a pollster has <i>k</i> polls inside the active window, each is divided by <code>sqrt(k)</code>, so a daily tracker contributes like roughly three polls, not thirty.</li>
+</ol>
+<p>Polls weighing less than 1% of the heaviest poll are dropped. The average for each candidate is the weighted mean of the polls that asked about that candidate, and a candidate is shown only if at least one poll inside the active window (about 4.3 half-lives) included them, so a name that pollsters have stopped testing drops out rather than lingering on stale numbers.</p>
+
+<h2>3. The trend line</h2>
+<p>For each date on the chart we recompute the average using only polls whose fieldwork had ended by that date. The line therefore shows what the average <i>was</i>, not a smoothed hindsight curve, and it never changes retroactively when new polls arrive.</p>
+
+<h2>4. What we don't do</h2>
+<p>No house-effect adjustment, no likely-voter conversion, no trend-line extrapolation, no "fundamentals". These can improve accuracy but they also add judgement calls that are hard to audit. Our priority is that a reader can reproduce every number from the table beneath it.</p>
+
+<h2>5. Pollster scorecard</h2>
+<p>Historical accuracy is computed from FiveThirtyEight's open archive (CC BY 4.0) of polls conducted in the final 21 days before an election, 2016–2022. For each pollster we report mean absolute error on the margin, mean signed error (bias), the share of races called correctly, and an adjusted error shrunk toward the field mean with <i>k</i> = 15. After the November 3, 2026 midterms we apply the same calculation to this site's own 2026 polls.</p>
+
+<h2>6. Prediction markets</h2>
+<p>Prices are read from Polymarket's and Kalshi's public APIs once per update and stored as implied probabilities. We show them next to poll shares for the same outcome but do not combine them; they measure different things.</p>
+
+<h2>7. Updates and corrections</h2>
+<p>Data refreshes several times a day; the timestamp on every page is the build date. Errors reported via the <a href="/about/#corrections">corrections page</a> are fixed in the dataset so the correction propagates to every chart, table and the API.</p>
+</article>
+{% endblock %}
