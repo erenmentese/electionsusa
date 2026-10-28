@@ -9,56 +9,56 @@ snapshot_date,market_id,platform,outcome,price,source_url,source_type,notes,fetc
 2026-03-18,pres-2028-winner,kalshi,Gavin Newsom,18.3,https://casinobeats.com/2026/03/18/gavin-newsom-jd-vance-see-chances-leading-parties-2028-sharply-decline/,seed,Press snapshot.,2026-10-25T00:00:00Z
 2026-10-04,gop-nominee-2028,kalshi,JD Vance,45.0,https://defirate.com/odds/republican-nominee/,seed,Aggregator quote flagged as possibly stale.,2026-10-25T00:00:00Z
 2026-10-04,gop-nominee-2028,polymarket,JD Vance,50.0,https://defirate.com/odds/republican-nominee/,seed,Aggregator quote flagged as possibly stale.,2026-10-25T00:00:00Z
-2026-10-28,pres-2028-winner,polymarket,JD Vance,18.2,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Gavin Newsom,10.7,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Alexandria Ocasio-Cortez,13.0,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Pete Buttigieg,2.5,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Josh Shapiro,2.9,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Marco Rubio,9.7,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Wes Moore,1.1,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Andy Beshear,1.8,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Kamala Harris,4.2,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,JB Pritzker,0.8,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Donald Trump,1.6,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Ron DeSantis,2.5,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Dwayne 'The Rock' Johnson,1.3,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Tucker Carlson,1.2,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Ivanka Trump,0.7,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Ro Khanna,0.9,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Thomas Massie,0.9,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Jon Ossoff,9.4,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,James Talarico,1.7,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Mark Kelly,1.1,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,pres-2028-winner,polymarket,Raphael Warnock,0.9,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Gavin Newsom,17.0,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Alexandria Ocasio-Cortez,16.1,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Pete Buttigieg,5.0,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Josh Shapiro,5.0,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Wes Moore,1.9,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Kamala Harris,6.3,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Andy Beshear,3.5,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Jon Ossoff,15.2,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,J.B. Pritzker,1.5,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Raphael Warnock,1.9,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Cory Booker,0.8,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Michelle Obama,0.7,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Mark Kelly,1.9,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Rahm Emanuel,1.7,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Jon Stewart,0.7,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Bernie Sanders,1.4,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Chelsea Clinton,1.1,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Dwayne 'The Rock' Johnson,0.9,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,Ro Khanna,1.4,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,dem-nominee-2028,polymarket,James Talarico,2.5,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Donald Trump,1.9,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,J.D. Vance,38.5,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Marco Rubio,18.1,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Donald Trump Jr.,1.8,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Ron DeSantis,3.5,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Brian Kemp,0.8,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Ted Cruz,2.5,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Elon Musk,0.7,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Tucker Carlson,3.0,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Robert F. Kennedy Jr.,49.0,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Ivanka Trump,1.5,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
-2026-10-28,gop-nominee-2028,polymarket,Thomas Massie,0.8,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:38:35Z
+2026-10-28,pres-2028-winner,polymarket,JD Vance,18.2,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Gavin Newsom,10.7,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Alexandria Ocasio-Cortez,13.0,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Pete Buttigieg,2.5,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Josh Shapiro,2.9,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Marco Rubio,9.7,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Wes Moore,1.1,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Andy Beshear,1.8,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Kamala Harris,4.2,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,JB Pritzker,0.8,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Donald Trump,1.6,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Ron DeSantis,2.5,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Dwayne 'The Rock' Johnson,1.3,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Tucker Carlson,1.2,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Ivanka Trump,0.7,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Ro Khanna,0.9,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Thomas Massie,0.9,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Jon Ossoff,9.4,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,James Talarico,1.7,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Mark Kelly,1.1,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,pres-2028-winner,polymarket,Raphael Warnock,0.9,https://polymarket.com/event/presidential-election-winner-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Gavin Newsom,17.0,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Alexandria Ocasio-Cortez,16.1,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Pete Buttigieg,5.0,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Josh Shapiro,5.0,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Wes Moore,1.9,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Kamala Harris,6.3,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Andy Beshear,3.5,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Jon Ossoff,15.2,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,J.B. Pritzker,1.5,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Raphael Warnock,1.9,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Cory Booker,0.8,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Michelle Obama,0.7,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Mark Kelly,1.9,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Rahm Emanuel,1.7,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Jon Stewart,0.7,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Bernie Sanders,1.4,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Chelsea Clinton,1.1,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Dwayne 'The Rock' Johnson,0.9,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,Ro Khanna,1.4,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,dem-nominee-2028,polymarket,James Talarico,2.5,https://polymarket.com/event/democratic-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Donald Trump,1.9,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,J.D. Vance,38.5,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Marco Rubio,18.1,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Donald Trump Jr.,1.8,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Ron DeSantis,3.5,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Brian Kemp,0.8,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Ted Cruz,2.5,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Elon Musk,0.7,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Tucker Carlson,3.0,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Robert F. Kennedy Jr.,49.0,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Ivanka Trump,1.5,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
+2026-10-28,gop-nominee-2028,polymarket,Thomas Massie,0.8,https://polymarket.com/event/republican-presidential-nominee-2028,api,,2026-10-28T14:45:21Z
