@@ -30,7 +30,7 @@ SITE = {
     ),
     "author": "ElectionsUSA Data Desk",  # TODO: replace with a named author for E-E-A-T
     "contact_email": "hello@electionsusa.org",
-    "twitter": "",  # e.g. "@electionsusa"
+    "twitter": "@ElectionsUSAorg",  # e.g. "@electionsusa"
     "github_repo": "erenmentese/electionsusa",  # e.g. "yourname/electionsusa" (enables data-download links)
     "adsense_client": "",  # e.g. "ca-pub-1234567890123456"; empty = render placeholders
     "analytics_snippet": "",  # paste a privacy-friendly analytics tag (Plausible, GoatCounter...)
@@ -232,7 +232,7 @@ DEFAULT_GRADE_WEIGHT = 0.6
 
 # Social bot (X / Twitter) -------------------------------------------------
 BOT = {
-    "handle": "",                 # e.g. "@electionsusa" (shown on cards when set)
+    "handle": "@ElectionsUSAorg",               # e.g. "@electionsusa" (shown on cards when set)
     "fresh_days": 10,             # only announce polls whose fieldwork ended this recently
     "max_posts_per_run": 2,       # the workflow runs every 6h -> at most ~8 posts/day
     "max_posts_per_day": 6,
