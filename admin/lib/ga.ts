@@ -1,20 +1,36 @@
 import "server-only";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import { getVercelOidcToken } from "@vercel/oidc";
+import { ExternalAccountClient } from "google-auth-library";
 import type { Dashboard, Range, Row, Totals } from "./types";
 import { sampleDashboard } from "./sample";
 
-// GA4_CREDENTIALS: the service-account JSON key, pasted as-is or base64-encoded.
 // GA4_PROPERTY_ID: the numeric property id (GA4 > Admin > Property details).
-function credentials(): { client_email: string; private_key: string } | null {
-  const raw = process.env.GA4_CREDENTIALS?.trim();
-  if (!raw) return null;
-  const json = raw.startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf8");
-  const parsed = JSON.parse(json);
-  return { client_email: parsed.client_email, private_key: parsed.private_key };
+// Auth, preferred: keyless Workload Identity Federation with Vercel OIDC (GCP_PROJECT_NUMBER,
+// GCP_SERVICE_ACCOUNT_EMAIL, GCP_WORKLOAD_IDENTITY_POOL_ID, GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID).
+// Fallback: GA4_CREDENTIALS, a service-account JSON key pasted as-is or base64-encoded.
+function client(): BetaAnalyticsDataClient {
+  const sa = process.env.GCP_SERVICE_ACCOUNT_EMAIL;
+  if (sa) {
+    const provider = `projects/${process.env.GCP_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${process.env.GCP_WORKLOAD_IDENTITY_POOL_ID}/providers/${process.env.GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID}`;
+    const authClient = ExternalAccountClient.fromJSON({
+      type: "external_account",
+      audience: `//iam.googleapis.com/${provider}`,
+      subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
+      token_url: "https://sts.googleapis.com/v1/token",
+      service_account_impersonation_url: `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${sa}:generateAccessToken`,
+      subject_token_supplier: { getSubjectToken: () => getVercelOidcToken() },
+    });
+    if (!authClient) throw new Error("Could not build the Workload Identity Federation client");
+    return new BetaAnalyticsDataClient({ authClient });
+  }
+  const raw = process.env.GA4_CREDENTIALS!.trim();
+  const parsed = JSON.parse(raw.startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf8"));
+  return new BetaAnalyticsDataClient({ credentials: { client_email: parsed.client_email, private_key: parsed.private_key } });
 }
 
 export function gaConfigured(): boolean {
-  return !!process.env.GA4_PROPERTY_ID && !!process.env.GA4_CREDENTIALS;
+  return !!process.env.GA4_PROPERTY_ID && !!(process.env.GCP_SERVICE_ACCOUNT_EMAIL || process.env.GA4_CREDENTIALS);
 }
 
 const num = (v: string | null | undefined) => Number(v ?? 0) || 0;
@@ -31,14 +47,14 @@ export async function getDashboard(range: Range): Promise<Dashboard> {
 }
 
 async function fetchDashboard(range: Range): Promise<Dashboard> {
-  const client = new BetaAnalyticsDataClient({ credentials: credentials()! });
+  const ga = client();
   const property = `properties/${process.env.GA4_PROPERTY_ID}`;
   // Each range ends today and includes it; the comparison range is the same length just before.
   const current = { startDate: `${range - 1}daysAgo`, endDate: "today", name: "current" };
   const previous = { startDate: `${range * 2 - 1}daysAgo`, endDate: `${range}daysAgo`, name: "previous" };
 
   const top = (dimension: string, metric: string, limit: number) =>
-    client.runReport({
+    ga.runReport({
       property,
       dateRanges: [current],
       dimensions: [{ name: dimension }],
@@ -48,12 +64,12 @@ async function fetchDashboard(range: Range): Promise<Dashboard> {
     });
 
   const [[totals], [daily], [pages], [channels], [sources], [countries], [devices], realtime] = await Promise.all([
-    client.runReport({
+    ga.runReport({
       property,
       dateRanges: [current, previous],
       metrics: ["activeUsers", "newUsers", "sessions", "screenPageViews", "averageSessionDuration", "engagementRate"].map((name) => ({ name })),
     }),
-    client.runReport({
+    ga.runReport({
       property,
       dateRanges: [current],
       dimensions: [{ name: "date" }],
@@ -61,7 +77,7 @@ async function fetchDashboard(range: Range): Promise<Dashboard> {
       orderBys: [{ dimension: { dimensionName: "date" } }],
       limit: 400,
     }),
-    client.runReport({
+    ga.runReport({
       property,
       dateRanges: [current],
       dimensions: [{ name: "pagePath" }],
@@ -73,7 +89,7 @@ async function fetchDashboard(range: Range): Promise<Dashboard> {
     top("sessionSource", "sessions", 8),
     top("country", "activeUsers", 8),
     top("deviceCategory", "activeUsers", 5),
-    client.runRealtimeReport({ property, metrics: [{ name: "activeUsers" }] }).catch(() => null),
+    ga.runRealtimeReport({ property, metrics: [{ name: "activeUsers" }] }).catch(() => null),
   ]);
 
   const totalsFor = (name: string): Totals => {

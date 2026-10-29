@@ -62,7 +62,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
           <p className="notice" role="status">
             {d.error
               ? <>GA4'ten veri alınamadı, örnek veri gösteriliyor. Hata: <code>{d.error}</code></>
-              : <>Örnek veri gösteriliyor. GA4 bağlantısı (<code>GA4_PROPERTY_ID</code>, <code>GA4_CREDENTIALS</code>) kurulunca gerçek rakamlar gelecek.</>}
+              : <>Örnek veri gösteriliyor. GA4 bağlantısı kurulunca gerçek rakamlar gelecek.</>}
           </p>
         )}
 
