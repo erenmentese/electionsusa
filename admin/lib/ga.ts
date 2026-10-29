@@ -20,6 +20,8 @@ function client(): BetaAnalyticsDataClient {
       token_url: "https://sts.googleapis.com/v1/token",
       service_account_impersonation_url: `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${sa}:generateAccessToken`,
       subject_token_supplier: { getSubjectToken: () => getVercelOidcToken() },
+      // The default cloud-platform scope is not accepted by the GA4 Data API.
+      scopes: ["https://www.googleapis.com/auth/analytics.readonly"],
     });
     if (!authClient) throw new Error("Could not build the Workload Identity Federation client");
     return new BetaAnalyticsDataClient({ authClient });
