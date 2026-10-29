@@ -3,6 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{% if site.ga4_id %}
+<script>
+// Google Analytics 4 - production domain only, so previews and local builds don't count as visits.
+// Ad cookies stay off until the site actually runs AdSense.
+{% set ads = "granted" if site.adsense_client else "denied" %}
+if (location.hostname === {{ site.domain | tojson }}) {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () { dataLayer.push(arguments); };
+  gtag("consent", "default", {ad_storage: "{{ ads }}", ad_user_data: "{{ ads }}", ad_personalization: "{{ ads }}", analytics_storage: "granted"});
+  gtag("consent", "default", {ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "denied", region: {{ site.consent_regions | tojson }}});
+  gtag("js", new Date());
+  gtag("config", {{ site.ga4_id | tojson }});
+  var ga = document.createElement("script");
+  ga.async = true;
+  ga.src = "https://www.googletagmanager.com/gtag/js?id=" + {{ site.ga4_id | tojson }};
+  document.head.appendChild(ga);
+}
+</script>
+{% endif %}
 {% set page_title = (title ~ " | " ~ site.name) if title else (site.name ~ " – " ~ site.tagline) %}
 <title>{{ page_title }}</title>
 <meta name="description" content="{{ description or site.description }}">
