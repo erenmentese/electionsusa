@@ -1,12 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <article class="prose">
-<header class="page-head"><p class="kicker">Legal</p><h1>Privacy policy</h1><p class="sub">Last updated {{ build_date }}</p></header>
+<header class="page-head"><p class="kicker">Legal</p><h1>Privacy policy</h1><p class="sub">Last updated {{ site.privacy_updated or build_date }}</p></header>
+{% if site.ga4_id %}
+<p>ElectionsUSA ({{ site.domain }}) is a static website. We do not require accounts or ask for your name or email address. When you browse the site, Google Analytics receives your IP address (used to estimate your approximate location), device and browser details, and the pages you view; outside the EEA, the UK and Switzerland it also stores an identifier in a cookie (<code>_ga</code>). See Analytics below.</p>
+{% else %}
 <p>ElectionsUSA ({{ site.domain }}) is a static website. We do not require accounts and do not collect names, email addresses or other personal information unless you email us.</p>
+{% endif %}
 <h2>Advertising</h2>
 <p>We use Google AdSense to display advertisements. Google and its partners may use cookies and similar technologies, including the DoubleClick cookie, to serve ads based on your prior visits to this and other websites. You can opt out of personalised advertising at <a href="https://adssettings.google.com" rel="noopener">Google Ads Settings</a> or <a href="https://www.aboutads.info" rel="noopener">aboutads.info</a>. Visitors in the European Economic Area, the United Kingdom and Switzerland are shown a consent dialog before any advertising cookies are set.</p>
 <h2>Analytics</h2>
+{% if site.ga4_id %}
+<p>We use Google Analytics 4, a service provided by Google, to count visits and see which pages are read, how visitors arrive (for example from a search engine or social network), and visitors' general device type and approximate location (country or city). Google Analytics sets first-party cookies, such as <code>_ga</code>, which recognise a returning browser for up to two years. Your IP address is used to estimate your location; Google Analytics 4 does not log or store it, and we never send names, email addresses or other directly identifying information to Google.{% if not site.adsense_client %} We do not use Google Analytics data for advertising.{% endif %} You can read <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">how Google uses information from sites that use its services</a>.</p>
+<p>For visitors in the European Economic Area, the United Kingdom and Switzerland, analytics and advertising cookies are off by default (Google Consent Mode). Google Analytics still loads for these visitors and sends cookieless pings, containing the page address, referring page, browser type and time but no visitor identifier, which Google uses to estimate overall traffic. Blocking cookies stops Google Analytics from recognising you between visits, but page views are still sent; to stop Google Analytics entirely, use the <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Google Analytics opt-out browser add-on</a> or a content blocker.</p>
+{% else %}
 <p>{% if site.analytics_snippet %}We use a privacy-focused analytics service that records aggregate page views without cookies or personal identifiers.{% else %}We do not currently run analytics.{% endif %}</p>
+{% endif %}
 <h2>Third-party links</h2>
 <p>Poll rows link to pollsters' and publishers' websites, which have their own privacy policies.</p>
 <h2>Contact</h2>
