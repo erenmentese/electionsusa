@@ -125,29 +125,56 @@ def parse_sample(text: str) -> tuple[float | None, str]:
 
 def match_candidate(header: str, race: config.Race) -> str | None:
     h = re.sub(r"\[.*?\]", "", str(header)).strip().lower()
-    for cand in race.candidates:
+    # longest names first so "Disapprove" is not swallowed by "Approve"
+    for cand in sorted(race.candidates, key=len, reverse=True):
         last = cand.split()[-1].lower().rstrip(".")
         if cand.lower() in h or (last in h and len(last) > 3):
             return cand
-    for alias, cand in CANDIDATE_ALIASES.items():
+    for alias, cand in sorted(CANDIDATE_ALIASES.items(), key=lambda kv: len(kv[0]), reverse=True):
         if alias in h and cand in race.candidates:
             return cand
     return None
 
 
-def tables_for_race(html: str, race: config.Race) -> list[tuple[pd.DataFrame, list[str]]]:
-    """Return (dataframe, row_citation_urls) for every wikitable that fits the race."""
+NON_CANDIDATE_COLS = re.compile(
+    r"poll|source|date|sample|margin|moe|error|undecided|other|unsure|lead|net|notes?|ref|link|method|mode|spread|total", re.I)
+PARTY_LABEL = re.compile(r"\((?:D|R|I|L|G|Ind\.?|Dem\.?|Rep\.?)\)", re.I)
+
+
+def _heading_year(text: str) -> int | None:
+    """'October 2026' -> 2026, '2025–2026' -> 2026 (latest year), 'Nationwide' -> None."""
+    ys = re.findall(r"(20\d\d)", text or "")
+    return int(ys[-1]) if ys else None
+
+
+def _headings(tbl) -> tuple[str, str]:
+    """(nearest heading text, nearest h2 text) preceding the table."""
+    near = tbl.find_previous(["h2", "h3", "h4", "h5"])
+    h2 = tbl.find_previous("h2")
+    clean = lambda h: re.sub(r"\[edit.*?\]", "", h.get_text(" ", strip=True)).strip() if h else ""
+    return clean(near), clean(h2)
+
+
+def tables_for_race(html: str, race: config.Race) -> list[tuple[pd.DataFrame, list[str], str]]:
+    """Return (dataframe, row_citation_urls, heading) for every wikitable that fits the race.
+
+    Selection is by table shape, not by section wording (Wikipedia editors rename
+    sections often): a pollster column, a date column and the race's candidates.
+    Aggregator tables (RealClearPolling, 270toWin ...) are skipped: they are not polls.
+    """
     soup = BeautifulSoup(html, "lxml")
     out = []
     for tbl in soup.select("table.wikitable"):
-        heading = ""
-        prev = tbl.find_previous(["h2", "h3", "h4"])
-        if prev:
-            heading = prev.get_text(" ", strip=True)
-        if race.wikipedia_section_hint and race.kind == "general":
-            # for head-to-head pages, require the matchup heading to match
-            if race.wikipedia_section_hint.lower().replace(".", "") not in heading.lower().replace(".", ""):
+        heading, h2 = _headings(tbl)
+        if re.search(r"aggregat", heading + " " + h2, re.I):
+            continue
+        if race.wikipedia_section_hint and race.kind in ("approval", "generic"):
+            # these pages mix national tables with statewide/issue/Senate tables: stay in the right h2
+            hint = race.wikipedia_section_hint.lower()
+            if hint not in (heading + " " + h2).lower():
                 continue
+        for st in tbl.select("style"):
+            st.decompose()
         try:
             df = pd.read_html(StringIO(str(tbl)), flavor="lxml")[0]
         except ValueError:
@@ -155,48 +182,65 @@ def tables_for_race(html: str, race: config.Race) -> list[tuple[pd.DataFrame, li
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = [" ".join(str(x) for x in col if "Unnamed" not in str(x)).strip() for col in df.columns]
         cols = [str(c) for c in df.columns]
-        cand_cols = [c for c in cols if match_candidate(c, race)]
-        if len(set(match_candidate(c, race) for c in cand_cols)) < 2:
+        if any(re.search(r"aggregat|updated", c, re.I) for c in cols):
             continue
-        if not any(re.search(r"poll|source|pollster", c, re.I) for c in cols):
+        if not any(re.search(r"poll|source|pollster|firm", c, re.I) for c in cols):
             continue
         if not any(re.search(r"date", c, re.I) for c in cols):
             continue
-        # citation URLs per row (first external link in first cell)
+        matched = {match_candidate(c, race) for c in cols if match_candidate(c, race)}
+        matched.discard(None)
+        if race.kind == "general":
+            # exactly this two-way matchup: both candidates present, no third named candidate
+            if matched != set(race.candidates):
+                continue
+            extra = [c for c in cols if not match_candidate(c, race) and not NON_CANDIDATE_COLS.search(c)]
+            if extra or any(PARTY_LABEL.search(c) and not match_candidate(c, race) for c in cols):
+                continue
+        elif race.kind == "primary":
+            if len(matched - {"Other/Undecided"}) < 3:  # skip head-to-head hypotheticals
+                continue
+        elif len(matched) < 2:
+            continue
+        # citation URLs per row (first external, non-Wikipedia link in the first cell)
         urls = []
         for tr in tbl.select("tr"):
             tds = tr.find_all(["td"])
             if not tds:
                 continue
-            a = tds[0].find("a", href=True)
-            href = a["href"] if a else ""
-            if href.startswith("/wiki/"):
-                href = ""
-            urls.append(href if href.startswith("http") else "")
-        out.append((df, urls))
+            href = ""
+            for a in tds[0].find_all("a", href=True):
+                if a["href"].startswith("http") and "wikipedia.org" not in a["href"]:
+                    href = a["href"]
+                    break
+            urls.append(href)
+        out.append((df, urls, heading))
     return out
 
 
-def rows_from_table(df: pd.DataFrame, urls: list[str], race: config.Race, page_url: str) -> list[dict]:
+def rows_from_table(df: pd.DataFrame, urls: list[str], race: config.Race, page_url: str,
+                    heading: str = "") -> list[dict]:
     cols = [str(c) for c in df.columns]
-    poll_col = next(c for c in cols if re.search(r"poll|source|pollster", c, re.I))
+    poll_col = next(c for c in cols if re.search(r"poll|source|pollster|firm", c, re.I))
     date_col = next(c for c in cols if re.search(r"date", c, re.I))
     sample_col = next((c for c in cols if re.search(r"sample", c, re.I)), None)
     cand_map = {c: match_candidate(c, race) for c in cols if match_candidate(c, race)}
+    # Wikipedia omits the year inside month sections ("October 24–26" under "October 2026")
+    default_year = _heading_year(heading) or date.today().year
     rows: list[dict] = []
     for i, r in df.iterrows():
         pollster_raw = str(r[poll_col])
         if not pollster_raw or pollster_raw.lower() in ("nan", poll_col.lower()):
             continue
-        start, end = parse_date_range(r[date_col])
-        if end is None:
+        start, end = parse_date_range(r[date_col], default_year)
+        if end is None or end > date.today():
             log.debug("skip row (date): %s | %s", pollster_raw, r[date_col])
             continue
         n, pop = parse_sample(r[sample_col]) if sample_col else (None, "")
         sponsor = ""
         pollster = canonical_pollster(re.split(r"/| for ", re.sub(r"\[.*?\]", "", pollster_raw))[0])
         if "/" in pollster_raw:
-            sponsor = pollster_raw.split("/", 1)[1].strip()
+            sponsor = re.sub(r"\[.*?\]", "", pollster_raw.split("/", 1)[1]).strip()
         url = urls[i] if i < len(urls) and urls[i] else page_url
         pid = make_poll_id(race.id, pollster, end.isoformat(), pop)
         got = 0
@@ -224,8 +268,8 @@ def fetch_race(race: config.Race, session: requests.Session | None = None) -> pd
     page_url = f"https://en.wikipedia.org/wiki/{race.wikipedia_page}"
     html = fetch_page_html(race.wikipedia_page, session)
     rows: list[dict] = []
-    for df, urls in tables_for_race(html, race):
-        rows.extend(rows_from_table(df, urls, race, page_url))
+    for df, urls, heading in tables_for_race(html, race):
+        rows.extend(rows_from_table(df, urls, race, page_url, heading))
     log.info("%s: %d candidate-rows from Wikipedia", race.id, len(rows))
     return pd.DataFrame(rows, columns=POLL_COLUMNS)
 

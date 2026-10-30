@@ -45,8 +45,9 @@ def test_wikipedia_table_parsing():
       <tr><td>Other Poll</td><td>Jul 1–4, 2026</td><td>900 (LV)</td><td>44%</td><td>41%</td></tr>
     </table>"""
     tables = tables_for_race(html, race)
-    assert len(tables) == 1  # only the matching matchup heading
-    rows = rows_from_table(*tables[0], race, "https://en.wikipedia.org/wiki/x")
+    assert len(tables) == 1  # only the matching matchup
+    df0, urls0, heading0 = tables[0]
+    rows = rows_from_table(df0, urls0, race, "https://en.wikipedia.org/wiki/x", heading0)
     df = validate_polls(pd.DataFrame(rows))
     assert set(df["candidate"]) == {"JD Vance", "Gavin Newsom"}
     assert len(df) == 4
@@ -80,3 +81,78 @@ def test_seed_data_valid():
     assert not df.empty
     assert df["source_url"].str.startswith("http").all()
     assert set(df["race_id"]) <= set(config.RACE_BY_ID)
+
+
+def test_wikipedia_live_layouts_oct_2026():
+    """Shapes seen on the live pages in Oct 2026: year-less dates under month headings,
+    aggregator tables, 'Nationwide' headings shared by every matchup, 3-way tables,
+    statewide approval tables and head-to-head tables on primary pages."""
+    approval = config.RACE_BY_ID["approval-trump-2"]
+    html = """
+    <h2>Nationwide job approval ratings</h2><h3>Aggregate polls</h3><h4>Approval</h4>
+    <table class="wikitable"><tr><th>Aggregator</th><th>Updated</th><th>Approve</th><th>Disapprove</th><th>Lead</th></tr>
+      <tr><td>Ballotpedia</td><td>October 29, 2026</td><td>38.0%</td><td>60.0%</td><td>−22.0%</td></tr></table>
+    <h3>2026</h3><h4>October 2026</h4>
+    <table class="wikitable"><tr><th>Poll source</th><th>Date</th><th>Sample size[a]</th><th>MoE</th><th>Approve</th><th>Disapprove</th><th>Unsure/Other</th><th>Net</th></tr>
+      <tr><td><a href="https://en.wikipedia.org/wiki/Harvard">Harvard</a>/<a href="https://harvardharrispoll.com/x.pdf">Harris</a></td><td>October 24–26</td><td>2,700 RV</td><td>± 1.9%</td><td>39%</td><td>59%</td><td>3%</td><td>−20%</td></tr>
+      <tr><td>Reuters/Ipsos</td><td>September 28 – October 4</td><td>1,100 A</td><td>± 3%</td><td>41%</td><td>56%</td><td>3%</td><td>−15%</td></tr></table>
+    <h2>Statewide job approval ratings</h2><h3>Alaska</h3>
+    <table class="wikitable"><tr><th>Poll source</th><th>Date</th><th>Sample size</th><th>Approve</th><th>Disapprove</th></tr>
+      <tr><td>Alaska Survey</td><td>October 1–3</td><td>500 RV</td><td>52%</td><td>44%</td></tr></table>"""
+    tables = tables_for_race(html, approval)
+    assert len(tables) == 1
+    rows = rows_from_table(*tables[0][:2], approval, "https://en.wikipedia.org/wiki/x", tables[0][2])
+    df = pd.DataFrame(rows)
+    assert len(df) == 4
+    hh = df[df.pollster.str.startswith("Harvard")].iloc[0]
+    assert hh.end_date == "2026-10-26" and hh.start_date == "2026-10-24" and hh.population == "RV"
+    assert hh.source_url == "https://harvardharrispoll.com/x.pdf"
+    ri = df[df.pollster.str.startswith("Reuters")].iloc[0]
+    assert ri.start_date == "2026-09-28" and ri.end_date == "2026-10-04"
+
+    general = config.RACE_BY_ID["pres-2028-vance-newsom"]
+    html = """
+    <h2>Polling</h2><h3>Nationwide</h3>
+    <table class="wikitable"><tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th><th>Vance (R)</th><th>Harris (D)</th><th>Undecided</th></tr>
+      <tr><td>Emerson College</td><td>August 16–17, 2026</td><td>1,000 (LV)</td><td>45%</td><td>49%</td><td>6%</td></tr></table>
+    <table class="wikitable"><tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th><th>Vance (R)</th><th>Newsom (D)</th><th>Undecided</th></tr>
+      <tr><td>The Bulwark/Pablo Torre</td><td>October 10–14, 2026</td><td>1,417 (A)</td><td>44%</td><td>47%</td><td>9%</td></tr></table>
+    <table class="wikitable"><tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th><th>Vance (R)</th><th>Newsom (D)</th><th>Rodgers (I)</th><th>Undecided</th></tr>
+      <tr><td>The Bulwark/Pablo Torre</td><td>October 10–14, 2026</td><td>1,417 (A)</td><td>40%</td><td>42%</td><td>8%</td><td>10%</td></tr></table>"""
+    tables = tables_for_race(html, general)
+    assert len(tables) == 1  # the two-way Vance/Newsom table only
+    rows = rows_from_table(*tables[0][:2], general, "u", tables[0][2])
+    assert {r["candidate"] for r in rows} == {"JD Vance", "Gavin Newsom"} and len(rows) == 2
+    assert rows[0]["sponsor"] == "Pablo Torre"
+
+    primary = config.RACE_BY_ID["gop-primary-2028"]
+    html = """
+    <h2>Polling aggregation</h2>
+    <table class="wikitable"><tr><th>Aggregator</th><th>Updated</th><th>Ron DeSantis</th><th>Marco Rubio</th><th>JD Vance</th></tr>
+      <tr><td>270toWin</td><td>August 14, 2026</td><td>2.5%</td><td>10%</td><td>60%</td></tr></table>
+    <h2>Polling</h2><h3>2026</h3>
+    <table class="wikitable"><tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th><th>Ted Cruz</th><th>Ron DeSantis</th><th>Nikki Haley</th><th>Marco Rubio</th><th>JD Vance</th><th>Other/Undecided</th></tr>
+      <tr><td>Clarity Campaign Labs</td><td>October 15–21, 2026</td><td>413 (LV)</td><td>3%</td><td>5%</td><td>2%</td><td>12%</td><td>58%</td><td>20%</td></tr></table>
+    <h2>Hypothetical polling</h2><h3>Vance vs. Rubio</h3>
+    <table class="wikitable"><tr><th>Polling firm</th><th>Date(s) administered</th><th>Sample size</th><th>JD Vance</th><th>Marco Rubio</th></tr>
+      <tr><td>Overton Insights</td><td>May 16–20, 2026</td><td>1,377 (RV)</td><td>61%</td><td>23%</td></tr></table>"""
+    tables = tables_for_race(html, primary)
+    assert len(tables) == 1
+    rows = rows_from_table(*tables[0][:2], primary, "u", tables[0][2])
+    assert {r["candidate"] for r in rows} == {"Ron DeSantis", "Nikki Haley", "Marco Rubio", "JD Vance", "Other/Undecided"}
+
+    generic = config.RACE_BY_ID["generic-ballot-2026"]
+    html = """
+    <h2>Federal elections</h2><h3>Generic congressional ballot aggregate polls</h3>
+    <table class="wikitable"><tr><th>Source of poll aggregation</th><th>Dates administered</th><th>Dates updated</th><th>Republicans</th><th>Democrats</th><th>Margin</th></tr>
+      <tr><td>Decision Desk HQ</td><td>January 9, 2025 – October 26, 2026</td><td>October 29, 2026</td><td>41.8%</td><td>51.2%</td><td>D +9.4</td></tr></table>
+    <h2>Polling</h2><h3>2025–2026</h3>
+    <table class="wikitable"><tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th><th>Margin of error</th><th>Democratic</th><th>Republican</th><th>Other/Undecided</th><th>Lead</th></tr>
+      <tr><td rowspan="2">Tufts University/YouGov</td><td rowspan="2">October 23–27, 2026</td><td>499 (LV)</td><td>± 4.6%</td><td>52%</td><td>40%</td><td>8%</td><td>12%</td></tr>
+      <tr><td>1,000 (A)</td><td>± 3.6%</td><td>47%</td><td>36%</td><td>17%</td><td>11%</td></tr></table>"""
+    tables = tables_for_race(html, generic)
+    assert len(tables) == 1
+    rows = rows_from_table(*tables[0][:2], generic, "u", tables[0][2])
+    df = pd.DataFrame(rows)
+    assert set(df.candidate) == {"Democrats", "Republicans"} and len(df) == 4
+    assert set(df.population) == {"LV", "A"}
