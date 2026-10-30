@@ -116,7 +116,7 @@ def test_wikipedia_live_layouts_oct_2026():
     <table class="wikitable"><tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th><th>Vance (R)</th><th>Harris (D)</th><th>Undecided</th></tr>
       <tr><td>Emerson College</td><td>August 16–17, 2026</td><td>1,000 (LV)</td><td>45%</td><td>49%</td><td>6%</td></tr></table>
     <table class="wikitable"><tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th><th>Vance (R)</th><th>Newsom (D)</th><th>Undecided</th></tr>
-      <tr><td>The Bulwark/Pablo Torre</td><td>October 10–14, 2026</td><td>1,417 (A)</td><td>44%</td><td>47%</td><td>9%</td></tr></table>
+      <tr><td>The Bulwark/Pablo Torre</td><td>October 10–14, 2026</td><td>1,417 (A)</td><td>44%</td><td>47%</td><td>9%</td><td></td><td></td></tr></table>
     <table class="wikitable"><tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th><th>Vance (R)</th><th>Newsom (D)</th><th>Rodgers (I)</th><th>Undecided</th></tr>
       <tr><td>The Bulwark/Pablo Torre</td><td>October 10–14, 2026</td><td>1,417 (A)</td><td>40%</td><td>42%</td><td>8%</td><td>10%</td></tr></table>"""
     tables = tables_for_race(html, general)

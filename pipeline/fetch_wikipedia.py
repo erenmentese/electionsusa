@@ -194,7 +194,8 @@ def tables_for_race(html: str, race: config.Race) -> list[tuple[pd.DataFrame, li
             # exactly this two-way matchup: both candidates present, no third named candidate
             if matched != set(race.candidates):
                 continue
-            extra = [c for c in cols if not match_candidate(c, race) and not NON_CANDIDATE_COLS.search(c)]
+            extra = [c for c in cols if c.strip() and "Unnamed" not in c
+                     and not match_candidate(c, race) and not NON_CANDIDATE_COLS.search(c)]
             if extra or any(PARTY_LABEL.search(c) and not match_candidate(c, race) for c in cols):
                 log.info("%s: skipped table under %r with columns %s", race.id, heading, cols)
                 continue
