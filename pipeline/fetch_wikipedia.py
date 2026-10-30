@@ -196,6 +196,7 @@ def tables_for_race(html: str, race: config.Race) -> list[tuple[pd.DataFrame, li
                 continue
             extra = [c for c in cols if not match_candidate(c, race) and not NON_CANDIDATE_COLS.search(c)]
             if extra or any(PARTY_LABEL.search(c) and not match_candidate(c, race) for c in cols):
+                log.info("%s: skipped table under %r with columns %s", race.id, heading, cols)
                 continue
         elif race.kind == "primary":
             if len(matched - {"Other/Undecided"}) < 3:  # skip head-to-head hypotheticals
@@ -234,7 +235,7 @@ def rows_from_table(df: pd.DataFrame, urls: list[str], race: config.Race, page_u
             continue
         start, end = parse_date_range(r[date_col], default_year)
         if end is None or end > date.today():
-            log.debug("skip row (date): %s | %s", pollster_raw, r[date_col])
+            log.info("%s: skip row (date): %s | %s", race.id, pollster_raw, r[date_col])
             continue
         n, pop = parse_sample(r[sample_col]) if sample_col else (None, "")
         sponsor = ""
