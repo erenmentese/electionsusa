@@ -20,11 +20,16 @@ pipeline/
   average.py         weighted polling average + no-look-ahead trend
   scorecard.py       pollster accuracy from FiveThirtyEight's open archive (+ 2026 cycle)
   charts.py          dependency-free SVG charts
+  history.py         presidential results by state 1976-2024 (MIT Election Lab + Census apportionment)
+  usmap.py           state map as inline SVG (us-atlas geometry), shaded by margin
+  og_cards.py        1200x630 share images, rendered at build time
   build.py           render everything into dist/
 site/templates/      Jinja2 pages        site/static/   CSS, JS, favicon
 data/polls.csv       long format: one row per poll per candidate (see /data/ page)
 data/markets.csv     market snapshots    data/results/2026.csv  (add after Nov 3, 2026)
 data/seed/fivethirtyeight/   538 raw-polls + pollster-ratings (CC BY 4.0)
+data/seed/medsl/     state presidential returns 1976-2024 (CC0)   data/seed/census/  House apportionment
+data/seed/us-atlas/  state outlines, Albers USA (ISC)             each folder has a SOURCE.md
 .github/workflows/   fetch every 6h → commit data → test → build → deploy to Pages
 ```
 

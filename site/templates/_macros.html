@@ -33,3 +33,27 @@
   <span class="fig-link">{{ race.title | replace("2028 Presidential Election Polls: ", "") }} →</span>
 </a>
 {% endmacro %}
+
+{% macro ev_bar(b) %}
+<div class="ev-bar" role="img" aria-label="Electoral votes: {{ b.dem }} {{ b.ev_dem }}, {{ b.rep }} {{ b.ev_rep }}. 270 needed to win.">
+  <div class="ev-labels"><span class="d">{{ b.dem }} <b>{{ b.ev_dem }}</b></span><span class="mid">270 to win</span><span class="r"><b>{{ b.ev_rep }}</b> {{ b.rep }}</span></div>
+  <div class="ev-track"><i class="d" style="width:{{ b.dem_w }}%"></i><i class="r" style="width:{{ b.rep_w }}%"></i><span class="ev-270"></span></div>
+</div>
+{% endmacro %}
+
+{# Shaded, linked state map. Every state is a real link, so it works without JS and crawlers follow it;
+   JS only mirrors the hovered state's result into the caption. #}
+{% macro us_map(m, caption) %}
+<figure class="map-fig">
+  <svg class="us-map" viewBox="0 0 {{ m.width }} {{ m.height }}" role="group" aria-label="{{ m.label }}" data-map>
+    {% for s in m.shapes %}<a href="{{ s.path }}" data-s="{{ s.summary }}"><title>{{ s.summary }}</title><path class="st {{ s.cls }}" d="{{ s.d }}"/></a>{% endfor %}
+    {% for b in m.boxes %}<a href="{{ b.path }}" data-s="{{ b.summary }}"><title>{{ b.summary }}</title><rect class="st {{ b.cls }}" x="{{ b.x }}" y="{{ b.y }}" width="{{ b.size }}" height="{{ b.size }}" rx="3"/><text class="box-label" x="{{ b.x + b.size + 6 }}" y="{{ b.y + b.size - 4 }}">{{ b.po }}</text></a>{% endfor %}
+  </svg>
+  <figcaption>
+    <span class="map-info" data-map-info>{{ caption }}</span>
+    <span class="map-legend">Margin:
+      {% for cls, label in [("d3", "D 15+"), ("d2", "D 5–15"), ("d1", "D <5"), ("r1", "R <5"), ("r2", "R 5–15"), ("r3", "R 15+")] %}<span><i class="sw {{ cls }}"></i>{{ label }}</span>{% endfor %}
+    </span>
+  </figcaption>
+</figure>
+{% endmacro %}

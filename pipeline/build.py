@@ -19,12 +19,13 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import average, charts, config, og_cards, scorecard
+from . import average, charts, config, history, og_cards, scorecard, usmap
 from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 
 NAV = [
     ("Approval", "/approval/trump/"),
     ("2028 President", "/2028/president/vance-vs-newsom/"),
+    ("States", "/states/"),
     ("Dem Primary", "/2028/democratic-primary/"),
     ("GOP Primary", "/2028/republican-primary/"),
     ("Markets", "/markets/"),
@@ -185,11 +186,12 @@ def site_ld() -> dict:
     return {"@context": "https://schema.org", "@graph": [website, org]}
 
 
-def breadcrumb_ld(path: str, name: str) -> dict:
+def breadcrumb_ld(trail: list[tuple[str, str]]) -> dict:
+    """trail: (name, path) for each level below Home, ending with the page itself."""
     base = config.SITE["url"]
     return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": f"{base}/"},
-        {"@type": "ListItem", "position": 2, "name": name, "item": f"{base}{path}"},
+        {"@type": "ListItem", "position": i, "name": name, "item": f"{base}{path}"}
+        for i, (name, path) in enumerate([("Home", "/"), *trail], start=1)
     ]}
 
 
@@ -278,6 +280,72 @@ def markets_context(markets: pd.DataFrame, averages: dict[str, average.RaceAvera
     return out
 
 
+# ------------------------------------------------------------------ states
+def build_states(render, dist: Path, states: dict[str, history.StateHistory],
+                 nation: dict[int, history.NationYear]) -> list[dict]:
+    """Render /states/, one page per state, their share cards and the results CSV; return finder entries."""
+    year, base = max(nation), config.SITE["url"]
+    nat, prev_year = nation[year], year - 4
+    colors = {p: config.PARTY_COLORS[p] for p in ("DEM", "REP")}
+    nat_series = [(y, n.margin) for y, n in sorted(nation.items())]
+    hub = [("Results by state", "/states/")]
+    creators = [{"@type": "Organization", "name": "MIT Election Data and Science Lab", "url": "https://electionlab.mit.edu/"},
+                {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base}]
+    csv_ld = {"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": f"{base}/data/president-by-state.csv"}
+    (dist / "og" / "states").mkdir(parents=True)
+    ordered = list(states.values())
+    index, csv_rows = [], []
+
+    for i, st in enumerate(ordered):
+        answer = history.answer_sentence(st, nation)
+        rows = [dict(year=y.year, dem=y.dem, rep=y.rep, dem_pct=y.dem_pct, rep_pct=y.rep_pct, other_pct=y.other_pct,
+                     other=y.other, other_votes=y.other_votes, total=y.total, winner=y.winner, margin_label=y.margin_label,
+                     lean=history.fmt_lean(y.margin - nation[y.year].margin), ev=y.ev, ev_dem=y.ev_dem, ev_rep=y.ev_rep,
+                     split_note=y.split_note) for y in reversed(st.years)]
+        chart = charts.margin_columns([(y.year, y.margin) for y in st.years], nat_series, colors,
+                                      title=f"{st.name} presidential margin by election, 1976–{year}")
+        ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"{st.name} presidential election results, 1976–{year}",
+              "description": answer, "url": f"{base}{st.path}", "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+              "isAccessibleForFree": True, "temporalCoverage": f"1976/{year}",
+              "spatialCoverage": {"@type": "Place", "name": f"{st.name}, United States"},
+              "creator": creators, "distribution": [csv_ld]}
+        (dist / "og" / "states" / f"{st.slug}.png").write_bytes(og_cards.state_image(st, nation, colors))
+        render("state.html", st.path, title=f"{st.name} Presidential Election Results, 1976–{year}", description=answer,
+               answer=answer, st=st, rows=rows, chart=chart, colors=colors, picked=st.picked_winner(nation),
+               lean=history.fmt_lean(st.lean(nation)), nation_label=history.fmt_margin(nat.margin, nat.dem, nat.rep),
+               prev=ordered[i - 1] if i else None, next=ordered[i + 1] if i + 1 < len(ordered) else None,
+               crumb=st.name, trail=hub, og_image=f"/og/states/{st.slug}.png", ld_dataset=ld)
+        y = st.latest
+        index.append(dict(t=f"{st.name} election results", u=st.path, k="State", s=f"{year}: {y.margin_label} · {y.ev} electoral votes",
+                          q=f"{st.name} {st.po} state results how did vote voted swing history electoral votes {year}"))
+        csv_rows += [dict(year=y.year, state=st.name, state_po=st.po, electoral_votes=y.ev, dem_candidate=y.dem, dem_votes=y.dem_votes,
+                          rep_candidate=y.rep, rep_votes=y.rep_votes, total_votes=y.total, dem_pct=round(y.dem_pct, 2),
+                          rep_pct=round(y.rep_pct, 2), margin_r=round(y.margin, 2), ev_dem=y.ev_dem, ev_rep=y.ev_rep,
+                          note=y.split_note) for y in st.years]
+
+    rows = []
+    for st in ordered:
+        y, p = st.latest, st.by_year(prev_year)
+        rows.append(dict(name=st.name, path=st.path, cls=usmap.shade(y.margin), ev=y.ev, dem_pct=y.dem_pct, rep_pct=y.rep_pct,
+                         margin=y.margin, margin_label=y.margin_label, prev=p.margin, prev_label=p.margin_label,
+                         shift=y.margin - p.margin, shift_label=history.fmt_lean(y.margin - p.margin)))
+    answer = history.national_sentence(states, nation, year)
+    ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"U.S. presidential election results by state, 1976–{year}",
+          "description": answer, "url": f"{base}/states/", "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "isAccessibleForFree": True, "temporalCoverage": f"1976/{year}", "creator": creators, "distribution": [csv_ld]}
+    (dist / "og" / "states.png").write_bytes(og_cards.states_image(nat, colors))
+    render("states.html", "/states/", title=f"{year} Election Results by State: Map, Margins and Electoral Votes",
+           description=answer, answer=answer, year=year, prev_year=prev_year, nation=nat, rows=rows,
+           usmap=usmap.map_context(states, year), evbar=usmap.ev_bar(nat), crumb="Results by state",
+           split_notes=[st.latest.split_note for st in ordered if st.latest.split_note],
+           og_image="/og/states.png", ld_dataset=ld)
+    pd.DataFrame(csv_rows).to_csv(dist / "data" / "president-by-state.csv", index=False)
+    index.append(dict(t=f"{year} election results by state", u="/states/", k="Map",
+                      s=f"{history.short(nat.rep)} {nat.ev_rep}, {history.short(nat.dem)} {nat.ev_dem} electoral votes",
+                      q="map results by state electoral college who won swing states red blue 2024 2020 history"))
+    return index
+
+
 # ------------------------------------------------------------------- build
 def build(as_of: date | None = None) -> Path:
     as_of = as_of or date.today()
@@ -304,9 +372,12 @@ def build(as_of: date | None = None) -> Path:
     (dist / "og").mkdir()
     pages: list[tuple[str, date | None]] = []  # (path, sitemap lastmod); None = no meaningful date
 
-    def render(template: str, out_path: str, lastmod: date | None = None, crumb: str | None = None, **ctx) -> None:
+    def render(template: str, out_path: str, lastmod: date | None = None, crumb: str | None = None,
+               trail: list[tuple[str, str]] | None = None, **ctx) -> None:
         page = not out_path.endswith(".html")
-        crumbs = breadcrumb_ld(out_path, crumb or ctx.get("title") or "") if page and out_path != "/" else None
+        crumbs = None
+        if page and out_path != "/":
+            crumbs = breadcrumb_ld([*(trail or []), (crumb or ctx.get("title") or "", out_path)])
         html = env.get_template(template).render(path=out_path, ld_breadcrumb=crumbs, **ctx)
         target = dist / out_path.strip("/") / "index.html" if out_path != "/" else dist / "index.html"
         if not page:
@@ -377,14 +448,19 @@ def build(as_of: date | None = None) -> Path:
     ]
     for pr in sc_rows[:40]:
         index.append(dict(t=pr.pollster, u="/pollsters/", k="Pollster", s=f"Avg error {pr.mean_abs_error}, bias {pr.bias_label}, {pr.n_polls} polls", q=f"{pr.pollster} pollster accuracy"))
+    states, nation = history.load()
+    index += build_states(render, dist, states, nation)
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
 
     (dist / "og" / "site.png").write_bytes(og_cards.site_image(summaries, as_of))
     markets_lastmod = max((m["latest"] for m in mk_ctx if m["latest"]), default=None)
     data_lastmod = max((d for d in [*race_lastmod.values(), markets_lastmod] if d), default=None)
 
+    map_year = max(nation)
     render("index.html", "/", summaries=summaries, latest=latest_polls(polls), markets=mk_ctx[:1],
-           scorecard=sc_rows[:8], title=None, description=config.SITE["description"], lastmod=data_lastmod)
+           scorecard=sc_rows[:8], title=None, description=config.SITE["description"], lastmod=data_lastmod,
+           usmap=usmap.map_context(states, map_year), evbar=usmap.ev_bar(nation[map_year]),
+           states=[dict(name=st.name, path=st.path, cls=usmap.shade(st.latest.margin)) for st in states.values()])
     render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows,
            title="Pollster Scorecard: Accuracy and Bias Ratings", description="How accurate has each U.S. pollster been? Mean error, partisan bias and call accuracy for 60+ pollsters, recomputed from 11,000 polls matched to results, plus FiveThirtyEight's final grades.")
     render("markets.html", "/markets/", markets=mk_ctx, title="2028 Election Odds: Prediction Markets vs. Polls",

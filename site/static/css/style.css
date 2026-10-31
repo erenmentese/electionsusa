@@ -106,6 +106,47 @@ main{padding:0 20px 72px}
 .table.compact td,.table.compact th{padding:8px 8px 8px 0}
 .table tbody tr:hover{background:var(--wash)}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.table td.win{font-weight:600;box-shadow:inset 3px 0 0 var(--c);padding-left:8px}
+/* state map: shades by margin (<5, 5-15, 15+ points) */
+:root{--d1:#a9bdf0;--d2:#5b7fd6;--d3:#1e40af;--r1:#f2b3b3;--r2:#dd6666;--r3:#b91c1c}
+/* on dark paper the order flips: safe states are the brightest, close ones sit nearest the background */
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--d1:#2f4277;--d2:#4b67c2;--d3:#7b98f2;--r1:#6f2b30;--r2:#b44a51;--r3:#f08a8f}}
+.d1{fill:var(--d1);background:var(--d1)}.d2{fill:var(--d2);background:var(--d2)}.d3{fill:var(--d3);background:var(--d3)}
+.r1{fill:var(--r1);background:var(--r1)}.r2{fill:var(--r2);background:var(--r2)}.r3{fill:var(--r3);background:var(--r3)}
+.statemap .ev-bar{margin:22px 0 6px}
+.map-fig{margin:0 auto;max-width:880px}
+.us-map{display:block;width:100%;height:auto}
+.us-map .st{stroke:var(--paper);stroke-width:.75;stroke-linejoin:round;transition:opacity .15s}
+.us-map a:hover .st,.us-map a:focus-visible .st{stroke:var(--ink);stroke-width:1.5}
+.us-map a{text-decoration:none}.us-map a:focus{outline:none}
+.us-map .box-label{font:600 12px var(--sans);fill:var(--ink2)}
+.map-fig figcaption{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;font-size:.86rem;color:var(--ink2);border-top:1px solid var(--rule);padding-top:10px;margin-top:6px}
+.map-info{min-height:1.4em}
+.map-legend{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;color:var(--mute);font-size:.78rem}
+.map-legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;flex:none;vertical-align:-1px;margin-right:6px}
+.map-legend .sw{margin:0}
+.ev-labels{display:flex;justify-content:space-between;align-items:baseline;font-size:.95rem;margin-bottom:6px}
+.ev-labels b{font-family:var(--serif);font-weight:400;font-size:2rem;letter-spacing:-.02em;vertical-align:-2px}
+.ev-labels .d b{color:var(--dem)}.ev-labels .r b{color:var(--rep)}
+.ev-labels .mid{font-size:.75rem;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+.ev-track{position:relative;display:flex;height:10px;background:var(--rule)}
+.ev-track i{display:block;height:100%}.ev-track i.d{background:var(--dem)}.ev-track i.r{background:var(--rep);margin-left:auto}
+.ev-270{position:absolute;left:50.19%;top:-5px;bottom:-5px;width:2px;background:var(--ink)}
+.state-list{margin-top:18px;font-size:.9rem}
+.state-list summary{cursor:pointer;color:var(--ink2)}
+.state-list ul{list-style:none;padding:0;margin:12px 0 0;columns:4 150px;column-gap:24px}
+.state-list li{padding:3px 0;break-inside:avoid}
+.state-list a,.table td a .sw{text-decoration:none}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0 28px;margin:0;border-top:1px solid var(--ink)}
+.facts div{padding:14px 0;border-bottom:1px solid var(--rule)}
+.facts dt{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);font-weight:600}
+.facts dd{margin:4px 0 0;font-family:var(--serif);font-size:1.9rem;line-height:1.1;letter-spacing:-.02em}
+.facts dd.small{font-family:var(--sans);font-size:.8rem;letter-spacing:0;margin-top:2px}
+.chart .axis{stroke:var(--ink);stroke-width:1}
+.chart .nat{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-dasharray:4 3}
+.chart .nat-dot{fill:var(--ink)}
+.pager{display:flex;justify-content:space-between;gap:16px;border-top:1px solid var(--ink);margin-top:56px;padding-top:14px;font-size:.92rem}
 /* folded poll table: newest rows, a fade, then "See all" (only with JS; without it every row shows) */
 .table-fold{scroll-margin-top:80px}
 .js .table-fold.is-folded{position:relative}
