@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad %}
+{% block content %}
+{% set r = p.rated %}
+<article>
+<header class="page-head">
+  <p class="kicker"><a href="/pollsters/">Pollster scorecard</a>{% if r %} · ranked {{ p.rank }} of {{ n_rated }}{% endif %}{% if p.partisan %} · <span title="Most of its polls are marked ({{ p.partisan }}) in the poll listings we collect, meaning a partisan pollster or sponsor">{{ "Republican" if p.partisan == "R" else "Democratic" }}-aligned</span>{% endif %}</p>
+  <h1>{% if r %}How accurate is {{ p.name }}?{% else %}{{ p.name }} polls{% endif %}</h1>
+  <p class="sub">{{ answer }}</p>
+</header>
+
+{% if r %}
+<section class="section">
+  <dl class="facts">
+    <div><dt>Average error</dt><dd>{{ "%.1f" % r.mean_abs_error }}</dd><dd class="muted small">points on the final margin; all pollsters {{ "%.1f" % field_error }}</dd></div>
+    <div><dt>Adjusted error</dt><dd>{{ "%.2f" % r.adj_error }}</dd><dd class="muted small">{{ p.rank | ordinal }} of {{ n_rated }} on the scorecard</dd></div>
+    <div><dt>Partisan bias</dt><dd class="{{ 'bias-d' if r.mean_bias > 0.3 else 'bias-r' if r.mean_bias < -0.3 else '' }}">{{ r.bias_label }}</dd><dd class="muted small">average signed miss</dd></div>
+    <div><dt>Right call</dt><dd>{{ "%.0f%%" % r.right_call_pct }}</dd><dd class="muted small">of polls had the winner ahead</dd></div>
+    <div><dt>Rated polls</dt><dd>{{ r.n_polls }}</dd><dd class="muted small">final three weeks, {{ r.cycles }}</dd></div>
+    <div><dt>538 grade</dt><dd>{{ r.grade_538 or "—" }}</dd><dd class="muted small">final (2023){% if r.pollster != p.name %}, rated as {{ r.pollster }}{% endif %}</dd></div>
+  </dl>
+  {% if r.methodology %}<p class="muted small">Main survey method in the rated polls: {{ r.methodology }}.</p>{% endif %}
+</section>
+
+<section class="section two-col">
+  <div>
+    <div class="section-head"><h2>By election year</h2></div>
+    <table class="table compact">
+      <thead><tr><th>Year</th><th class="num">Polls</th><th class="num">Avg error</th><th class="num">Bias</th><th class="num">Right call</th></tr></thead>
+      <tbody>{% for y in record.years %}<tr><td>{{ y.label }}</td><td class="num">{{ y.n }}</td><td class="num">{{ "%.1f" % y.error }}</td><td class="num nowrap {{ 'bias-d' if y.bias and y.bias > 0.3 else 'bias-r' if y.bias and y.bias < -0.3 else '' }}">{{ y.bias_label }}</td><td class="num">{{ y.right_call }}%</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  <div>
+    <div class="section-head"><h2>By race</h2></div>
+    <table class="table compact">
+      <thead><tr><th>Race</th><th class="num">Polls</th><th class="num">Avg error</th><th class="num">Bias</th><th class="num">Right call</th></tr></thead>
+      <tbody>{% for t in record.types %}<tr><td>{{ t.label }}</td><td class="num">{{ t.n }}</td><td class="num">{{ "%.1f" % t.error }}</td><td class="num nowrap {{ 'bias-d' if t.bias and t.bias > 0.3 else 'bias-r' if t.bias and t.bias < -0.3 else '' }}">{{ t.bias_label }}</td><td class="num">{{ t.right_call }}%</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{{ ad("pollster-mid") }}
+
+{% if cycle %}
+<section class="section" id="2026">
+  <div class="section-head"><h2>2026 midterm polls</h2><a href="/pollsters/#2026">All pollsters →</a></div>
+  <div class="table-scroll">
+  <table class="table">
+    <thead><tr><th>Race</th><th>Poll end</th><th class="num">Poll margin</th><th class="num">Result</th><th class="num">Error</th><th>Right call</th></tr></thead>
+    <tbody>{% for c in cycle %}<tr><td>{{ c.race_id }}</td><td class="nowrap">{{ c.end_date }}</td><td class="num">{{ "%+.1f" % c.poll_margin }}</td><td class="num">{{ "%+.1f" % c.actual_margin }}</td><td class="num">{{ c.error }}</td><td>{{ "✓" if c.right_call else "✗" }}</td></tr>{% endfor %}</tbody>
+  </table>
+  </div>
+  <p class="muted small">Final-three-weeks polls compared with the result used on the <a href="/pollsters/#2026">2026 scorecard</a>, which says whether that result is preliminary or certified.</p>
+</section>
+{% endif %}
+
+{% if p.polls %}
+<section class="section">
+  <div class="section-head"><h2>{{ p.name }} polls on ElectionsUSA <span class="muted">({{ p.polls | length }})</span></h2><a href="/data/polls.csv">CSV →</a></div>
+  {% set preview_rows = 12 %}
+  {% set foldable = p.polls | length > preview_rows + 3 %}
+  <div class="table-fold{{ ' is-folded' if foldable }}" id="pollster-polls">
+  <div class="table-scroll">
+  <table class="table polls">
+    <thead><tr><th>Race</th><th>Dates</th><th>Sample</th><th>Result</th><th class="num">Margin</th></tr></thead>
+    <tbody>
+    {% for q in p.polls %}
+    <tr{% if foldable and loop.index > preview_rows %} class="fold"{% endif %}>
+      <td><a href="/{{ q.race.slug }}/">{{ q.race.short_title }}</a>{% if q.partners %}<span class="muted small"> · {{ q.partners }}</span>{% endif %}{% if q.source_url %} <a class="src" href="{{ q.source_url }}" rel="nofollow noopener" target="_blank" title="Source" aria-label="Source">↗</a>{% endif %}</td>
+      <td class="nowrap">{{ q.dates }}</td><td class="nowrap">{{ q.sample }}</td>
+      <td>{{ q.headline }}</td><td class="num nowrap">{{ q.margin_label }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  </div>
+  {% if foldable %}<button type="button" class="fold-toggle" aria-controls="pollster-polls" aria-expanded="false" data-fold-toggle data-less="Show fewer polls">See all {{ p.polls | length }} polls</button>{% endif %}
+  <p class="muted small">Every poll ElectionsUSA has recorded for the approval, generic-ballot and 2028 averages, newest first. Names after a race are the media sponsor or co-pollster; ↗ opens the source.</p>
+</section>
+{% endif %}
+
+<section class="section prose">
+  <h2>How these numbers work</h2>
+  {% if r %}
+  <p>Accuracy covers polls taken in the final three weeks of races from 2016 to 2022, from FiveThirtyEight's open archive of polls matched to certified results (CC BY 4.0). Average error is the mean absolute difference between the poll's margin and the actual margin. The adjusted error shrinks it toward the field average (k = 15 polls) so a short hot streak can't outrank a long record, and the ranking uses it. Bias is the average signed miss: D+ means the polls were more favourable to Democrats than the result, R+ more favourable to Republicans.</p>
+  {% else %}
+  <p>The scorecard rates pollsters on polls taken in the final three weeks of races from 2016 to 2022, using FiveThirtyEight's open archive. {{ p.name }} doesn't have ten such polls there yet. Its 2026 midterm polls are scored against the result once it is in, on the <a href="/pollsters/#2026">2026 scorecard</a>.</p>
+  {% endif %}
+  <p>{% if p.polls %}Polls are listed under the firm that conducted them, even when the source names a media partner first (for example "The Economist/YouGov" or "CNN/SSRS"). {% endif %}Full method on the <a href="/pollsters/">scorecard</a> and <a href="/methodology/">methodology</a> pages. Something wrong? Report it through the <a href="/about/#corrections">corrections page</a>.</p>
+</section>
+
+<nav class="pager" aria-label="Other pollsters">
+  {% if prev %}<a href="{{ prev.path }}">← {{ prev.rank | ordinal }}: {{ prev.name }}</a>{% else %}<span></span>{% endif %}
+  <a href="/pollsters/">All pollsters</a>
+  {% if next %}<a href="{{ next.path }}">{{ next.rank | ordinal }}: {{ next.name }} →</a>{% else %}<span></span>{% endif %}
+</nav>
+
+{{ ad("pollster-bottom") }}
+</article>
+{% endblock %}

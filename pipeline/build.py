@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import average, charts, config, history, og_cards, scorecard, usmap
+from . import average, charts, config, history, og_cards, pollsters, scorecard, usmap
 from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 
 NAV = [
@@ -78,7 +78,7 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     return polls, markets, ratings
 
 
-def race_table(ra: average.RaceAverage, race: config.Race, ratings: pd.DataFrame) -> list[dict]:
+def race_table(ra: average.RaceAverage, race: config.Race, ratings: pd.DataFrame, pollster_path=lambda p, s: None) -> list[dict]:
     wide = ra.polls
     if wide is None or wide.empty:
         return []
@@ -91,8 +91,9 @@ def race_table(ra: average.RaceAverage, race: config.Race, ratings: pd.DataFrame
         margin = None
         if len(race.candidates) >= 2 and vals.get(race.candidates[0]) is not None and vals.get(race.candidates[1]) is not None:
             margin = vals[race.candidates[0]] - vals[race.candidates[1]]
+        sponsor = r["sponsor"] if isinstance(r["sponsor"], str) else ""
         rows.append(dict(
-            pollster=r["pollster"], sponsor=r["sponsor"] if isinstance(r["sponsor"], str) else "",
+            pollster=r["pollster"], sponsor=sponsor, pollster_path=pollster_path(r["pollster"], sponsor),
             dates=fmt_dates(r["start_date"], r["end_date"]), end_date=r["end_date"].isoformat(),
             sample=fmt_sample(r["sample_size"], r["population"]),
             grade=average.pollster_grade(r["pollster"], grades) or "—",
@@ -209,7 +210,8 @@ def dataset_ld(race: config.Race, path: str, as_of: date) -> dict:
     }
 
 
-def latest_polls(polls: pd.DataFrame, n: int = 12) -> list[dict]:
+def poll_list(polls: pd.DataFrame) -> list[dict]:
+    """One summary per poll, newest first, credited to the firm that ran it (see pollsters.resolve)."""
     if polls.empty:
         return []
     out = []
@@ -217,16 +219,23 @@ def latest_polls(polls: pd.DataFrame, n: int = 12) -> list[dict]:
         race = config.RACE_BY_ID.get(g["race_id"].iat[0])
         if not race:
             continue
+        r = g.iloc[0]
         vals = dict(zip(g["candidate"], g["pct"]))
         ordered = [c for c in race.candidates if c in vals]
         if race.kind == "primary":
             ordered = sorted((c for c in ordered if c != "Other/Undecided"), key=lambda c: -vals[c])[:3]
         headline = "  ·  ".join(f"{short_name(c)} {vals[c]:g}%" for c in ordered)
-        out.append(dict(race=race, pollster=g["pollster"].iat[0], end_date=g["end_date"].iat[0],
-                        dates=fmt_dates(g["start_date"].iat[0], g["end_date"].iat[0]),
-                        headline=headline, source_url=g["source_url"].iat[0]))
+        a, b = (race.candidates + ["", ""])[:2]
+        margin_label = signed(vals[a] - vals[b], short_name(a), short_name(b)) if race.kind != "primary" and a in vals and b in vals else ""
+        sponsor = r["sponsor"] if isinstance(r["sponsor"], str) else ""
+        firm, tag = pollsters.resolve(r["pollster"], sponsor) or (None, "")
+        out.append(dict(poll_id=pid, race=race, pollster=r["pollster"], sponsor=sponsor, firm=firm, tag=tag,
+                        partners=pollsters.partners(r["pollster"], sponsor, firm) if firm else "",
+                        end_date=r["end_date"], dates=fmt_dates(r["start_date"], r["end_date"]),
+                        sample=fmt_sample(r["sample_size"], r["population"]), headline=headline, margin_label=margin_label,
+                        source_url=r["source_url"] if isinstance(r["source_url"], str) else ""))
     out.sort(key=lambda d: d["end_date"], reverse=True)
-    return out[:n]
+    return out
 
 
 def markets_context(markets: pd.DataFrame, averages: dict[str, average.RaceAverage]) -> list[dict]:
@@ -360,6 +369,30 @@ def year_path(yr: int, latest: int) -> str:
     return "/states/" if yr == latest else f"/states/{yr}/"
 
 
+# --------------------------------------------------------------- pollsters
+def build_pollsters(render, pages: dict[str, pollsters.Pollster], rated: list[scorecard.PollsterRow],
+                    cycle_rows: list[dict], as_of: date) -> list[dict]:
+    """Render one page per pollster (see pollsters.registry); return finder entries."""
+    raw, _ = scorecard.load_538()
+    field = pollsters.field_error(raw)
+    by_rank = {p.rank: p for p in pages.values() if p.rank}
+    index = []
+    for p in pages.values():
+        r = p.rated
+        answer = pollsters.answer_sentence(p, len(rated))
+        render("pollster.html", p.path, p=p, answer=answer, description=answer, n_rated=len(rated), field_error=field,
+               record=pollsters.track_record(raw, r.rating_id) if r else None,
+               cycle=[c for c in cycle_rows if c["pollster_path"] == p.path],
+               prev=by_rank.get(p.rank - 1) if p.rank else None, next=by_rank.get(p.rank + 1) if p.rank else None,
+               title=f"Is {p.name} Accurate? Pollster Rating, Bias and Polls" if r else f"{p.name} Polls: Every Recent Result",
+               crumb=p.name, trail=[("Pollster scorecard", "/pollsters/")],
+               lastmod=min(p.polls[0]["end_date"], as_of) if p.polls else None)
+        index.append(dict(t=p.name, u=p.path, k="Pollster",
+                          s=f"Avg error {r.mean_abs_error}, bias {r.bias_label}, {r.n_polls} rated polls" if r else f"{len(p.polls)} polls on record",
+                          q=f"{p.name} pollster polls poll accuracy accurate rating rated grade bias biased reliable"))
+    return index
+
+
 # ------------------------------------------------------------------- build
 def build(as_of: date | None = None) -> Path:
     as_of = as_of or date.today()
@@ -368,6 +401,7 @@ def build(as_of: date | None = None) -> Path:
                       trim_blocks=True, lstrip_blocks=True)
     env.filters["signed"] = signed
     env.filters["short"] = short_name
+    env.filters["ordinal"] = pollsters.ordinal
     env.globals.update(site=config.SITE, nav=NAV, build_date=as_of.strftime("%B %-d, %Y"),
                        build_iso=as_of.isoformat(), year=as_of.year,
                        election_day=config.ELECTION_DAY_2028, midterm_day=config.MIDTERM_DAY_2026,
@@ -401,13 +435,26 @@ def build(as_of: date | None = None) -> Path:
         if page:
             pages.append((out_path, lastmod))
 
+    # pollster pages are known before the race pages render, so poll tables can link to them
+    sc_rows = scorecard.historical_scorecard()
+    all_polls = poll_list(polls)
+    pollster_pages = pollsters.registry(all_polls, sc_rows)
+
+    def pollster_path(pollster: str, sponsor: str = "") -> str | None:
+        f = pollsters.firm(pollster, sponsor)
+        page = pollster_pages.get(pollsters.key(f)) if f else None
+        return page.path if page else None
+
+    for q in all_polls:
+        q["pollster_path"] = pollster_path(q["pollster"], q["sponsor"])
+
     averages: dict[str, average.RaceAverage] = {}
     summaries = []
     race_lastmod: dict[str, date | None] = {}
     for race in config.RACES:
         ra = average.compute_race(polls, race, ratings, as_of=as_of)
         averages[race.id] = ra
-        table = race_table(ra, race, ratings)
+        table = race_table(ra, race, ratings, pollster_path)
         ch = race_charts(ra, race)
         summaries.append(dict(race=race, avg=ra, colors=race_colors(race), path=f"/{race.slug}/"))
         shown = [c for c in race.candidates if any(r["vals"].get(c) is not None for r in table)
@@ -427,14 +474,16 @@ def build(as_of: date | None = None) -> Path:
         api = dict(race_id=race.id, title=race.title, as_of=as_of.isoformat(), method="https://electionsusa.org/methodology/",
                    average=ra.values, margin=ra.margin, n_polls_weighted=ra.n_polls, n_polls_total=ra.n_polls_total,
                    trend={c: [(d.isoformat(), v) for d, v in s] for c, s in ra.trend.items()},
-                   polls=[{k: v for k, v in row.items()} for row in table])
+                   polls=[{k: v for k, v in row.items() if k != "pollster_path"} for row in table])
         (dist / "api" / f"{race.id}.json").write_text(json.dumps(api, indent=1, default=str))
 
-    sc_rows = scorecard.historical_scorecard()
     cycle_rows = []
     res_path = config.DATA_DIR / "results" / "2026.csv"
     if res_path.exists():
         cycle_rows = scorecard.cycle_scorecard(polls, pd.read_csv(res_path))
+    path_by_poll = {q["poll_id"]: q["pollster_path"] for q in all_polls}
+    for r in cycle_rows:
+        r["pollster_path"] = path_by_poll.get(r["poll_id"])
     mk_ctx = markets_context(markets, averages)
 
     # client-side finder index
@@ -460,8 +509,7 @@ def build(as_of: date | None = None) -> Path:
         dict(t="Open data & API", u="/data/", k="Data", s="Download every poll as CSV or JSON", q="data download csv json api dataset"),
         dict(t="About & corrections", u="/about/", k="About", s="Who runs ElectionsUSA and how to report an error", q="about contact who correction error report funding ads independent"),
     ]
-    for pr in sc_rows[:40]:
-        index.append(dict(t=pr.pollster, u="/pollsters/", k="Pollster", s=f"Avg error {pr.mean_abs_error}, bias {pr.bias_label}, {pr.n_polls} polls", q=f"{pr.pollster} pollster accuracy"))
+    index += build_pollsters(render, pollster_pages, sc_rows, cycle_rows, as_of)
     states, nation = history.load()
     index += build_states(render, dist, states, nation)
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
@@ -471,11 +519,13 @@ def build(as_of: date | None = None) -> Path:
     data_lastmod = max((d for d in [*race_lastmod.values(), markets_lastmod] if d), default=None)
 
     map_year = max(nation)
-    render("index.html", "/", summaries=summaries, latest=latest_polls(polls), markets=mk_ctx[:1],
-           scorecard=sc_rows[:8], title=None, description=config.SITE["description"], lastmod=data_lastmod,
+    rated_paths = {p.rated.pollster: p.path for p in pollster_pages.values() if p.rated}
+    render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1],
+           scorecard=sc_rows[:8], pollster_paths=rated_paths, title=None, description=config.SITE["description"], lastmod=data_lastmod,
            usmap=usmap.map_context(states, map_year), evbar=usmap.ev_bar(nation[map_year]),
            states=[dict(name=st.name, path=st.path, cls=usmap.shade(st.latest.margin)) for st in states.values()])
-    render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows,
+    render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows, pollster_paths=rated_paths,
+           active=sorted((p for p in pollster_pages.values() if not p.rated), key=lambda p: -len(p.polls)),
            title="Pollster Scorecard: Accuracy and Bias Ratings", description="How accurate has each U.S. pollster been? Mean error, partisan bias and call accuracy for 60+ pollsters, recomputed from 11,000 polls matched to results, plus FiveThirtyEight's final grades.")
     render("markets.html", "/markets/", markets=mk_ctx, title="2028 Election Odds: Prediction Markets vs. Polls",
            description="Polymarket and Kalshi odds for the 2028 presidential election and party nominations, compared with the polling average.",
