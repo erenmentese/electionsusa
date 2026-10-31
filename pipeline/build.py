@@ -96,7 +96,7 @@ def race_table(ra: average.RaceAverage, race: config.Race, ratings: pd.DataFrame
             pollster=r["pollster"], sponsor=sponsor, pollster_path=pollster_path(r["pollster"], sponsor),
             dates=fmt_dates(r["start_date"], r["end_date"]), end_date=r["end_date"].isoformat(),
             sample=fmt_sample(r["sample_size"], r["population"]),
-            grade=average.pollster_grade(r["pollster"], grades) or "—",
+            grade=average.pollster_grade(r["pollster"], sponsor, grades) or "—",
             weight=round(float(w.loc[i]), 1) if len(w) else 0.0,
             vals=vals, margin=margin,
             margin_label=signed(margin, short_name(race.candidates[0]), short_name(race.candidates[1])) if margin is not None else "—",

@@ -12,8 +12,8 @@
 <ol>
   <li><b>Recency.</b> <code>0.5 ^ (age_in_days / half_life)</code>. The half-life is 14 days for approval and the generic ballot, 45 days for 2028 general-election matchups and 60 days for the 2028 primaries while polling is sparse; these shorten as Election Day approaches and every change is logged here. A poll two half-lives old counts a quarter as much as one released today.</li>
   <li><b>Sample size.</b> <code>min(sqrt(n / 600), 1.5)</code>. Unknown n is treated as 600. Error falls with the square root of sample size, not linearly, and above ~1,350 respondents design effects dominate, so the bonus is capped.</li>
-  <li><b>Pollster quality.</b> FiveThirtyEight's final letter grade mapped to a weight from 1.0 (A+) to 0.1 (F); unrated pollsters get 0.6. We will switch to our own grades once the <a href="/pollsters/#2026">2026 scorecard</a> has enough polls.</li>
-  <li><b>Frequency damping.</b> If a pollster has <i>k</i> polls inside the active window, each is divided by <code>sqrt(k)</code>, so a daily tracker contributes like roughly three polls, not thirty.</li>
+  <li><b>Pollster quality.</b> FiveThirtyEight's final letter grade for the firm that conducted the poll, mapped to a weight from 1.0 (A+) to 0.1 (F); unrated pollsters get 0.6. A poll released as "The Economist/YouGov" or "CNN/SSRS" takes YouGov's or SSRS's grade, never the media sponsor's, and a firm's name must match the one 538 rated (or a name 538 rated it under before, such as Marist College for Marist University). We will switch to our own grades once the <a href="/pollsters/#2026">2026 scorecard</a> has enough polls.</li>
+  <li><b>Frequency damping.</b> If a firm has <i>k</i> polls inside the active window, each is divided by <code>sqrt(k)</code>, so a daily tracker contributes like roughly three polls, not thirty. Polls count toward the firm that ran them, so YouGov's polls for The Economist, Yahoo News and CBS News are damped together.</li>
 </ol>
 <p>Polls weighing less than 1% of the heaviest poll are dropped. The average for each candidate is the weighted mean of the polls that asked about that candidate, and a candidate is shown only if at least one poll inside the active window (about 4.3 half-lives) included them, so a name that pollsters have stopped testing drops out rather than lingering on stale numbers.</p>
 
@@ -31,5 +31,6 @@
 
 <h2>7. Updates and corrections</h2>
 <p>Data refreshes several times a day; the timestamp on every page is the build date. Errors reported via the <a href="/about/#corrections">corrections page</a> are fixed in the dataset so the correction propagates to every chart, table and the API.</p>
+<p><b>Method changes.</b> November 2026: pollster grades and frequency damping now follow the firm that conducted each poll rather than the first name in the source table, which was often the media sponsor. Earlier, partial name matches also gave some polls another pollster's grade (co/efficient got the A+ of The New York Times/Siena College). Every average and trend line was recomputed with the corrected weights.</p>
 </article>
 {% endblock %}

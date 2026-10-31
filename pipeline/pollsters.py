@@ -61,8 +61,13 @@ NOT_POLLSTERS = {"538aggregate"}
 
 # Firms FiveThirtyEight rated under an earlier or longer name
 RATED_AS = {
+    "Decision Desk HQ": "NewsNation",  # 538 rated the NewsNation poll, which DDHQ runs, under the sponsor's name
+    "Hart Research Associates": "Hart Research Associates/Public Opinion Strategies",  # the NBC News poll, with POS
+    "High Point University": "High Point University Survey Research Center",
     "Marist University": "Marist College",
+    "Navigator Research": "Global Strategy Group/GBAO (Navigator Research)",
     "Noble Predictive Insights": "OH Predictive Insights",
+    "Tufts University": "Tufts University Public Opinion Lab",
     "UMass Lowell": "University of Massachusetts Lowell Center for Public Opinion",
 }
 
