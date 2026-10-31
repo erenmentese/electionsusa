@@ -1,16 +1,15 @@
 {% extends "base.html" %}
 {% from "_macros.html" import ad %}
 {% block head %}
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Dataset","name":"{{ race.title }} – polling average","description":"{{ race.description }}","url":"{{ site.url }}{{ path }}","dateModified":"{{ build_iso }}","license":"https://creativecommons.org/licenses/by/4.0/","creator":{"@type":"Organization","name":"{{ site.name }}"},"distribution":[{"@type":"DataDownload","encodingFormat":"application/json","contentUrl":"{{ site.url }}/api/{{ race.id }}.json"},{"@type":"DataDownload","encodingFormat":"text/csv","contentUrl":"{{ site.url }}/data/polls.csv"}]}
-</script>
+<script type="application/ld+json">{{ ld_dataset | tojson }}</script>
 {% endblock %}
 {% block content %}
 <article>
 <header class="page-head">
   <p class="kicker">Polling average · updated {{ build_date }}</p>
   <h1>{{ race.title }}</h1>
-  <p class="sub">{{ race.description }}</p>
+  {# the dated one-sentence answer is what search snippets and AI answers quote #}
+  <p class="sub">{{ answer or race.description }}</p>
 </header>
 
 {% if avg.values %}
@@ -44,6 +43,10 @@
 {% if table %}
 <section class="section">
   <div class="section-head"><h2>All polls <span class="muted">({{ table | length }})</span></h2><a href="/data/polls.csv">CSV →</a></div>
+  {# long tables show the newest rows and fade out; every row stays in the HTML, so search engines and no-JS readers get all of them #}
+  {% set preview_rows = 12 %}
+  {% set foldable = table | length > preview_rows + 3 %}
+  <div class="table-fold{{ ' is-folded' if foldable }}" id="all-polls">
   <div class="table-scroll">
   <table class="table polls">
     <thead><tr>
@@ -54,7 +57,7 @@
     </tr></thead>
     <tbody>
     {% for r in table %}
-    <tr>
+    <tr{% if foldable and loop.index > preview_rows %} class="fold"{% endif %}>
       <td>{% if r.source_url %}<a href="{{ r.source_url }}" rel="nofollow noopener" target="_blank">{{ r.pollster }}</a>{% else %}{{ r.pollster }}{% endif %}{% if r.sponsor %}<span class="muted small"> / {{ r.sponsor }}</span>{% endif %}{% if r.notes %}<span class="note" title="{{ r.notes }}">ⓘ</span>{% endif %}</td>
       <td class="nowrap">{{ r.dates }}</td><td class="nowrap">{{ r.sample }}</td><td>{{ r.grade }}</td>
       {% for c in shown %}<td class="num">{{ ("%g" % r.vals[c]) ~ "%" if r.vals[c] is not none else "—" }}</td>{% endfor %}
@@ -65,6 +68,8 @@
     </tbody>
   </table>
   </div>
+  </div>
+  {% if foldable %}<button type="button" class="fold-toggle" aria-controls="all-polls" aria-expanded="false" data-fold-toggle data-less="Show fewer polls">See all {{ table | length }} polls</button>{% endif %}
   <p class="muted small">Rows marked ⓘ carry a note (for example, fieldwork dates inferred from press coverage). Weight is the poll's share of the current average after recency, sample-size, pollster-quality and frequency adjustments.</p>
 </section>
 {% endif %}

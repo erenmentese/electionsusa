@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>document.documentElement.classList.add("js")</script>{# set before first paint so JS-only layouts (folded tables) don't jump #}
 {% if site.ga4_id %}
 <script>
 // Google Analytics 4 - production domain only, so previews and local builds don't count as visits.
@@ -31,7 +32,11 @@ if (location.hostname === {{ site.domain | tojson }}) {
 <meta property="og:title" content="{{ page_title }}">
 <meta property="og:description" content="{{ description or site.description }}">
 <meta property="og:url" content="{{ site.url }}{{ path }}">
-<meta property="og:image" content="{{ site.url }}/static/img/og.png">
+{# Share cards are rebuilt with fresh numbers on every build; ?v= stops X and Facebook serving a stale cached copy #}
+<meta property="og:image" content="{{ site.url }}{{ og_image or '/og/site.png' }}?v={{ build_iso }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ description or site.description }}">
 <meta name="twitter:card" content="summary_large_image">
 {% if site.twitter %}<meta name="twitter:site" content="{{ site.twitter }}">{% endif %}
 <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
@@ -43,9 +48,8 @@ if (location.hostname === {{ site.domain | tojson }}) {
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ site.adsense_client }}" crossorigin="anonymous"></script>
 {% endif %}
 {{ site.analytics_snippet | safe }}
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","name":"{{ site.name }}","url":"{{ site.url }}","description":"{{ site.description }}","publisher":{"@type":"Organization","name":"{{ site.name }}","url":"{{ site.url }}"}}
-</script>
+{% if ld_site %}<script type="application/ld+json">{{ ld_site | tojson }}</script>{% endif %}
+{% if ld_breadcrumb %}<script type="application/ld+json">{{ ld_breadcrumb | tojson }}</script>{% endif %}
 {% block head %}{% endblock %}
 </head>
 <body>

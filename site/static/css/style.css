@@ -106,6 +106,14 @@ main{padding:0 20px 72px}
 .table.compact td,.table.compact th{padding:8px 8px 8px 0}
 .table tbody tr:hover{background:var(--wash)}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* folded poll table: newest rows, a fade, then "See all" (only with JS; without it every row shows) */
+.table-fold{scroll-margin-top:80px}
+.js .table-fold.is-folded{position:relative}
+.js .table-fold.is-folded tr.fold{display:none}
+.js .table-fold.is-folded::after{content:"";position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(to bottom,transparent,var(--paper));pointer-events:none}
+.fold-toggle{display:none}
+.js .fold-toggle{display:block;margin:16px auto 4px;font:inherit;font-size:.9rem;font-weight:500;color:var(--ink);background:var(--paper);border:1px solid var(--rule2);border-radius:999px;padding:9px 22px;cursor:pointer}
+.fold-toggle:hover{border-color:var(--ink)}
 .note{display:inline-block;margin-left:5px;color:var(--mute);cursor:help;font-size:.8em}
 .bias-d{color:var(--dem)}.bias-r{color:var(--rep)}
 .list{list-style:none;margin:0;padding:0}

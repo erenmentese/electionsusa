@@ -40,6 +40,19 @@
     });
   });
 
+  // ---- folded poll tables ------------------------------------------------
+  document.querySelectorAll("[data-fold-toggle]").forEach(function (btn) {
+    var fold = document.getElementById(btn.getAttribute("aria-controls"));
+    var more = btn.textContent;
+    btn.addEventListener("click", function () {
+      var open = !fold.classList.toggle("is-folded");
+      btn.setAttribute("aria-expanded", open);
+      btn.textContent = open ? btn.getAttribute("data-less") : more;
+      // folding back up from far down the page would leave the reader in the next section
+      if (!open && btn.getBoundingClientRect().top < 0) fold.scrollIntoView();
+    });
+  });
+
   // ---- finder ------------------------------------------------------------
   var finders = document.querySelectorAll("[data-finder]");
   if (!finders.length) return;
