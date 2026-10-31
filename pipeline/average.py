@@ -5,8 +5,12 @@ Method (documented on /methodology/):
    is per race (14 days for fast-moving trackers, 30 days for early hypotheticals).
 2. Sample size: weight * min(sqrt(n / 600), 1.5); unknown n is treated as 600.
 3. Pollster quality: weight * grade_weight(538 2023 letter grade); unrated = 0.6.
-4. Pollster frequency: a pollster that released k polls inside the active window
+   The grade belongs to the firm that ran the poll (pollsters.firm), not the media
+   sponsor Wikipedia lists first, and the firm's name must match 538's exactly
+   (after pollsters.key) or through pollsters.RATED_AS.
+4. Pollster frequency: a firm that released k polls inside the active window
    has each of those polls divided by sqrt(k), so trackers cannot dominate.
+   Polls are counted by firm, so Economist/YouGov and Yahoo/YouGov count together.
 5. Average = sum(w * pct) / sum(w) per candidate, over polls that asked about
    that candidate. Polls with weight below 1% of the top poll are excluded.
 
@@ -21,7 +25,7 @@ from datetime import date, timedelta
 
 import pandas as pd
 
-from . import config
+from . import config, pollsters
 
 
 @dataclass
@@ -39,39 +43,36 @@ class RaceAverage:
 
 
 def _grade_lookup(ratings: pd.DataFrame | None) -> dict[str, str]:
+    """538 letter grade by `pollsters.key` of the rated name, plus the firms in pollsters.RATED_AS."""
     if ratings is None or ratings.empty:
         return {}
-    return {str(p).strip().lower(): str(g) for p, g in zip(ratings["Pollster"], ratings["538 Grade"])}
+    grades = {pollsters.key(p): str(g) for p, g in zip(ratings["Pollster"], ratings["538 Grade"])}
+    for name, rated_as in pollsters.RATED_AS.items():
+        if pollsters.key(rated_as) in grades:
+            grades[pollsters.key(name)] = grades[pollsters.key(rated_as)]
+    return grades
 
 
-_GRADE_CACHE: dict[tuple[int, str], str | None] = {}
+def firm_key(pollster: str, sponsor: str | None = "") -> str:
+    """`pollsters.key` of the firm that ran a poll; the pollster column itself when no firm resolves."""
+    return pollsters.key(pollsters.firm(pollster, sponsor) or pollster)
 
 
-def pollster_grade(pollster: str, grades: dict[str, str]) -> str | None:
-    key = pollster.strip().lower()
-    ck = (id(grades), key)
-    if ck in _GRADE_CACHE:
-        return _GRADE_CACHE[ck]
-    _GRADE_CACHE[ck] = g = _pollster_grade(key, grades)
-    return g
+def pollster_grade(pollster: str, sponsor: str | None, grades: dict[str, str]) -> str | None:
+    """538's grade for the firm that ran the poll, or None when 538 didn't rate that firm.
 
-
-def _pollster_grade(key: str, grades: dict[str, str]) -> str | None:
-    if key in grades:
-        return grades[key]
-    # loose match: "Emerson College" vs "Emerson College Polling"
-    for k, g in grades.items():
-        if key in k or k in key:
-            return g
-    return None
+    Names match exactly: a sponsor never lends its grade ("Washington Post" polls are run by
+    Ipsos), and a short name never borrows a longer one's (co/efficient's "co" is not in "Siena College").
+    """
+    return grades.get(firm_key(pollster, sponsor))
 
 
 def static_weights(wide: pd.DataFrame, grades: dict[str, str]) -> pd.Series:
     """Sample-size x pollster-quality factor; independent of the as-of date."""
     n = wide["sample_size"].fillna(600).clip(lower=50).astype(float)
     size = (n / 600.0).pow(0.5).clip(upper=1.5)
-    quality = wide["pollster"].map(
-        lambda p: config.GRADE_WEIGHTS.get(pollster_grade(p, grades) or "", config.DEFAULT_GRADE_WEIGHT)
+    quality = wide["firm"].map(
+        lambda f: config.GRADE_WEIGHTS.get(grades.get(f, ""), config.DEFAULT_GRADE_WEIGHT)
     ).astype(float)
     return size * quality
 
@@ -86,10 +87,10 @@ def poll_weights(wide: pd.DataFrame, as_of: date, half_life: int, grades: dict[s
     age = (pd.Timestamp(as_of) - pd.to_datetime(wide["end_date"])).dt.days.clip(lower=0)
     recency = 0.5 ** (age / half_life)
     w = recency * static
-    # frequency damping inside the active window (recency > 0.05)
+    # frequency damping inside the active window (recency > 0.05), counted per firm
     active = recency > 0.05
-    counts = wide.loc[active, "pollster"].value_counts()
-    damp = wide["pollster"].map(lambda p: 1 / math.sqrt(counts.get(p, 1)))
+    counts = wide.loc[active, "firm"].value_counts()
+    damp = wide["firm"].map(lambda f: 1 / math.sqrt(counts.get(f, 1)))
     return w * damp
 
 
@@ -102,6 +103,7 @@ def to_wide(polls: pd.DataFrame, race: config.Race) -> pd.DataFrame:
     meta = sub.drop_duplicates("poll_id").set_index("poll_id")[meta_cols]
     for c in ("sponsor", "notes", "source_url"):
         meta[c] = meta[c].fillna("").astype(str)
+    meta["firm"] = [firm_key(p, s) for p, s in zip(meta["pollster"], meta["sponsor"])]
     vals = sub.pivot_table(index="poll_id", columns="candidate", values="pct", aggfunc="first")
     wide = meta.join(vals).reset_index()
     wide.columns.name = None

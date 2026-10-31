@@ -25,7 +25,7 @@ NYT_SIENA = "The New York Times/Siena College"
 # pollster, the poll belongs to the first name in the sponsor column that isn't one of these.
 MEDIA = {"abcnews", "aarp", "argument", "bulwark", "cbs", "cbsnews", "cnn", "dailymail",
          "deseretnewsandhinckleyinstituteofpolitics", "economist", "financialtimes", "harvard", "harvardcaps",
-         "ii", "nbcnews", "newsnation", "npr", "onpoint", "pablotorresfindsout", "pbs", "reuters",
+         "ii", "nbcnews", "newsnation", "npr", "onpoint", "pablotorrefindsout", "pablotorresfindsout", "pbs", "reuters",
          "strengthinnumbers", "washingtonpost", "yahoo", "yahoonews"}
 
 # Spelling variants, renamed firms and sponsors with a standing partner -> the name on the page
@@ -61,8 +61,13 @@ NOT_POLLSTERS = {"538aggregate"}
 
 # Firms FiveThirtyEight rated under an earlier or longer name
 RATED_AS = {
+    "Decision Desk HQ": "NewsNation",  # 538 rated the NewsNation poll, which DDHQ runs, under the sponsor's name
+    "Hart Research Associates": "Hart Research Associates/Public Opinion Strategies",  # the NBC News poll, with POS
+    "High Point University": "High Point University Survey Research Center",
     "Marist University": "Marist College",
+    "Navigator Research": "Global Strategy Group/GBAO (Navigator Research)",
     "Noble Predictive Insights": "OH Predictive Insights",
+    "Tufts University": "Tufts University Public Opinion Lab",
     "UMass Lowell": "University of Massachusetts Lowell Center for Public Opinion",
 }
 

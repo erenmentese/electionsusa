@@ -1,8 +1,10 @@
+import json
 from datetime import date
 
 import pandas as pd
+import pytest
 
-from pipeline import average, config
+from pipeline import average, build, config, scorecard
 from pipeline.fetch_wikipedia import match_candidate, parse_date_range, parse_sample, rows_from_table, tables_for_race
 from pipeline.seed_data import seed_polls_frame
 from pipeline.schema import validate_polls
@@ -74,6 +76,56 @@ def test_trend_has_no_lookahead():
     # before the Zogby poll (July 2026) the average must equal the Emerson-only value
     early = [v for d, v in ra.trend["JD Vance"] if d < date(2026, 7, 4)]
     assert early and all(44 <= v <= 46.5 for v in early)
+
+
+@pytest.mark.parametrize("pollster, sponsor, grade", [
+    ("co", "efficient (R)", "B+"),               # co/efficient, not The New York Times/Siena College's A+
+    ("Data", "", "B"),                           # Data for Progress, not Data Orbital's A/B
+    ("Harvard", "Harris Poll/HarrisX", None),    # HarrisX is unrated, not Harvard University's B/C
+    ("The Economist", "YouGov", "B+"),           # media sponsors listed first used to leave these unrated
+    ("The Bulwark", "Pablo Torre Finds Out/YouGov", "B+"),  # two media names before the firm
+    ("Reuters", "Ipsos", "B-"),
+    ("CNN", "SSRS", "C+"),
+    ("Washington Post", "ABC News/Ipsos", "B-"),  # run by Ipsos, not graded as "ABC News/The Washington Post"
+    ("CBS News", "YouGov", "B+"),
+    ("Fox News", "", "A"),                       # Beacon Research/Shaw & Co. Research
+    ("NPR", "PBS/Marist University", "A"),       # rated as Marist College
+    ("Hart Research Associates (D)", "Public Opinion Strategies (R)", "B+"),  # the NBC News poll
+    ("Emerson College", "", "A-"),
+    ("538 aggregate", "", None),
+])
+def test_grade_belongs_to_the_firm_that_ran_the_poll(pollster, sponsor, grade):
+    grades = average._grade_lookup(scorecard.load_538()[1])
+    assert average.pollster_grade(pollster, sponsor, grades) == grade
+
+
+def test_weights_use_the_grade_the_table_shows():
+    polls, _, ratings = build.load_data()
+    grades = average._grade_lookup(ratings)
+    for race in config.RACES:
+        wide = average.to_wide(polls, race).assign(sample_size=600.0)  # leaves only the quality factor
+        shown = [config.GRADE_WEIGHTS.get(average.pollster_grade(p, s, grades) or "", config.DEFAULT_GRADE_WEIGHT)
+                 for p, s in zip(wide["pollster"], wide["sponsor"])]
+        assert average.static_weights(wide, grades).round(6).tolist() == pd.Series(shown).round(6).tolist(), race.id
+
+
+def test_frequency_damping_counts_polls_by_firm():
+    race, d = config.RACE_BY_ID["generic-ballot-2026"], date(2026, 10, 20)
+    polls = pd.DataFrame([
+        dict(poll_id=f"p{i}", race_id=race.id, pollster=p, sponsor=s, start_date=d, end_date=d, sample_size=1000.0,
+             population="RV", source_url="", notes="", candidate=c, pct=v)
+        for i, (p, s) in enumerate([("The Economist", "YouGov"), ("Yahoo News", "YouGov"), ("Emerson College", "")])
+        for c, v in (("Democrats", 48.0), ("Republicans", 44.0))])
+    wide = average.to_wide(polls, race)
+    grades = average._grade_lookup(scorecard.load_538()[1])
+    damp = average.poll_weights(wide, d, race.half_life_days, grades) / average.static_weights(wide, grades)
+    assert dict(zip(wide["pollster"], damp.round(3))) == {"The Economist": 0.707, "Yahoo News": 0.707, "Emerson College": 1.0}
+
+
+def test_race_tables_show_the_firms_grade(site):
+    rows = json.loads((site / "api" / "approval-trump-2.json").read_text())["polls"]
+    economist = {r["grade"] for r in rows if r["pollster"] == "The Economist" and r["sponsor"] == "YouGov"}
+    assert economist == {"B+"}
 
 
 def test_seed_data_valid():
