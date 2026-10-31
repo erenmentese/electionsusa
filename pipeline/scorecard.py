@@ -36,6 +36,7 @@ class PollsterRow:
     grade_538: str | None
     plus_minus_538: float | None
     methodology: str
+    rating_id: int  # FiveThirtyEight's pollster_rating_id, which links a row to its polls in raw-polls
 
 
 def load_538() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -81,6 +82,7 @@ def historical_scorecard(min_year: int = 2016, min_polls: int = 10) -> list[Poll
             grade_538=str(r["538 Grade"]) if r is not None and pd.notna(r["538 Grade"]) else None,
             plus_minus_538=round(float(r["Predictive Plus-Minus"]), 2) if r is not None else None,
             methodology=str(meth.iat[0]) if len(meth) else "",
+            rating_id=int(rid),
         ))
     # rank: lower error is better; tie-break by more polls
     rows.sort(key=lambda r: (r.adj_error, -r.n_polls))
@@ -115,7 +117,7 @@ def cycle_scorecard(polls: pd.DataFrame, results: pd.DataFrame, window_days: int
         for _, row in wide.iterrows():
             poll_margin = row[cands[0]] - row[cands[1]]
             err = poll_margin - actual_margin
-            out.append(dict(race_id=race_id, pollster=row["pollster"], end_date=row["end_date"],
+            out.append(dict(race_id=race_id, poll_id=row["poll_id"], pollster=row["pollster"], end_date=row["end_date"],
                             poll_margin=round(poll_margin, 1), actual_margin=round(actual_margin, 1),
                             error=round(abs(err), 1), bias=round(err, 1),
                             right_call=(poll_margin > 0) == (actual_margin > 0)))

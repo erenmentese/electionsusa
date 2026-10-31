@@ -50,7 +50,7 @@
     <div class="section-head"><h2>Latest polls</h2><a href="/data/">All data →</a></div>
     <ul class="list">
       {% for p in latest %}
-      <li><div><span class="d">{{ p.dates }}</span><br><span class="r"><a href="/{{ p.race.slug }}/">{{ p.race.short_title }}</a></span> <span class="p">· {% if p.source_url %}<a href="{{ p.source_url }}" rel="nofollow noopener" target="_blank">{{ p.pollster }}</a>{% else %}{{ p.pollster }}{% endif %}</span></div>
+      <li><div><span class="d">{{ p.dates }}</span><br><span class="r"><a href="/{{ p.race.slug }}/">{{ p.race.short_title }}</a></span> <span class="p">· {% if p.pollster_path %}<a href="{{ p.pollster_path }}">{{ p.pollster }}</a>{% elif p.source_url %}<a href="{{ p.source_url }}" rel="nofollow noopener" target="_blank">{{ p.pollster }}</a>{% else %}{{ p.pollster }}{% endif %}</span></div>
           <span class="v">{{ p.headline }}</span></li>
       {% endfor %}
     </ul>
@@ -62,7 +62,7 @@
       <thead><tr><th>Pollster</th><th class="num">Polls</th><th class="num">Avg error</th><th class="num">Bias</th></tr></thead>
       <tbody>
       {% for r in scorecard %}
-      <tr><td>{{ r.pollster }}</td><td class="num">{{ r.n_polls }}</td><td class="num">{{ "%.1f" % r.mean_abs_error }}</td><td class="num">{{ r.bias_label }}</td></tr>
+      <tr><td><a href="{{ pollster_paths[r.pollster] }}">{{ r.pollster }}</a></td><td class="num">{{ r.n_polls }}</td><td class="num">{{ "%.1f" % r.mean_abs_error }}</td><td class="num">{{ r.bias_label }}</td></tr>
       {% endfor %}
       </tbody>
     </table>

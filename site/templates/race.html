@@ -58,7 +58,7 @@
     <tbody>
     {% for r in table %}
     <tr{% if foldable and loop.index > preview_rows %} class="fold"{% endif %}>
-      <td>{% if r.source_url %}<a href="{{ r.source_url }}" rel="nofollow noopener" target="_blank">{{ r.pollster }}</a>{% else %}{{ r.pollster }}{% endif %}{% if r.sponsor %}<span class="muted small"> / {{ r.sponsor }}</span>{% endif %}{% if r.notes %}<span class="note" title="{{ r.notes }}">ⓘ</span>{% endif %}</td>
+      <td>{% if r.pollster_path %}<a href="{{ r.pollster_path }}">{{ r.pollster }}</a>{% else %}{{ r.pollster }}{% endif %}{% if r.sponsor %}<span class="muted small"> / {{ r.sponsor }}</span>{% endif %}{% if r.source_url %} <a class="src" href="{{ r.source_url }}" rel="nofollow noopener" target="_blank" title="Source" aria-label="Source">↗</a>{% endif %}{% if r.notes %}<span class="note" title="{{ r.notes }}">ⓘ</span>{% endif %}</td>
       <td class="nowrap">{{ r.dates }}</td><td class="nowrap">{{ r.sample }}</td><td>{{ r.grade }}</td>
       {% for c in shown %}<td class="num">{{ ("%g" % r.vals[c]) ~ "%" if r.vals[c] is not none else "—" }}</td>{% endfor %}
       {% if race.kind != "primary" %}<td class="num">{{ r.margin_label }}</td>{% endif %}
@@ -70,7 +70,7 @@
   </div>
   </div>
   {% if foldable %}<button type="button" class="fold-toggle" aria-controls="all-polls" aria-expanded="false" data-fold-toggle data-less="Show fewer polls">See all {{ table | length }} polls</button>{% endif %}
-  <p class="muted small">Rows marked ⓘ carry a note (for example, fieldwork dates inferred from press coverage). Weight is the poll's share of the current average after recency, sample-size, pollster-quality and frequency adjustments.</p>
+  <p class="muted small">Click a pollster for its accuracy record and every poll it has released; ↗ opens the poll's source. Rows marked ⓘ carry a note (for example, fieldwork dates inferred from press coverage). Weight is the poll's share of the current average after recency, sample-size, pollster-quality and frequency adjustments.</p>
 </section>
 {% endif %}
 

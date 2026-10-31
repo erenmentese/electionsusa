@@ -59,7 +59,7 @@ if (location.hostname === {{ site.domain | tojson }}) {
   <div class="wrap header-inner">
     <a class="brand" href="/" aria-label="{{ site.name }} home">Elections<em>USA</em></a>
     <nav class="nav" aria-label="Primary">
-      {% for label, href in nav %}<a href="{{ href }}" {% if path == href or (href == "/states/" and path.startswith(href)) %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+      {% for label, href in nav %}<a href="{{ href }}" {% if path == href or (href in ("/states/", "/pollsters/") and path.startswith(href)) %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
     </nav>
     {% if path != "/" %}
     <div class="hdr-search finder" data-finder>
