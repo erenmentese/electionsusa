@@ -30,7 +30,8 @@ data/markets.csv     market snapshots    data/results/2026.csv  (add after Nov 3
 data/seed/fivethirtyeight/   538 raw-polls + pollster-ratings (CC BY 4.0)
 data/seed/medsl/     state presidential returns 1976-2024 (CC0)   data/seed/census/  House apportionment
 data/seed/us-atlas/  state outlines, Albers USA (ISC)             each folder has a SOURCE.md
-.github/workflows/   fetch every 6h → commit data → test → build → deploy to Pages
+.github/workflows/   fetch every 6h → test → commit data (Vercel deploys) → health check; tests also run on PRs
+                     an unhealthy run opens a "data-alert" issue (pipeline/check_data.py), closed once healthy
 ```
 
 ## Run locally

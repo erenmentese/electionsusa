@@ -5,14 +5,18 @@ on:
     - cron: "17 */6 * * *"   # every 6 hours (UTC)
   push:
     branches: [main]
+  pull_request:              # tests only: nothing is fetched, committed or posted
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
+  issues: write              # the data-health alert issue
 
 concurrency:
-  group: data
-  cancel-in-progress: false
+  # data runs queue behind each other; a pull request only waits for its own previous run
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || 'data' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -26,10 +30,19 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Fetch latest polls and market prices
+        id: fetch
+        if: github.event_name != 'pull_request'
         run: python -m pipeline.run_pipeline
-        continue-on-error: true   # a source outage must never block a deploy
+        continue-on-error: true   # a source outage must never block a deploy; the health check reports it
+
+      # Tests run on the freshly fetched data before anything is committed, so a parser
+      # regression or broken data never reaches the site (Vercel deploys every push to main).
+      - name: Run tests
+        id: tests
+        run: python -m pytest -q tests
 
       - name: Commit refreshed data
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name "electionsusa-bot"
           git config user.email "bot@electionsusa.org"
@@ -40,7 +53,7 @@ jobs:
       - name: Post new polls to X
         # Enable with repository variable BOT_ENABLED=true and the four X_* secrets.
         # Runs on the schedule and manual runs only, never on pushes, so a code push cannot double-post.
-        if: ${{ vars.BOT_ENABLED == 'true' && github.event_name != 'push' }}
+        if: ${{ vars.BOT_ENABLED == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
         env:
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
@@ -52,13 +65,34 @@ jobs:
         continue-on-error: true
 
       - name: Save bot state
-        if: ${{ vars.BOT_ENABLED == 'true' && github.event_name != 'push' }}
+        if: ${{ vars.BOT_ENABLED == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
         run: |
           git add data/bot_state.json 2>/dev/null || exit 0
           git diff --cached --quiet || git commit -m "bot: update posted state"
           git push || true
 
-      - name: Run tests
-        run: python -m pytest -q tests
+      # Runs even when an earlier step failed: that is exactly when someone needs to hear about it.
+      - name: Check data health
+        id: health
+        if: always() && github.event_name != 'pull_request'
+        run: python -m pipeline.check_data --report health.md --fetch "${{ steps.fetch.outcome }}" --tests "${{ steps.tests.outcome }}"
+        continue-on-error: true
 
-      # Vercel redeploys the site automatically on every push to main.
+      # One open issue at a time, labelled data-alert: created on the first unhealthy run (GitHub
+      # emails the repo owner), its body kept current on later runs, closed once healthy again.
+      - name: Open, update or close the data alert
+        if: always() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          open=$(gh issue list --label data-alert --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)
+          if [ "${{ steps.health.outcome }}" = "failure" ]; then
+            gh label create data-alert --color B60205 --description "Automated data health alert" 2>/dev/null || true
+            if [ -n "$open" ]; then
+              gh issue edit "$open" --body-file health.md
+            else
+              gh issue create --title "Data alert: the site's data needs a look" --label data-alert --body-file health.md
+            fi
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "Healthy again as of $(date -u +%Y-%m-%dT%H:%MZ). Closing automatically."
+          fi
