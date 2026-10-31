@@ -44,9 +44,8 @@ def test_answer_sentence_ties_and_empty():
     assert build.answer_sentence(config.RACE_BY_ID["pres-2028-vance-newsom"], RaceAverage("x", AS_OF), AS_OF) == ""
 
 
-def test_build_seo_output(tmp_path, monkeypatch):
-    monkeypatch.setattr(config, "DIST_DIR", tmp_path / "dist")
-    dist = build.build(AS_OF)
+def test_build_seo_output(site):
+    dist = site
 
     # every page carries valid JSON-LD (no HTML entities leaking into JSON) and an og:image that exists
     for page in dist.rglob("*.html"):

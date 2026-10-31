@@ -11,7 +11,7 @@ from datetime import date
 
 from PIL import Image, ImageDraw
 
-from . import average, config
+from . import average, config, history
 from .social_cards import BLUE, PAPER, RED, CardSpec, Figure, render
 from .social_compose import margin_label, race_title, short
 
@@ -71,6 +71,31 @@ def site_card(summaries: list[dict], as_of: date) -> CardSpec:
             if s["race"].featured and s["avg"].values]
     return CardSpec(kind="list", kicker=f"Polling averages · {as_of.strftime('%B %-d, %Y')}", title="How is 2028 looking?",
                     rows=rows, footer_left="Free, open data · every poll linked to its source")
+
+
+def state_card(st: history.StateHistory, nation: dict[int, history.NationYear], colors: dict[str, str]) -> CardSpec:
+    y = st.latest
+    return CardSpec(kind="figures", kicker=f"Presidential results · {y.ev} electoral votes", title=f"{st.name} in {y.year}",
+                    figures=[Figure(history.short(y.dem), pct(y.dem_pct), colors["DEM"]),
+                             Figure(history.short(y.rep), pct(y.rep_pct), colors["REP"])],
+                    note=f"{y.margin_label} · backed the winner in {st.picked_winner(nation)} of {len(st.years)} elections since 1976",
+                    footer_left="Every presidential result since 1976")
+
+
+def states_card(n: history.NationYear, colors: dict[str, str]) -> CardSpec:
+    return CardSpec(kind="figures", kicker="Electoral votes · certified results", title=f"{n.year} results by state",
+                    figures=[Figure(history.short(n.dem), str(n.ev_dem), colors["DEM"]),
+                             Figure(history.short(n.rep), str(n.ev_rep), colors["REP"])],
+                    note=f"Popular vote: {history.short(n.dem)} {pct(n.dem_pct)}, {history.short(n.rep)} {pct(n.rep_pct)}",
+                    footer_left="Map, margins and every state since 1976")
+
+
+def state_image(st: history.StateHistory, nation: dict[int, history.NationYear], colors: dict[str, str]) -> bytes:
+    return to_og(render(state_card(st, nation, colors)))
+
+
+def states_image(n: history.NationYear, colors: dict[str, str]) -> bytes:
+    return to_og(render(states_card(n, colors)))
 
 
 def race_image(race: config.Race, ra: average.RaceAverage, colors: dict[str, str], as_of: date) -> bytes:

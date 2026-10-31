@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import ad, figure %}
+{% from "_macros.html" import ad, figure, us_map, ev_bar %}
 {% block content %}
 <section class="greet">
   <p class="kicker">Updated {{ build_date }} · {{ days_to_election }} days to Election Day</p>
@@ -22,13 +22,25 @@
   </div>
 </section>
 
-<section class="promise">
-  <p>Free. Open data. <span>Every number linked to the pollster that published it.</span></p>
-  <p class="meta">No paywall, no login, no forecasts dressed up as facts. <a href="/methodology/">How the average works</a> · <a href="/data/">Download everything</a></p>
+{% if usmap %}
+<section class="section statemap" aria-labelledby="map-h">
+  <div class="section-head"><h2 id="map-h">Where 2028 starts: the {{ usmap.year }} map</h2><a href="/states/">Results by state →</a></div>
+  {{ ev_bar(evbar) }}
+  {{ us_map(usmap, "Tap a state for every presidential result there since 1976.") }}
+  <details class="state-list">
+    <summary>All 50 states and DC</summary>
+    <ul>{% for st in states %}<li><a href="{{ st.path }}"><i class="sw {{ st.cls }}"></i>{{ st.name }}</a></li>{% endfor %}</ul>
+  </details>
 </section>
+{% endif %}
 
 <section class="figures">
   {% for s in summaries if s.race.featured %}{{ figure(s) }}{% endfor %}
+</section>
+
+<section class="promise">
+  <p>Free. Open data. <span>Every number linked to the pollster that published it.</span></p>
+  <p class="meta">No paywall, no login, no forecasts dressed up as facts. <a href="/methodology/">How the average works</a> · <a href="/data/">Download everything</a></p>
 </section>
 
 {{ ad("home-top") }}

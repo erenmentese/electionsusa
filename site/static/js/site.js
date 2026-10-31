@@ -27,7 +27,9 @@
         var rows = Array.prototype.slice.call(table.querySelectorAll("tbody tr"));
         var asc = th.getAttribute("data-asc") !== "true";
         rows.sort(function (a, b) {
-          var x = a.children[idx].textContent.trim(), y = b.children[idx].textContent.trim();
+          // data-sort carries a signed number when the text can't ("Trump +1.7" vs "Harris +1.7")
+          var key = function (row) { var c = row.children[idx]; return c.getAttribute("data-sort") || c.textContent.trim(); };
+          var x = key(a), y = key(b);
           var nx = parseFloat(x.replace(/[^0-9.\-]/g, "")), ny = parseFloat(y.replace(/[^0-9.\-]/g, ""));
           if (!isNaN(nx) && !isNaN(ny)) return asc ? nx - ny : ny - nx;
           return asc ? x.localeCompare(y) : y.localeCompare(x);
@@ -38,6 +40,20 @@
         rows.forEach(function (r) { tb.appendChild(r); });
       });
     });
+  });
+
+  // ---- state map: show the hovered or focused state's result in the caption --
+  document.querySelectorAll("[data-map]").forEach(function (map) {
+    var info = map.parentNode.querySelector("[data-map-info]");
+    if (!info) return;
+    var idle = info.textContent;
+    function show(e) {
+      var a = e.target.closest && e.target.closest("a[data-s]");
+      info.textContent = a ? a.getAttribute("data-s") : idle;
+    }
+    map.addEventListener("mouseover", show);
+    map.addEventListener("focusin", show);
+    map.addEventListener("mouseleave", function () { info.textContent = idle; });
   });
 
   // ---- folded poll tables ------------------------------------------------

@@ -155,6 +155,49 @@ def grouped_bars(groups: dict[str, dict[str, float]], series_colors: dict[str, s
     return "".join(out)
 
 
+def margin_columns(state: list[tuple[int, float]], nation: list[tuple[int, float]], colors: dict[str, str],
+                   title: str = "", chart_id: str = "margins") -> str:
+    """One column per election: the state's margin (Republican up, Democratic down), with the
+    national margin as a line so the state's lean against the country is visible at a glance."""
+    if not state:
+        return empty_chart("No results.")
+    h, pad_l, pad_r, pad_t, pad_b = 330, 52, 16, 14, 48
+    top = max(abs(m) for _, m in state + nation)
+    lim = next((t for t in (5, 10, 15, 20, 30, 40, 50, 60, 80, 100) if t >= top * 1.12), 100)
+    step = (W - pad_l - pad_r) / len(state)
+    ph = h - pad_t - pad_b
+
+    def y(m: float) -> float:
+        return pad_t + ph * (1 - (m + lim) / (2 * lim))
+
+    def lean(m: float, fmt: str = ".1f") -> str:
+        return "EVEN" if abs(m) < 0.05 else f"{'R' if m > 0 else 'D'}+{abs(m):{fmt}}"
+
+    out = [f"<svg viewBox='0 0 {W} {h}' role='img' aria-labelledby='{chart_id}-t' class='chart' {FONT}>",
+           f"<title id='{chart_id}-t'>{escape(title)}</title>"]
+    for t in (-lim, -lim / 2, 0, lim / 2, lim):
+        out.append(f"<line x1='{pad_l}' x2='{W - pad_r}' y1='{y(t):.1f}' y2='{y(t):.1f}' class='{'axis' if t == 0 else 'grid'}'/>")
+        out.append(f"<text x='{pad_l - 8}' y='{y(t) + 4:.1f}' text-anchor='end' class='tick'>{lean(t, 'g')}</text>")
+    for i, (yr, m) in enumerate(state):
+        cx = pad_l + step * (i + 0.5)
+        bw = step * 0.56
+        y0, y1 = sorted((y(0), y(m)))
+        c = colors["REP" if m > 0 else "DEM"]
+        out.append(f"<rect x='{cx - bw / 2:.1f}' y='{y0:.1f}' width='{bw:.1f}' height='{max(y1 - y0, 1):.1f}' rx='2' "
+                   f"fill='{c}'><title>{yr}: {escape(lean(m))}</title></rect>")
+        # values sit in their own row above the years, where the national line can't cross them
+        out.append(f"<text x='{cx:.1f}' y='{h - 26}' text-anchor='middle' class='label' style='fill:{c}'>{escape(lean(m))}</text>")
+        out.append(f"<text x='{cx:.1f}' y='{h - 8}' text-anchor='middle' class='tick'>{yr}</text>")
+    if nation:
+        xs = {yr: pad_l + step * (i + 0.5) for i, (yr, _) in enumerate(state)}
+        pts = [(xs[yr], y(m)) for yr, m in nation if yr in xs]
+        out.append("<path d='" + " ".join(f"{'M' if i == 0 else 'L'}{px:.1f},{py:.1f}" for i, (px, py) in enumerate(pts))
+                   + "' class='nat'/>")
+        out += [f"<circle cx='{px:.1f}' cy='{py:.1f}' r='3' class='nat-dot'/>" for px, py in pts]
+    out.append("</svg>")
+    return "".join(out)
+
+
 def empty_chart(msg: str) -> str:
     return (f"<svg viewBox='0 0 {W} 120' class='chart empty' {FONT}>"
             f"<text x='{W / 2}' y='64' text-anchor='middle' class='label'>{escape(msg)}</text></svg>")

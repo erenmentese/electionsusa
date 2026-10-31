@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad %}
+{% block head %}
+<script type="application/ld+json">{{ ld_dataset | tojson }}</script>
+{% endblock %}
+{% block content %}
+{% set y = st.latest %}
+<article>
+<header class="page-head">
+  <p class="kicker"><a href="/states/">Results by state</a> · {{ y.ev }} electoral votes</p>
+  <h1>{{ st.name }} Presidential Election Results</h1>
+  <p class="sub">{{ answer }}</p>
+</header>
+
+<section class="avg-hero">
+  <div class="avg-big-row">
+    <div class="avg-big" style="--c: {{ colors.DEM }}"><span class="who">{{ y.dem }}</span><span class="val">{{ "%.1f" % y.dem_pct }}%</span></div>
+    <div class="avg-big" style="--c: {{ colors.REP }}"><span class="who">{{ y.rep }}</span><span class="val">{{ "%.1f" % y.rep_pct }}%</span></div>
+    <div class="avg-big margin"><span class="who">{{ y.year }} margin</span><span class="val">{{ y.margin_label }}</span></div>
+  </div>
+  <p class="avg-note">{{ "{:,}".format(y.total) }} votes cast in {{ y.year }}{% if y.other %}; {{ y.other }} won {{ "%.1f" % (100 * y.other_votes / y.total) }}%{% endif %}. Certified results, via the MIT Election Data and Science Lab. <a href="/data/president-by-state.csv">CSV</a></p>
+</section>
+
+<section class="section">
+  <dl class="facts">
+    <div><dt>Electoral votes</dt><dd>{{ y.ev }}</dd><dd class="muted small">for {{ y.year }} and 2028 (2020 census)</dd></div>
+    <div><dt>Partisan lean, {{ y.year }}</dt><dd>{{ lean }}</dd><dd class="muted small">margin compared with the national result ({{ nation_label }})</dd></div>
+    <div><dt>Picked the winner</dt><dd>{{ picked }} of {{ st.years | length }}</dd><dd class="muted small">elections since 1976</dd></div>
+    {% set streak = st.streak() %}
+    <div><dt>Last Democratic win</dt><dd>{{ st.last_win("D") or "None since 1976" }}</dd><dd class="muted small">{% if st.latest.winner == "D" and streak > 1 %}{{ streak }} in a row{% endif %}</dd></div>
+    <div><dt>Last Republican win</dt><dd>{{ st.last_win("R") or "None since 1976" }}</dd><dd class="muted small">{% if st.latest.winner == "R" and streak > 1 %}{{ streak }} in a row{% endif %}</dd></div>
+  </dl>
+</section>
+
+<section class="section">
+  <div class="section-head"><h2>Margin by election</h2><span class="muted small">Columns: {{ st.name }} · line: national popular vote</span></div>
+  <div class="chart-wrap">{{ chart | safe }}</div>
+</section>
+
+{{ ad("state-mid") }}
+
+<section class="section">
+  <div class="section-head"><h2>Every election since 1976</h2><a href="/data/president-by-state.csv">CSV →</a></div>
+  <div class="table-scroll">
+  <table class="table">
+    <thead><tr><th>Year</th><th>Democrat</th><th class="num">%</th><th>Republican</th><th class="num">%</th><th class="num">Other</th><th class="num">Margin</th><th class="num" title="Margin compared with the national popular vote">Lean</th><th class="num">Electoral votes</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.year }}</td>
+      <td{% if r.winner == "D" %} class="win" style="--c: {{ colors.DEM }}"{% endif %}>{{ r.dem }}</td><td class="num">{{ "%.1f" % r.dem_pct }}</td>
+      <td{% if r.winner == "R" %} class="win" style="--c: {{ colors.REP }}"{% endif %}>{{ r.rep }}</td><td class="num">{{ "%.1f" % r.rep_pct }}</td>
+      <td class="num"{% if r.other %} title="{{ r.other }} {{ '%.1f' % (100 * r.other_votes / r.total) }}%"{% endif %}>{{ "%.1f" % r.other_pct }}{% if r.other %}<span class="note">ⓘ</span>{% endif %}</td>
+      <td class="num nowrap">{{ r.margin_label }}</td>
+      <td class="num nowrap muted">{{ r.lean }}</td>
+      <td class="num nowrap">{% if r.split_note %}{{ r.ev_dem }} D · {{ r.ev_rep }} R<span class="note" title="{{ r.split_note }}">ⓘ</span>{% else %}{{ r.ev }} {{ r.winner }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted small">Winner highlighted. Percentages are of all votes cast, so Democrat + Republican + Other = 100. Lean is the state's margin minus the national popular-vote margin. Rows marked ⓘ name a third-party candidate above 5% or a split electoral vote.</p>
+</section>
+
+<section class="section prose">
+  <h2>About these numbers</h2>
+  <p>Vote counts are the certified state results compiled by the MIT Election Data and Science Lab from the Clerk of the U.S. House's official statistics and released under CC0. Electoral votes follow the Census Bureau's House apportionment in force at each election. They are shown as the state's result pledged them; the few electors who voted otherwise or abstained (one each in 1976, 1988, 2000 and 2004; seven in 2016) are not reflected.{% if st.po in ("ME", "NE") %} {{ st.name }} awards two electoral votes to the statewide winner and one to the winner of each congressional district, so its votes can split.{% endif %}</p>
+  <p>Something wrong? Report it through the <a href="/about/#corrections">corrections page</a>.</p>
+</section>
+
+<nav class="pager" aria-label="Other states">
+  {% if prev %}<a href="{{ prev.path }}">← {{ prev.name }}</a>{% else %}<span></span>{% endif %}
+  <a href="/states/">All states</a>
+  {% if next %}<a href="{{ next.path }}">{{ next.name }} →</a>{% else %}<span></span>{% endif %}
+</nav>
+
+{{ ad("state-bottom") }}
+</article>
+{% endblock %}
