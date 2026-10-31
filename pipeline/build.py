@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import average, charts, config, scorecard
+from . import average, charts, config, og_cards, scorecard
 from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 
 NAV = [
@@ -108,16 +108,56 @@ def race_colors(race: config.Race) -> dict[str, str]:
     return {c: config.PARTY_COLORS.get(race.parties.get(c, "OTHER"), "#6b7280") for c in race.candidates}
 
 
+def primary_colors(race: config.Race, top: list[str]) -> dict[str, str]:
+    # distinct shades for same-party candidates
+    palette = ["#1e3a8a", "#0f766e", "#5b21b6", "#9f1239", "#9a3412", "#52525b"] if race.parties.get(top[0] if top else "", "DEM") == "DEM" \
+        else ["#991b1b", "#9a3412", "#854d0e", "#5b21b6", "#0f766e", "#52525b"]
+    return {c: palette[i % len(palette)] for i, c in enumerate(top)}
+
+
+def answer_sentence(race: config.Race, ra: average.RaceAverage, as_of: date) -> str:
+    """One quotable, dated sentence with the current average: the page lead and its meta description."""
+    v = ra.values
+    if not v:
+        return ""
+    national = "national " if race.kind == "primary" else ""
+    src = f"the ElectionsUSA average of {ra.n_polls} {national}poll{'s' if ra.n_polls != 1 else ''}"
+    when = f"as of {as_of.strftime('%B %-d, %Y')}"
+    if race.kind == "approval":
+        who = race.short_title.removesuffix(" approval")
+        if "Disapprove" not in v:
+            return f"{who}'s job approval stands at {v['Approve']:.1f}% in {src}, {when}."
+        net = f"{v['Approve'] - v['Disapprove']:+.1f}".replace("-", "−")
+        return f"{who}'s job approval stands at {v['Approve']:.1f}% approve and {v['Disapprove']:.1f}% disapprove (net {net}) in {src}, {when}."
+    if race.kind == "primary":
+        top = og_cards.ranked(ra)
+        contest = race.title.removesuffix(" Polls").replace("Primary", "primary")
+        if len(top) > 1 and f"{v[top[0]]:.1f}" == f"{v[top[1]]:.1f}":
+            lead = f"{top[0]} and {top[1]} are tied for the lead in the {contest} at {v[top[0]]:.1f}%"
+            rest = top[2:4]
+        else:
+            lead = f"{top[0]} leads the {contest} with {v[top[0]]:.1f}%"
+            rest = top[1:3]
+        behind = f", ahead of {' and '.join(f'{c} ({v[c]:.1f}%)' for c in rest)}" if rest else ""
+        return f"{lead} in {src}{behind}, {when}."
+    a, b = race.candidates[:2]
+    if a not in v or b not in v:
+        return ""
+    what = "on the generic congressional ballot" if race.kind == "generic" else "in a hypothetical 2028 matchup"
+    if f"{v[a]:.1f}" == f"{v[b]:.1f}":
+        return f"{a} and {b} are tied at {v[a]:.1f}% {what}, according to {src}, {when}."
+    lead, trail = (a, b) if v[a] > v[b] else (b, a)
+    verb = "lead" if race.kind == "generic" else "leads"  # "Democrats lead", "Newsom leads"
+    return f"{lead} {verb} {trail} {v[lead]:.1f}% to {v[trail]:.1f}% {what}, according to {src}, {when}."
+
+
 def race_charts(ra: average.RaceAverage, race: config.Race) -> dict[str, str]:
     colors = race_colors(race)
     wide = ra.polls if ra.polls is not None else pd.DataFrame()
     points = {c: [(r["end_date"], float(r[c])) for _, r in wide.iterrows() if pd.notna(r[c])] for c in race.candidates} if not wide.empty else {}
     if race.kind == "primary":
         top = sorted(ra.values, key=ra.values.get, reverse=True)[:5]
-        # distinct shades for same-party candidates
-        palette = ["#1e3a8a", "#0f766e", "#5b21b6", "#9f1239", "#9a3412", "#52525b"] if race.parties.get(top[0] if top else "", "DEM") == "DEM" \
-            else ["#991b1b", "#9a3412", "#854d0e", "#5b21b6", "#0f766e", "#52525b"]
-        pc = {c: palette[i % len(palette)] for i, c in enumerate(top)}
+        pc = primary_colors(race, top)
         line = charts.line_chart({c: ra.trend.get(c, []) for c in top}, {c: points.get(c, []) for c in top}, pc,
                                  title=f"{race.title}: polling average over time", chart_id="trend",
                                  short={c: short_name(c) for c in top})
@@ -128,6 +168,43 @@ def race_charts(ra: average.RaceAverage, race: config.Race) -> dict[str, str]:
                              title=f"{race.title}: polling average over time", chart_id="trend",
                              short={c: short_name(c) for c in race.candidates})
     return {"line": line, "bars": ""}
+
+
+def site_ld() -> dict:
+    """WebSite + Organization structured data, emitted on every page."""
+    s = config.SITE
+    org = {"@type": "Organization", "@id": f"{s['url']}/#org", "name": s["name"], "url": s["url"],
+           "logo": f"{s['url']}/static/img/logo.png"}
+    same_as = [f"https://x.com/{s['twitter'].lstrip('@')}"] if s.get("twitter") else []
+    if s.get("github_repo"):
+        same_as.append(f"https://github.com/{s['github_repo']}")
+    if same_as:
+        org["sameAs"] = same_as
+    website = {"@type": "WebSite", "@id": f"{s['url']}/#website", "name": s["name"], "url": s["url"],
+               "description": s["description"], "inLanguage": s["language"], "publisher": {"@id": org["@id"]}}
+    return {"@context": "https://schema.org", "@graph": [website, org]}
+
+
+def breadcrumb_ld(path: str, name: str) -> dict:
+    base = config.SITE["url"]
+    return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": f"{base}/"},
+        {"@type": "ListItem", "position": 2, "name": name, "item": f"{base}{path}"},
+    ]}
+
+
+def dataset_ld(race: config.Race, path: str, as_of: date) -> dict:
+    base = config.SITE["url"]
+    return {
+        "@context": "https://schema.org", "@type": "Dataset", "name": f"{race.title} – polling average",
+        "description": race.description, "url": f"{base}{path}", "dateModified": as_of.isoformat(),
+        "license": "https://creativecommons.org/licenses/by/4.0/", "isAccessibleForFree": True,
+        "creator": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
+        "distribution": [
+            {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{base}/api/{race.id}.json"},
+            {"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": f"{base}/data/polls.csv"},
+        ],
+    }
 
 
 def latest_polls(polls: pd.DataFrame, n: int = 12) -> list[dict]:
@@ -214,29 +291,34 @@ def build(as_of: date | None = None) -> Path:
                        election_day=config.ELECTION_DAY_2028, midterm_day=config.MIDTERM_DAY_2026,
                        days_to_election=(config.ELECTION_DAY_2028 - as_of).days,
                        days_to_midterm=(config.MIDTERM_DAY_2026 - as_of).days,
-                       races=config.RACES)
+                       races=config.RACES, ld_site=site_ld())
 
     dist = config.DIST_DIR
     if dist.exists():
         shutil.rmtree(dist)
     dist.mkdir(parents=True)
     shutil.copytree(config.STATIC_DIR, dist / "static")
+    shutil.copy(config.ROOT / "assets" / "social" / "x-avatar.png", dist / "static" / "img" / "logo.png")
     (dist / "api").mkdir()
     (dist / "data").mkdir()
-    pages: list[str] = []
+    (dist / "og").mkdir()
+    pages: list[tuple[str, date | None]] = []  # (path, sitemap lastmod); None = no meaningful date
 
-    def render(template: str, out_path: str, **ctx) -> None:
-        html = env.get_template(template).render(path=out_path, **ctx)
+    def render(template: str, out_path: str, lastmod: date | None = None, crumb: str | None = None, **ctx) -> None:
+        page = not out_path.endswith(".html")
+        crumbs = breadcrumb_ld(out_path, crumb or ctx.get("title") or "") if page and out_path != "/" else None
+        html = env.get_template(template).render(path=out_path, ld_breadcrumb=crumbs, **ctx)
         target = dist / out_path.strip("/") / "index.html" if out_path != "/" else dist / "index.html"
-        if out_path.endswith(".html"):
+        if not page:
             target = dist / out_path.strip("/")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(html, encoding="utf-8")
-        if not out_path.endswith(".html"):
-            pages.append(out_path)
+        if page:
+            pages.append((out_path, lastmod))
 
     averages: dict[str, average.RaceAverage] = {}
     summaries = []
+    race_lastmod: dict[str, date | None] = {}
     for race in config.RACES:
         ra = average.compute_race(polls, race, ratings, as_of=as_of)
         averages[race.id] = ra
@@ -245,8 +327,18 @@ def build(as_of: date | None = None) -> Path:
         summaries.append(dict(race=race, avg=ra, colors=race_colors(race), path=f"/{race.slug}/"))
         shown = [c for c in race.candidates if any(r["vals"].get(c) is not None for r in table)
                  and (race.kind != "primary" or c != "Other/Undecided")]
+        og_image = None
+        if ra.values:
+            colors = primary_colors(race, sorted(ra.values, key=ra.values.get, reverse=True)[:5]) if race.kind == "primary" else race_colors(race)
+            (dist / "og" / f"{race.id}.png").write_bytes(og_cards.race_image(race, ra, colors, as_of))
+            og_image = f"/og/{race.id}.png"
+        # a page changes meaningfully when a new poll lands, not every time the build runs
+        race_lastmod[race.id] = min(pd.Timestamp(ra.latest_end_date).date(), as_of) if ra.latest_end_date is not None else None
+        answer = answer_sentence(race, ra, as_of)
         render("race.html", f"/{race.slug}/", race=race, avg=ra, table=table, charts=ch, colors=race_colors(race),
-               shown=shown, title=race.title, description=race.description)
+               shown=shown, title=race.title, description=answer or race.description, answer=answer,
+               crumb=race.short_title, og_image=og_image, lastmod=race_lastmod[race.id],
+               ld_dataset=dataset_ld(race, f"/{race.slug}/", as_of))
         api = dict(race_id=race.id, title=race.title, as_of=as_of.isoformat(), method="https://electionsusa.org/methodology/",
                    average=ra.values, margin=ra.margin, n_polls_weighted=ra.n_polls, n_polls_total=ra.n_polls_total,
                    trend={c: [(d.isoformat(), v) for d, v in s] for c, s in ra.trend.items()},
@@ -287,12 +379,17 @@ def build(as_of: date | None = None) -> Path:
         index.append(dict(t=pr.pollster, u="/pollsters/", k="Pollster", s=f"Avg error {pr.mean_abs_error}, bias {pr.bias_label}, {pr.n_polls} polls", q=f"{pr.pollster} pollster accuracy"))
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
 
+    (dist / "og" / "site.png").write_bytes(og_cards.site_image(summaries, as_of))
+    markets_lastmod = max((m["latest"] for m in mk_ctx if m["latest"]), default=None)
+    data_lastmod = max((d for d in [*race_lastmod.values(), markets_lastmod] if d), default=None)
+
     render("index.html", "/", summaries=summaries, latest=latest_polls(polls), markets=mk_ctx[:1],
-           scorecard=sc_rows[:8], title=None, description=config.SITE["description"])
+           scorecard=sc_rows[:8], title=None, description=config.SITE["description"], lastmod=data_lastmod)
     render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows,
            title="Pollster Scorecard: Accuracy and Bias Ratings", description="How accurate has each U.S. pollster been? Mean error, partisan bias and call accuracy for 60+ pollsters, recomputed from 11,000 polls matched to results, plus FiveThirtyEight's final grades.")
     render("markets.html", "/markets/", markets=mk_ctx, title="2028 Election Odds: Prediction Markets vs. Polls",
-           description="Polymarket and Kalshi odds for the 2028 presidential election and party nominations, compared with the polling average.")
+           description="Polymarket and Kalshi odds for the 2028 presidential election and party nominations, compared with the polling average.",
+           lastmod=markets_lastmod)
     render("countdown.html", "/countdown/", title="How Many Days Until the 2028 Election?",
            description=f"Live countdown to the November 7, 2028 U.S. presidential election, with the 2026 midterm date and the 2028 primary calendar.")
     render("calendar.html", "/2028/calendar/", calendar=config.PRIMARY_CALENDAR_2028, title="2028 Election Calendar: Primaries, Conventions, Election Day",
@@ -300,9 +397,11 @@ def build(as_of: date | None = None) -> Path:
     render("methodology.html", "/methodology/", title="Methodology: How Our Polling Average Works",
            description="A plain-English, fully reproducible description of the ElectionsUSA polling average, pollster weights and scorecard.")
     render("about.html", "/about/", title="About ElectionsUSA", description="Who runs ElectionsUSA, how it is funded, and how to report an error.")
-    render("privacy.html", "/privacy/", title="Privacy Policy", description="How ElectionsUSA uses cookies, advertising and analytics.")
+    render("privacy.html", "/privacy/", title="Privacy Policy", description="How ElectionsUSA uses cookies, advertising and analytics.",
+           lastmod=datetime.strptime(config.SITE["privacy_updated"], "%B %d, %Y").date())
     render("data.html", "/data/", title="Open Data: Download Every Poll", description="Download the full ElectionsUSA polls and prediction-market datasets as CSV and JSON.",
-           n_polls=int(polls["poll_id"].nunique()) if not polls.empty else 0, n_rows=len(polls), n_markets=len(markets))
+           n_polls=int(polls["poll_id"].nunique()) if not polls.empty else 0, n_rows=len(polls), n_markets=len(markets),
+           lastmod=data_lastmod)
     render("404.html", "/404.html", title="Page not found", description="")
 
     # data downloads + sitemap/robots
@@ -313,8 +412,8 @@ def build(as_of: date | None = None) -> Path:
     (dist / "data" / "pollster-scorecard.csv").write_text(pd.DataFrame([asdict(r) for r in sc_rows]).to_csv(index=False))
     base = config.SITE["url"]
     sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for p in pages:
-        sm.append(f"  <url><loc>{base}{p}</loc><lastmod>{as_of.isoformat()}</lastmod></url>")
+    for p, mod in pages:
+        sm.append(f"  <url><loc>{base}{p}</loc>{f'<lastmod>{mod.isoformat()}</lastmod>' if mod else ''}</url>")
     sm.append("</urlset>")
     (dist / "sitemap.xml").write_text("\n".join(sm))
     (dist / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n")
