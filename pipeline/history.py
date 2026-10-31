@@ -153,6 +153,7 @@ class NationYear:
     total: int = 0
     ev_dem: int = 0
     ev_rep: int = 0
+    others: dict[str, int] = field(default_factory=dict)  # third-party votes by candidate
 
     @property
     def dem_pct(self) -> float:
@@ -161,6 +162,20 @@ class NationYear:
     @property
     def rep_pct(self) -> float:
         return 100 * self.rep_votes / self.total
+
+    @property
+    def other_pct(self) -> float:
+        return 100 - self.dem_pct - self.rep_pct
+
+    @property
+    def top_other(self) -> tuple[str, float] | None:
+        """The leading third-party candidate nationally, when notable (Anderson 1980, Perot 1992/1996).
+        The share is a floor: votes on unnamed lines (Perot in five states in 1996) aren't counted."""
+        if not self.others:
+            return None
+        name = max(self.others, key=self.others.get)
+        pct = 100 * self.others[name] / self.total
+        return (name, pct) if pct >= NOTABLE_OTHER else None
 
     @property
     def margin(self) -> float:
@@ -255,6 +270,8 @@ def load() -> tuple[dict[str, StateHistory], dict[int, NationYear]]:
         st.years.append(StateYear(year, po, d_name, r_name, dem_votes, rep_votes, total, ev, ev_dem, ev_rep,
                                   note, other, other_votes))
         n = nation[year]
+        for cand, v in others.items():
+            n.others[display_name(cand)] = n.others.get(display_name(cand), 0) + int(v)
         n.dem_votes += dem_votes
         n.rep_votes += rep_votes
         n.total += total
@@ -273,8 +290,11 @@ def national_sentence(states: dict[str, StateHistory], nation: dict[int, NationY
     popular = n.rep if n.rep_votes > n.dem_votes else n.dem
     also = " also" if popular == won else ""
     hi, lo = max(n.dem_pct, n.rep_pct), min(n.dem_pct, n.rep_pct)
+    # The total third-party share is exact; one candidate's national share isn't always (in 1996
+    # five states report Perot only inside an unnamed "independent" line), so name the leader only.
+    third = f" Other candidates won {n.other_pct:.1f}%, led by {n.top_other[0]}." if n.top_other else ""
     return (f"{won} won the {year} presidential election with {ev_won} electoral votes to {lost}'s {ev_lost}, "
-            f"carrying {carried} of the 50 states. {short(popular)}{also} won the national popular vote, {hi:.1f}% to {lo:.1f}%.")
+            f"carrying {carried} of the 50 states. {short(popular)}{also} won the national popular vote, {hi:.1f}% to {lo:.1f}%.{third}")
 
 
 def answer_sentence(st: StateHistory, nation: dict[int, NationYear]) -> str:

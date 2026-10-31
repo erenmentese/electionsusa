@@ -301,7 +301,7 @@ def build_states(render, dist: Path, states: dict[str, history.StateHistory],
         rows = [dict(year=y.year, dem=y.dem, rep=y.rep, dem_pct=y.dem_pct, rep_pct=y.rep_pct, other_pct=y.other_pct,
                      other=y.other, other_votes=y.other_votes, total=y.total, winner=y.winner, margin_label=y.margin_label,
                      lean=history.fmt_lean(y.margin - nation[y.year].margin), ev=y.ev, ev_dem=y.ev_dem, ev_rep=y.ev_rep,
-                     split_note=y.split_note) for y in reversed(st.years)]
+                     split_note=y.split_note, year_path=year_path(y.year, year)) for y in reversed(st.years)]
         chart = charts.margin_columns([(y.year, y.margin) for y in st.years], nat_series, colors,
                                       title=f"{st.name} presidential margin by election, 1976–{year}")
         ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"{st.name} presidential election results, 1976–{year}",
@@ -323,27 +323,41 @@ def build_states(render, dist: Path, states: dict[str, history.StateHistory],
                           rep_pct=round(y.rep_pct, 2), margin_r=round(y.margin, 2), ev_dem=y.ev_dem, ev_rep=y.ev_rep,
                           note=y.split_note) for y in st.years]
 
-    rows = []
-    for st in ordered:
-        y, p = st.latest, st.by_year(prev_year)
-        rows.append(dict(name=st.name, path=st.path, cls=usmap.shade(y.margin), ev=y.ev, dem_pct=y.dem_pct, rep_pct=y.rep_pct,
-                         margin=y.margin, margin_label=y.margin_label, prev=p.margin, prev_label=p.margin_label,
-                         shift=y.margin - p.margin, shift_label=history.fmt_lean(y.margin - p.margin)))
-    answer = history.national_sentence(states, nation, year)
-    ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"U.S. presidential election results by state, 1976–{year}",
-          "description": answer, "url": f"{base}/states/", "license": "https://creativecommons.org/publicdomain/zero/1.0/",
-          "isAccessibleForFree": True, "temporalCoverage": f"1976/{year}", "creator": creators, "distribution": [csv_ld]}
-    (dist / "og" / "states.png").write_bytes(og_cards.states_image(nat, colors))
-    render("states.html", "/states/", title=f"{year} Election Results by State: Map, Margins and Electoral Votes",
-           description=answer, answer=answer, year=year, prev_year=prev_year, nation=nat, rows=rows,
-           usmap=usmap.map_context(states, year), evbar=usmap.ev_bar(nat), crumb="Results by state",
-           split_notes=[st.latest.split_note for st in ordered if st.latest.split_note],
-           og_image="/og/states.png", ld_dataset=ld)
+    # one results-by-state page per election: /states/ for the latest, /states/<year>/ for earlier ones
+    years = [dict(year=yr, path=year_path(yr, year)) for yr in sorted(nation)]
+    for yr in sorted(nation):
+        n, path, prev = nation[yr], year_path(yr, year), (yr - 4 if yr - 4 in nation else None)
+        rows = []
+        for st in ordered:
+            y, p = st.by_year(yr), st.by_year(prev) if prev else None
+            rows.append(dict(name=st.name, path=st.path, cls=usmap.shade(y.margin), ev=y.ev, dem_pct=y.dem_pct, rep_pct=y.rep_pct,
+                             other_pct=y.other_pct, margin=y.margin, margin_label=y.margin_label,
+                             prev=p.margin if p else None, prev_label=p.margin_label if p else "",
+                             shift=y.margin - p.margin if p else None, shift_label=history.fmt_lean(y.margin - p.margin) if p else ""))
+        answer = history.national_sentence(states, nation, yr)
+        ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"{yr} U.S. presidential election results by state",
+              "description": answer, "url": f"{base}{path}", "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+              "isAccessibleForFree": True, "temporalCoverage": str(yr), "creator": creators, "distribution": [csv_ld]}
+        og = "/og/states.png" if yr == year else f"/og/states/{yr}.png"
+        (dist / og.lstrip("/")).write_bytes(og_cards.states_image(n, colors))
+        latest = yr == year
+        render("states.html", path, description=answer, answer=answer, year=yr, latest_year=year, years=years,
+               prev_year=prev, nation=n, rows=rows, show_other=n.other_pct >= history.NOTABLE_OTHER,
+               title=f"{yr} Election Results by State: Map, Margins and Electoral Votes" if latest
+               else f"{yr} Presidential Election Results by State: Map and Electoral Votes",
+               usmap=usmap.map_context(states, yr), evbar=usmap.ev_bar(n),
+               crumb="Results by state" if latest else str(yr), trail=[] if latest else hub,
+               split_notes=[st.by_year(yr).split_note for st in ordered if st.by_year(yr).split_note],
+               og_image=og, ld_dataset=ld)
+        index.append(dict(t=f"{yr} election results by state", u=path, k="Map",
+                          s=f"{history.short(n.rep)} {n.ev_rep}, {history.short(n.dem)} {n.ev_dem} electoral votes",
+                          q=f"{yr} map results by state electoral college who won {n.dem} {n.rep} swing states red blue"))
     pd.DataFrame(csv_rows).to_csv(dist / "data" / "president-by-state.csv", index=False)
-    index.append(dict(t=f"{year} election results by state", u="/states/", k="Map",
-                      s=f"{history.short(nat.rep)} {nat.ev_rep}, {history.short(nat.dem)} {nat.ev_dem} electoral votes",
-                      q="map results by state electoral college who won swing states red blue 2024 2020 history"))
     return index
+
+
+def year_path(yr: int, latest: int) -> str:
+    return "/states/" if yr == latest else f"/states/{yr}/"
 
 
 # ------------------------------------------------------------------- build

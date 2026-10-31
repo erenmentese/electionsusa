@@ -207,3 +207,7 @@ main{padding:0 20px 72px}
 .footer-grid a:hover{text-decoration:underline}
 .brand-foot{font-family:var(--serif);font-size:1.6rem;letter-spacing:-.02em;margin:0 0 8px}
 .copyright{margin-top:28px;border-top:1px solid var(--rule);padding-top:16px}
+.years{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:18px;font-size:.92rem}
+.years a{color:var(--ink2);text-decoration:none;padding:2px 0}
+.years a:hover{text-decoration:underline}
+.years a[aria-current]{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--ink)}
