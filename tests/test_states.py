@@ -70,7 +70,8 @@ def test_state_pages(site):
     assert [c["name"] for c in crumbs] == ["Home", "Results by state", "Pennsylvania"]
     assert any(b.get("@type") == "Dataset" for b in blocks)
     assert "og/states/pennsylvania.png" in page and (site / "og" / "states" / "pennsylvania.png").exists()
-    assert len(list((site / "states").glob("*/index.html"))) == 51
+    pages = [p.parent.name for p in (site / "states").glob("*/index.html")]
+    assert len([p for p in pages if not p.isdigit()]) == 51 and len([p for p in pages if p.isdigit()]) == 12
 
     home = (site / "index.html").read_text()
     assert home.count("<path class=\"st ") == 51 and "Where 2028 starts" in home
@@ -79,3 +80,19 @@ def test_state_pages(site):
     assert len(csv) == 51 * 13 and csv.groupby("year")["electoral_votes"].sum().eq(538).all()
     sitemap = (site / "sitemap.xml").read_text()
     assert "https://electionsusa.org/states/pennsylvania/" in sitemap and "https://electionsusa.org/states/</loc>" in sitemap
+
+
+def test_year_pages(site, results):
+    states, nation = results
+    page = (site / "states" / "1992" / "index.html").read_text()
+    assert "<h1>1992 Presidential Election Results by State</h1>" in page
+    assert "Other candidates won 19.6%, led by Ross Perot." in page and "Other %" in page
+    blocks = [json.loads(b) for b in re.findall(r'<script type="application/ld\+json">(.*?)</script>', page, re.S)]
+    crumbs = next(b for b in blocks if b.get("@type") == "BreadcrumbList")["itemListElement"]
+    assert [c["name"] for c in crumbs] == ["Home", "Results by state", "1992"]
+    nav = re.search(r'<nav class="years".*?</nav>', page, re.S).group(0)
+    assert nav.count("<a ") == 13 and 'href="/states/1992/" aria-current="page"' in nav and 'href="/states/"' in nav
+    assert "Shift" not in (site / "states" / "1976" / "index.html").read_text()
+    assert not (site / "states" / "2024").exists()  # the latest year lives at /states/
+    assert 'href="/states/2020/">2020</a>' in (site / "states" / "pennsylvania" / "index.html").read_text()
+    assert "Other candidates" not in history.national_sentence(states, nation, 2024)

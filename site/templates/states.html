@@ -6,9 +6,12 @@
 {% block content %}
 <article>
 <header class="page-head">
-  <p class="kicker">Certified results · updated with each presidential election</p>
+  <p class="kicker">{% if year == latest_year %}Certified results · updated with each presidential election{% else %}<a href="/states/">Results by state</a> · certified results{% endif %}</p>
   <h1>{{ year }} Presidential Election Results by State</h1>
   <p class="sub">{{ answer }}</p>
+  <nav class="years" aria-label="Election year">
+    {% for y in years | reverse %}<a href="{{ y.path }}"{% if y.year == year %} aria-current="page"{% endif %}>{{ y.year }}</a>{% endfor %}
+  </nav>
 </header>
 
 <section class="section statemap">
@@ -19,30 +22,33 @@
 {{ ad("states-mid") }}
 
 <section class="section">
-  <div class="section-head"><h2>Every state</h2><a href="/data/president-by-state.csv">CSV, 1976–{{ year }} →</a></div>
+  <div class="section-head"><h2>Every state in {{ year }}</h2><a href="/data/president-by-state.csv">CSV, 1976–{{ latest_year }} →</a></div>
   <div class="table-scroll">
   <table class="table sortable">
-    <thead><tr><th>State</th><th class="num">EV</th><th class="num">{{ nation.dem | short }} %</th><th class="num">{{ nation.rep | short }} %</th><th class="num">Margin</th><th class="num" title="Margin in {{ prev_year }}">{{ prev_year }}</th><th class="num" title="Change in margin since {{ prev_year }}">Shift</th></tr></thead>
+    <thead><tr><th>State</th><th class="num">EV</th><th class="num">{{ nation.dem | short }} %</th><th class="num">{{ nation.rep | short }} %</th>{% if show_other %}<th class="num">Other %</th>{% endif %}<th class="num">Margin</th>{% if prev_year %}<th class="num" title="Margin in {{ prev_year }}">{{ prev_year }}</th><th class="num" title="Change in margin since {{ prev_year }}">Shift</th>{% endif %}</tr></thead>
     <tbody>
     {% for r in rows %}
     <tr>
       <td><a href="{{ r.path }}"><i class="sw {{ r.cls }}"></i>{{ r.name }}</a></td>
       <td class="num">{{ r.ev }}</td>
       <td class="num">{{ "%.1f" % r.dem_pct }}</td><td class="num">{{ "%.1f" % r.rep_pct }}</td>
+      {% if show_other %}<td class="num">{{ "%.1f" % r.other_pct }}</td>{% endif %}
       <td class="num nowrap" data-sort="{{ '%.2f' % r.margin }}">{{ r.margin_label }}</td>
+      {% if prev_year %}
       <td class="num nowrap muted" data-sort="{{ '%.2f' % r.prev }}">{{ r.prev_label }}</td>
       <td class="num nowrap {{ 'bias-r' if r.shift > 0 else 'bias-d' }}" data-sort="{{ '%.2f' % r.shift }}">{{ r.shift_label }}</td>
+      {% endif %}
     </tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
-  <p class="muted small">Click a column to sort. Margin and shift are in percentage points of all votes cast; shift is the change in margin since {{ prev_year }}, so "R+3.1" means the state moved 3.1 points toward the Republican. {% for n in split_notes %}{{ n }}. {% endfor %}</p>
+  <p class="muted small">Click a column to sort. Margins are in percentage points of all votes cast{% if prev_year %}; shift is the change in margin since {{ prev_year }}, so "R+3.1" means the state moved 3.1 points toward the Republican{% endif %}. {% for n in split_notes %}{{ n }}. {% endfor %}</p>
 </section>
 
 <section class="section prose">
   <h2>About these numbers</h2>
-  <p>Certified state results compiled by the MIT Election Data and Science Lab from the Clerk of the U.S. House's official statistics, with electoral votes from the Census Bureau's apportionment. Each state page has every presidential result since 1976, how the state leaned against the country, and how often it backed the winner. The full table is <a href="/data/president-by-state.csv">downloadable as CSV</a>.</p>
+  <p>Certified state results compiled by the MIT Election Data and Science Lab from the Clerk of the U.S. House's official statistics, with electoral votes from the Census Bureau's apportionment in force in {{ year }}. Each state page has every presidential result since 1976, how the state leaned against the country, and how often it backed the winner. The full table is <a href="/data/president-by-state.csv">downloadable as CSV</a>.</p>
 </section>
 
 {{ ad("states-bottom") }}

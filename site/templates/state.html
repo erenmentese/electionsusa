@@ -47,7 +47,7 @@
     <tbody>
     {% for r in rows %}
     <tr>
-      <td>{{ r.year }}</td>
+      <td><a href="{{ r.year_path }}">{{ r.year }}</a></td>
       <td{% if r.winner == "D" %} class="win" style="--c: {{ colors.DEM }}"{% endif %}>{{ r.dem }}</td><td class="num">{{ "%.1f" % r.dem_pct }}</td>
       <td{% if r.winner == "R" %} class="win" style="--c: {{ colors.REP }}"{% endif %}>{{ r.rep }}</td><td class="num">{{ "%.1f" % r.rep_pct }}</td>
       <td class="num"{% if r.other %} title="{{ r.other }} {{ '%.1f' % (100 * r.other_votes / r.total) }}%"{% endif %}>{{ "%.1f" % r.other_pct }}{% if r.other %}<span class="note">ⓘ</span>{% endif %}</td>
