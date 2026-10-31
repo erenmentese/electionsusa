@@ -25,7 +25,7 @@ NYT_SIENA = "The New York Times/Siena College"
 # pollster, the poll belongs to the first name in the sponsor column that isn't one of these.
 MEDIA = {"abcnews", "aarp", "argument", "bulwark", "cbs", "cbsnews", "cnn", "dailymail",
          "deseretnewsandhinckleyinstituteofpolitics", "economist", "financialtimes", "harvard", "harvardcaps",
-         "ii", "nbcnews", "newsnation", "npr", "onpoint", "pablotorresfindsout", "pbs", "reuters",
+         "ii", "nbcnews", "newsnation", "npr", "onpoint", "pablotorrefindsout", "pablotorresfindsout", "pbs", "reuters",
          "strengthinnumbers", "washingtonpost", "yahoo", "yahoonews"}
 
 # Spelling variants, renamed firms and sponsors with a standing partner -> the name on the page

@@ -83,6 +83,7 @@ def test_trend_has_no_lookahead():
     ("Data", "", "B"),                           # Data for Progress, not Data Orbital's A/B
     ("Harvard", "Harris Poll/HarrisX", None),    # HarrisX is unrated, not Harvard University's B/C
     ("The Economist", "YouGov", "B+"),           # media sponsors listed first used to leave these unrated
+    ("The Bulwark", "Pablo Torre Finds Out/YouGov", "B+"),  # two media names before the firm
     ("Reuters", "Ipsos", "B-"),
     ("CNN", "SSRS", "C+"),
     ("Washington Post", "ABC News/Ipsos", "B-"),  # run by Ipsos, not graded as "ABC News/The Washington Post"
