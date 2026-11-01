@@ -181,6 +181,20 @@ main{padding:0 20px 72px}
 .chart{width:100%;height:auto;display:block}
 .chart .grid{stroke:var(--rule)}.chart .tick{fill:var(--mute);font-size:12px}.chart .label{fill:var(--ink);font-size:13px;font-weight:600}.chart .strong{font-weight:700}
 .chart.bars text{font-family:var(--sans)}
+/* trend charts: on phones the SVG is drawn wider than its frame so the end-label column is cropped off
+   (the legend below names the lines), and date labels get larger with fewer of them (charts._date_ticks) */
+.trend-fig{overflow:hidden}
+.trend-legend,.trend-fig .m-only{display:none}
+@media(max-width:640px){
+  .trend-fig .chart{width:var(--crop);max-width:none}
+  .trend-fig .tick{font-size:16px}.trend-fig .tick.y{font-size:14px}
+  .trend-fig .label,.trend-fig .m-hide{display:none}
+  .trend-fig .m-only{display:inline}
+  .trend-legend{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;margin:10px 0 0;padding:0;font-size:.85rem;color:var(--ink2)}
+  .trend-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  .trend-legend b{font-weight:600;color:var(--ink)}
+}
+@media(max-width:480px){.trend-fig .tick{font-size:22px}.trend-fig .tick.y{font-size:18px}}
 .chart.empty .label{fill:var(--mute);font-weight:500}
 .empty-state{padding:36px 0;border-bottom:1px solid var(--rule)}
 .empty-state h2{margin-top:0}
