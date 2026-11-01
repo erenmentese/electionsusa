@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from html import escape
 
 W, H = 860, 360
-PAD_L, PAD_R, PAD_T, PAD_B = 46, 150, 18, 36
+PAD_L, PAD_R, PAD_T, PAD_B = 50, 165, 18, 36
 FONT = "font-family='Inter, system-ui, -apple-system, Segoe UI, sans-serif'"
 
 
@@ -25,23 +25,26 @@ def _nice_ticks(lo: float, hi: float, n: int = 5) -> list[float]:
     return ticks
 
 
-def _month_ticks(d0: date, d1: date) -> list[date]:
-    ticks = []
-    y, m = d0.year, d0.month
-    span_days = (d1 - d0).days
-    step = 1 if span_days <= 240 else 2 if span_days <= 500 else 3
-    d = date(y, m, 1)
-    if d < d0:
-        m += 1
-        if m > 12:
-            m, y = 1, y + 1
-        d = date(y, m, 1)
-    while d <= d1:
-        ticks.append(d)
-        m += step
-        while m > 12:
-            m, y = m - 12, y + 1
-        d = date(y, m, 1)
+TICK_STEPS = (1, 3, 6, 12)  # months; each divides the next, so the ticks kept on phones are a subset
+MIN_GAP, MIN_GAP_PHONE = 56, 100  # user units between date labels; phones draw them ~1.8x larger (see style.css)
+
+
+def _date_ticks(d0: date, d1: date, width: float) -> list[tuple[date, str, bool]]:
+    """January-aligned month ticks as (date, label, shown on phones).
+
+    January is labelled with its year and other months with their abbreviation, so
+    labels stay short ("Oct 2025  2026  Apr  Jul"); the first tick also carries its year.
+    """
+    per_month = width * 30.44 / max((d1 - d0).days, 1)
+    step = next((s for s in TICK_STEPS if s * per_month >= MIN_GAP), 12)
+    phone_step = next((s for s in TICK_STEPS if s * per_month >= MIN_GAP_PHONE), 12)
+    ticks: list[tuple[date, str, bool]] = []
+    y, m = (d0.year, d0.month) if d0.day == 1 else (d0.year + d0.month // 12, d0.month % 12 + 1)
+    while (d := date(y, m, 1)) <= d1:
+        if (m - 1) % step == 0:
+            label = str(y) if m == 1 else d.strftime("%b %Y") if not ticks else d.strftime("%b")
+            ticks.append((d, label, (m - 1) % phone_step == 0))
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
     return ticks
 
 
@@ -57,6 +60,17 @@ def line_chart(series: dict[str, list[tuple[date, float]]], points: dict[str, li
     if hi - lo < 8:
         mid = (hi + lo) / 2
         lo, hi = max(0, mid - 4), min(100, mid + 4)
+    # the chart starts where the average does; older polls stay in the table below it
+    start = min((s[0][0] for s in series.values() if s), default=None)
+    if start:
+        points = {c: [(d, v) for d, v in pts if d >= start] for c, pts in points.items()}
+        all_vals = [v for s in series.values() for _, v in s] + [v for s in points.values() for _, v in s]
+        all_dates = [d for s in series.values() for d, _ in s] + [d for s in points.values() for d, _ in s]
+        lo = y_min if y_min is not None else max(0, min(all_vals) - 4)
+        hi = y_max if y_max is not None else min(100, max(all_vals) + 4)
+        if hi - lo < 8:
+            mid = (hi + lo) / 2
+            lo, hi = max(0, mid - 4), min(100, mid + 4)
     d0, d1 = min(all_dates), max(all_dates)
     if d0 == d1:
         d0 = d1 - timedelta(days=30)
@@ -74,18 +88,28 @@ def line_chart(series: dict[str, list[tuple[date, float]]], points: dict[str, li
     for t in _nice_ticks(lo, hi):
         yy = y(t)
         out.append(f"<line x1='{PAD_L}' x2='{W - PAD_R}' y1='{yy:.1f}' y2='{yy:.1f}' class='grid'/>")
-        out.append(f"<text x='{PAD_L - 8}' y='{yy + 4:.1f}' text-anchor='end' class='tick'>{t:g}{y_label}</text>")
-    for d in _month_ticks(d0, d1):
+        out.append(f"<text x='{PAD_L - 8}' y='{yy + 4:.1f}' text-anchor='end' class='tick y'>{t:g}{y_label}</text>")
+    ticks = _date_ticks(d0, d1, pw)
+    phone = [i for i, t in enumerate(ticks) if t[2]]
+    if len(phone) > 1 and ticks[phone[0]][0].month != 1 and ticks[phone[1]][0].month == 1 \
+            and x(ticks[phone[1]][0]) - x(ticks[phone[0]][0]) < 160:
+        phone = phone[1:]  # too tight for "Oct 2025" beside "2026" on a phone; the year label is enough
+    for i, (d, label, _) in enumerate(ticks):
         xx = x(d)
-        label = d.strftime("%b %Y") if d.month in (1,) or (d1 - d0).days > 400 else d.strftime("%b")
-        out.append(f"<text x='{xx:.1f}' y='{H - 10}' text-anchor='middle' class='tick'>{label}</text>")
+        anchor = "start" if xx - PAD_L < 30 else "middle"
+        tick = f"<text x='{xx:.1f}' y='{H - 10}' text-anchor='{anchor}' class='tick{{}}'>{{}}</text>"
+        if phone and i == phone[0] and i > 0 and d.month != 1:
+            # the first label a phone shows needs its year too
+            out.append(tick.format(" m-hide", label) + tick.format(" m-only", d.strftime("%b %Y")))
+        else:
+            out.append(tick.format("" if i in phone else " m-hide", label))
     # points first (behind lines)
     for name, pts in points.items():
         c = colors.get(name, "#6b7280")
         for d, v in pts:
             out.append(f"<circle cx='{x(d):.1f}' cy='{y(v):.1f}' r='3.2' fill='{c}' fill-opacity='0.35'/>")
-    # lines + end labels
-    labels = []
+    # lines + end labels (on phones the end labels are cropped off and the legend names the lines)
+    labels, legend = [], []
     for name, s in series.items():
         if not s:
             continue
@@ -94,6 +118,7 @@ def line_chart(series: dict[str, list[tuple[date, float]]], points: dict[str, li
         out.append(f"<path d='{path}' fill='none' stroke='{c}' stroke-width='2.2' stroke-linejoin='round'/>")
         ld, lv = s[-1]
         labels.append((y(lv), c, f"{(short or {}).get(name, name)} {lv:.1f}{y_label}", x(ld)))
+        legend.append((lv, c, (short or {}).get(name, name)))
     # de-overlap labels
     labels.sort()
     last = -99
@@ -102,7 +127,10 @@ def line_chart(series: dict[str, list[tuple[date, float]]], points: dict[str, li
         last = yy
         out.append(f"<text x='{W - PAD_R + 8}' y='{yy + 4:.1f}' fill='{c}' class='label'>{escape(text)}</text>")
     out.append("</svg>")
-    return "".join(out)
+    items = "".join(f"<li><i style='background:{c}'></i>{escape(n)} <b>{v:.1f}{y_label}</b></li>"
+                    for v, c, n in sorted(legend, key=lambda t: -t[0]))
+    crop = 100 * W / (W - PAD_R + 12)
+    return f"<div class='trend-fig' style='--crop:{crop:.1f}%'>{''.join(out)}<ul class='trend-legend'>{items}</ul></div>"
 
 
 def bar_chart(values: dict[str, float], colors: dict[str, str], title: str = "", chart_id: str = "bars",
