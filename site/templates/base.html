@@ -94,5 +94,6 @@ if (location.hostname === {{ site.domain | tojson }}) {
   <div class="wrap copyright muted small">© {{ year }} {{ site.name }} · {{ site.domain }}</div>
 </footer>
 <script src="/static/js/site.js" defer></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

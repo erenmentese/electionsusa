@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad %}
+{% block head %}
+<script type="application/ld+json">{{ ld_app | tojson }}</script>
+{% endblock %}
+{% block content %}
+{% set m = usmap %}
+<article class="builder" data-builder>
+<header class="page-head">
+  <p class="kicker">Interactive · starts from the {{ year }} result</p>
+  <h1>2028 Electoral Map: Make Your Own Forecast</h1>
+  <p class="sub">{{ answer }}</p>
+</header>
+
+<section class="section">
+  <div class="ev-bar" role="img" aria-label="Electoral votes on this map: Democrats {{ evbar.ev_dem }}, Republicans {{ evbar.ev_rep }}. 270 needed to win." data-ev-bar>
+    <div class="ev-labels"><span class="d">Democrats <b data-ev="D">{{ evbar.ev_dem }}</b></span><span class="mid">270 to win<span data-tu hidden> · toss-up <span data-ev="T">0</span></span></span><span class="r"><b data-ev="R">{{ evbar.ev_rep }}</b> Republicans</span></div>
+    <div class="ev-track"><i class="d" style="width:{{ evbar.dem_w }}%" data-w="D"></i><i class="t" style="width:0" data-w="T"></i><i class="r" style="width:{{ evbar.rep_w }}%" data-w="R"></i><span class="ev-270"></span></div>
+  </div>
+  <p class="builder-status" aria-live="polite" data-status>{{ "Republicans" if nation.ev_rep > nation.ev_dem else "Democrats" }} win, {{ [nation.ev_rep, nation.ev_dem] | max }}–{{ [nation.ev_rep, nation.ev_dem] | min }}, as in {{ year }}.</p>
+
+  <div class="builder-controls">
+    <label class="swing-label" for="swing">National swing <output for="swing" data-swing-label>none</output></label>
+    <input type="range" id="swing" min="-10" max="10" step="0.5" value="0" data-swing aria-describedby="swing-help">
+    <div class="swing-ends" id="swing-help"><span>← toward Democrats</span><span>toward Republicans →</span></div>
+    <div class="builder-buttons"><button type="button" data-reset>Reset to {{ year }}</button><button type="button" class="primary" data-share>Share your map</button></div>
+  </div>
+
+  <figure class="map-fig">
+    <svg class="us-map" viewBox="0 0 {{ m.width }} {{ m.height }}" role="group" aria-label="Electoral map. Select a state to change who wins it." data-builder-map>
+      {% for s in m.shapes %}<a href="{{ s.path }}" data-po="{{ s.po }}"><title>{{ s.summary }}</title><path class="st {{ s.cls }}" d="{{ s.d }}"/></a>{% endfor %}
+      {% for b in m.boxes %}<a href="{{ b.path }}" data-po="{{ b.po }}"><title>{{ b.summary or b.label }}</title><rect class="st {{ b.cls }}" x="{{ b.x }}" y="{{ b.y }}" width="{{ b.size }}" height="{{ b.size }}" rx="3"/><text class="box-label" x="{{ b.x + b.size + 6 }}" y="{{ b.y + b.size - 4 }}">{{ b.label or b.po }}</text></a>{% endfor %}
+    </svg>
+    <figcaption>
+      <span class="map-info" data-map-info>Tap a state to flip it, again for a toss-up, and once more to hand it back to the swing.</span>
+      <span class="map-legend">
+        {% for cls, label in [("d3", "D 15+"), ("d2", "D 5–15"), ("d1", "D <5"), ("tu", "Toss-up"), ("r1", "R <5"), ("r2", "R 5–15"), ("r3", "R 15+")] %}<span><i class="sw {{ cls }}"></i>{{ label }}</span>{% endfor %}
+      </span>
+    </figcaption>
+  </figure>
+  {% if tipping %}<p class="muted small" data-tipping>Tipping point: {{ tipping[0].n }}, the state that takes the {{ "Democrats" if nation.ev_rep > nation.ev_dem else "Republicans" }} to 270 on a uniform swing.</p>{% endif %}
+</section>
+
+{{ ad("map-mid") }}
+
+<section class="section">
+  <div class="section-head"><h2>Closest states</h2><span class="muted small" data-closest-note>{{ year }} margin</span></div>
+  <div class="table-scroll">
+  <table class="table">
+    <thead><tr><th>State</th><th class="num">EV</th><th class="num">{{ year }}</th><th class="num">With swing</th><th>Your call</th></tr></thead>
+    <tbody data-closest>
+    {% for u in closest %}
+    <tr><td><a href="{{ u.u }}">{{ u.n }}</a></td><td class="num">{{ u.ev }}</td><td class="num nowrap">{{ "Even" if u.m | abs < 0.05 else ("R+" if u.m > 0 else "D+") ~ ("%.1f" % (u.m | abs)) }}</td><td class="num nowrap">same</td><td>{{ "Rep" if u.m > 0 else "Dem" }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted small">The ten states nearest to even after your swing; ✎ marks your own calls. Each links to its full results since 1976.</p>
+</section>
+
+<section class="section prose">
+  <h2>How this map works</h2>
+  <p>Every state starts with its certified {{ year }} margin. The swing slider adds the same number of points toward one party in every state, a "uniform swing": the simplest way to ask what a better or worse national environment would do to the map. Real elections never move every state equally, so tap any state to call it yourself.</p>
+  <p>2028 uses the same electoral votes as {{ year }}: both follow the House apportionment from the 2020 census, and the next reapportionment, after the 2030 census, takes effect in 2032. Maine and Nebraska give two electoral votes to the statewide winner and one to the winner of each congressional district.{% for u in m.units if u.m is none %} {{ u.n }} voted {{ "Republican" if u.w == "R" else "Democratic" }} in {{ year }} against its state, so it is shown on its own; we don't have district results to swing it, so it keeps its {{ year }} winner until you tap it.{% endfor %}</p>
+  <p>See the <a href="/states/">{{ year }} results by state</a>, the <a href="/2028/president/vance-vs-newsom/">2028 matchup polls</a> and the <a href="/markets/">prediction markets</a> for where the race stands now.</p>
+</section>
+
+{{ ad("map-bottom") }}
+</article>
+<script type="application/json" id="map-data">{{ builder | tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="/static/js/map-builder.js" defer></script>{% endblock %}

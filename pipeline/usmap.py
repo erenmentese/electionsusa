@@ -82,3 +82,42 @@ def map_context(states: dict[str, history.StateHistory], year: int) -> dict:
 def ev_bar(n: history.NationYear) -> dict:
     return dict(dem=history.short(n.dem), rep=history.short(n.rep), ev_dem=n.ev_dem, ev_rep=n.ev_rep,
                 dem_w=round(100 * n.ev_dem / 538, 2), rep_w=round(100 * n.ev_rep / 538, 2))
+
+
+# ------------------------------------------------------------- map builder
+DISTRICT_STATES = ("ME", "NE")  # one electoral vote per congressional district, two for the statewide winner
+
+
+def builder_context(states: dict[str, history.StateHistory], year: int) -> dict:
+    """Data for the 2028 map builder, starting from `year`.
+
+    Each state carries its margin (R-positive) and electoral votes. Where Maine or Nebraska split in
+    `year`, the district that went the other way (the 2nd, in every split so far) becomes its own unit;
+    with no district results in our data it has no margin and keeps its `year` winner until tapped.
+    """
+    m = map_context(states, year)
+    units, districts = [], []
+    for st in states.values():
+        y = st.by_year(year)
+        ev = y.ev
+        if st.po in DISTRICT_STATES and y.ev_dem and y.ev_rep:
+            ev -= 1
+            districts.append(dict(po=f"{st.po}2", n=f"{st.name}'s 2nd district", ev=1, m=None,
+                                  w="D" if y.ev_dem < y.ev_rep else "R", u=st.path))
+        units.append(dict(po=st.po, n=st.name, ev=ev, m=round(y.margin, 2), u=st.path))
+    below = BOX_Y + len(BOXED) * (BOX_SIZE + BOX_GAP) + 12
+    boxes = m["boxes"] + [dict(po=d["po"], path=d["u"], cls="r2" if d["w"] == "R" else "d2", label=f"{d['po'][:2]}-2",
+                               x=BOX_X, y=below + i * (BOX_SIZE + BOX_GAP), size=BOX_SIZE)
+                          for i, d in enumerate(districts)]
+    return dict(m, boxes=boxes, units=units + districts)
+
+
+def tipping_point(units: list[dict], party: str) -> tuple[dict, float] | None:
+    """The unit that would give `party` its 270th electoral vote under a uniform swing, and that swing in points."""
+    sign = 1 if party == "D" else -1  # Democrats gain as margins fall
+    total = sum(u["ev"] for u in units if u["m"] is None and u["w"] == party)
+    for u in sorted((u for u in units if u["m"] is not None), key=lambda u: sign * u["m"]):
+        total += u["ev"]
+        if total >= 270:
+            return u, sign * u["m"]
+    return None

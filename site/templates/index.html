@@ -27,6 +27,7 @@
   <div class="section-head"><h2 id="map-h">Where 2028 starts: the {{ usmap.year }} map</h2><a href="/states/">Results by state →</a></div>
   {{ ev_bar(evbar) }}
   {{ us_map(usmap, "Tap a state for every presidential result there since 1976.") }}
+  <p class="map-cta"><a class="cta" href="/2028/map/">Make your own 2028 map →</a></p>
   <details class="state-list">
     <summary>All 50 states and DC</summary>
     <ul>{% for st in states %}<li><a href="{{ st.path }}"><i class="sw {{ st.cls }}"></i>{{ st.name }}</a></li>{% endfor %}</ul>

@@ -115,6 +115,24 @@ main{padding:0 20px 72px}
 .d1{fill:var(--d1);background:var(--d1)}.d2{fill:var(--d2);background:var(--d2)}.d3{fill:var(--d3);background:var(--d3)}
 .r1{fill:var(--r1);background:var(--r1)}.r2{fill:var(--r2);background:var(--r2)}.r3{fill:var(--r3);background:var(--r3)}
 .statemap .ev-bar{margin:22px 0 6px}
+.tu{fill:var(--rule2);background:var(--rule2)}
+.map-cta{margin:18px 0 0}
+.cta{display:inline-block;background:var(--ink);color:var(--paper);text-decoration:none;border-radius:999px;padding:10px 20px;font-size:.92rem;font-weight:500}
+.cta:hover{opacity:.88}
+/* 2028 map builder */
+.builder .ev-bar{margin:26px 0 8px}
+.builder .ev-track i{transition:width .2s}.builder .ev-track i.r{margin-left:0}.builder .ev-track i.t{background:var(--rule2)}
+.builder-status{font-family:var(--serif);font-size:1.35rem;line-height:1.25;margin:14px 0 18px}
+.builder-controls{display:none}
+.js .builder-controls{display:grid;grid-template-columns:1fr auto;gap:6px 24px;align-items:center;margin:0 0 18px;padding:14px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.swing-label{font-size:.86rem;color:var(--ink2)}.swing-label output{font-weight:600;color:var(--ink);margin-left:6px}
+.builder-controls input[type=range]{grid-column:1;width:100%;accent-color:var(--ink);margin:0}
+.swing-ends{grid-column:1;display:flex;justify-content:space-between;font-size:.75rem;color:var(--mute)}
+.builder-buttons{grid-column:2;grid-row:1/span 3;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.builder-buttons button{font:inherit;font-size:.88rem;border:1px solid var(--rule2);background:var(--paper);color:var(--ink);border-radius:999px;padding:9px 16px;cursor:pointer}
+.builder-buttons button.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.builder .us-map a{cursor:pointer}
+@media(max-width:640px){.builder .ev-labels{flex-wrap:wrap}.builder .ev-labels .d,.builder .ev-labels .r{white-space:nowrap}.builder .ev-labels .mid{order:3;flex-basis:100%;text-align:center;margin-top:2px}.js .builder-controls{grid-template-columns:1fr}.builder-buttons{grid-column:1;grid-row:auto;justify-content:flex-start;margin-top:8px}}
 .map-fig{margin:0 auto;max-width:880px}
 .us-map{display:block;width:100%;height:auto}
 .us-map .st{stroke:var(--paper);stroke-width:.75;stroke-linejoin:round;transition:opacity .15s}

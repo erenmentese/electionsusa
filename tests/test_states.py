@@ -96,3 +96,23 @@ def test_year_pages(site, results):
     assert not (site / "states" / "2024").exists()  # the latest year lives at /states/
     assert 'href="/states/2020/">2020</a>' in (site / "states" / "pennsylvania" / "index.html").read_text()
     assert "Other candidates" not in history.national_sentence(states, nation, 2024)
+
+
+def test_map_builder(results, site):
+    states, nation = results
+    ctx = usmap.builder_context(states, 2024)
+    units = {u["po"]: u for u in ctx["units"]}
+    assert sum(u["ev"] for u in units.values()) == 538
+    # Maine's 2nd went Republican and Nebraska's 2nd Democratic in 2024, so each is its own unit
+    assert (units["ME"]["ev"], units["ME2"]["w"], units["NE"]["ev"], units["NE2"]["w"]) == (3, "R", 4, "D")
+    winner_ev = sum(u["ev"] for u in units.values() if (u["m"] > 0 if u["m"] is not None else u["w"] == "R"))
+    assert winner_ev == 312
+    u, swing = usmap.tipping_point(ctx["units"], "D")
+    assert (u["po"], round(swing, 1)) == ("PA", 1.7)
+
+    page = (site / "2028" / "map" / "index.html").read_text()
+    data = json.loads(re.search(r'<script type="application/json" id="map-data">(.*?)</script>', page, re.S).group(1))
+    assert len(data["units"]) == 53 and len(set(re.findall(r'data-po="(\w+)"', page))) == 53  # small states also get a box
+    assert "more than 1.7 points toward Democrats would flip Pennsylvania" in page
+    assert '"@type": "WebApplication"' in page and "/static/js/map-builder.js" in page
+    assert 'href="/2028/map/"' in (site / "index.html").read_text()

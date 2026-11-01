@@ -90,6 +90,17 @@ def states_card(n: history.NationYear, colors: dict[str, str]) -> CardSpec:
                     footer_left="Map, margins and every state since 1976")
 
 
+def map_card(n: history.NationYear, colors: dict[str, str]) -> CardSpec:
+    return CardSpec(kind="figures", kicker="Interactive · 270 to win", title="Make your own 2028 map",
+                    figures=[Figure("Democrats", str(n.ev_dem), colors["DEM"]), Figure("Republicans", str(n.ev_rep), colors["REP"])],
+                    note=f"Starts from the {n.year} result. Tap states, swing the map, share it.",
+                    footer_left="2028 electoral map builder")
+
+
+def map_image(n: history.NationYear, colors: dict[str, str]) -> bytes:
+    return to_og(render(map_card(n, colors)))
+
+
 def state_image(st: history.StateHistory, nation: dict[int, history.NationYear], colors: dict[str, str]) -> bytes:
     return to_og(render(state_card(st, nation, colors)))
 
