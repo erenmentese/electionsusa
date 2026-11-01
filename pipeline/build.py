@@ -25,6 +25,7 @@ from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 NAV = [
     ("Approval", "/approval/trump/"),
     ("2028 President", "/2028/president/vance-vs-newsom/"),
+    ("2028 Map", "/2028/map/"),
     ("States", "/states/"),
     ("Dem Primary", "/2028/democratic-primary/"),
     ("GOP Primary", "/2028/republican-primary/"),
@@ -365,6 +366,37 @@ def build_states(render, dist: Path, states: dict[str, history.StateHistory],
     return index
 
 
+def build_map_builder(render, dist: Path, states: dict[str, history.StateHistory],
+                      nation: dict[int, history.NationYear]) -> list[dict]:
+    """Render /2028/map/, the electoral map builder that starts from the latest result; return its finder entry."""
+    year, base = max(nation), config.SITE["url"]
+    n = nation[year]
+    ctx = usmap.builder_context(states, year)
+    winner, loser = ("R", "D") if n.ev_rep > n.ev_dem else ("D", "R")
+    party = {"D": "Democrats", "R": "Republicans"}
+    answer = (f"{n.rep if winner == 'R' else n.dem} won {year} with {max(n.ev_rep, n.ev_dem)} electoral votes to "
+              f"{min(n.ev_rep, n.ev_dem)}; 2028 uses the same electoral-vote allocation.")
+    tp = usmap.tipping_point(ctx["units"], loser)
+    if tp:
+        u, swing = tp
+        answer += (f" Starting from that map, a uniform swing of more than {swing:.1f} points toward {party[loser]} "
+                   f"would flip {u['n']} and give them 270.")
+    answer += " Tap states to flip them, swing every state at once, and share your forecast."
+    colors = {p: config.PARTY_COLORS[p] for p in ("DEM", "REP")}
+    (dist / "og" / "map.png").write_bytes(og_cards.map_image(n, colors))
+    closest = sorted((u for u in ctx["units"] if u["m"] is not None), key=lambda u: abs(u["m"]))[:10]
+    ld = {"@context": "https://schema.org", "@type": "WebApplication", "name": "2028 electoral map builder",
+          "url": f"{base}/2028/map/", "description": answer, "applicationCategory": "ReferenceApplication",
+          "operatingSystem": "Any", "isAccessibleForFree": True, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+          "creator": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base}}
+    render("map_builder.html", "/2028/map/", title="2028 Electoral Map: Make Your Own Forecast", description=answer,
+           answer=answer, year=year, nation=n, usmap=ctx, closest=closest, tipping=tp,
+           evbar=dict(ev_dem=n.ev_dem, ev_rep=n.ev_rep, dem_w=round(100 * n.ev_dem / 538, 2), rep_w=round(100 * n.ev_rep / 538, 2)),
+           builder=dict(year=year, units=ctx["units"]), crumb="2028 electoral map", og_image="/og/map.png", ld_app=ld)
+    return [dict(t="2028 electoral map builder", u="/2028/map/", k="Map", s="Make your own forecast: flip states, swing the map, share it",
+                 q="2028 electoral map interactive make your own forecast prediction 270 to win swing states simulator scenario build")]
+
+
 def year_path(yr: int, latest: int) -> str:
     return "/states/" if yr == latest else f"/states/{yr}/"
 
@@ -512,6 +544,7 @@ def build(as_of: date | None = None) -> Path:
     index += build_pollsters(render, pollster_pages, sc_rows, cycle_rows, as_of)
     states, nation = history.load()
     index += build_states(render, dist, states, nation)
+    index += build_map_builder(render, dist, states, nation)
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
 
     (dist / "og" / "site.png").write_bytes(og_cards.site_image(summaries, as_of))

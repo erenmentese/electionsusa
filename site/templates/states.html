@@ -17,6 +17,7 @@
 <section class="section statemap">
   {{ ev_bar(evbar) }}
   {{ us_map(usmap, "Tap a state for every presidential result there since 1976.") }}
+  {% if year == latest_year %}<p class="map-cta"><a class="cta" href="/2028/map/">Build your 2028 map from this result →</a></p>{% endif %}
 </section>
 
 {{ ad("states-mid") }}

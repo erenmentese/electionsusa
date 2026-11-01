@@ -77,6 +77,7 @@
 <section class="section prose">
   <h2>About this average</h2>
   {% if race.kind == "general" %}
+  <p>National polls don't elect presidents; states do. <a href="/2028/map/">Make your own 2028 electoral map</a>, starting from the 2024 result.</p>
   <p>Hypothetical general-election polls this far from Election Day measure name recognition and partisan loyalty more than a decided choice, which is why this page uses a long {{ race.half_life_days }}-day half-life and why early leads of a few points should be read as a tie. The average becomes much more informative once both parties have nominees, in summer 2028.</p>
   {% elif race.kind == "primary" %}
   <p>Primary polls are volatile: the field is not set, many respondents name whoever is in the news, and "undecided" is often the largest answer. Candidates are shown only when at least one poll in the window tested them, so a candidate's average can move simply because different pollsters include different names. Use the trend chart, not any single poll.</p>
