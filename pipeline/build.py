@@ -548,7 +548,9 @@ def build(as_of: date | None = None) -> Path:
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
 
     (dist / "og" / "site.png").write_bytes(og_cards.site_image(summaries, as_of))
+    # capped like race pages: a build for an earlier --as-of date must not claim a future lastmod
     markets_lastmod = max((m["latest"] for m in mk_ctx if m["latest"]), default=None)
+    markets_lastmod = min(markets_lastmod, as_of) if markets_lastmod else None
     data_lastmod = max((d for d in [*race_lastmod.values(), markets_lastmod] if d), default=None)
 
     map_year = max(nation)
