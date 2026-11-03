@@ -767,8 +767,12 @@ def build(as_of: date | None = None) -> Path:
            lastmod=markets_lastmod)
     render("countdown.html", "/countdown/", title="How Many Days Until the 2028 Election?",
            description=f"Live countdown to the November 7, 2028 U.S. presidential election, with the 2026 midterm date and the 2028 primary calendar.")
-    render("calendar.html", "/2028/calendar/", calendar=config.PRIMARY_CALENDAR_2028, title="2028 Election Calendar: Primaries, Conventions, Election Day",
-           description="Key dates for the 2028 U.S. presidential election cycle.")
+    cal_answer = ("South Carolina holds the first 2028 Democratic primary on January 22, 2028, followed by Nevada, New Hampshire, "
+                  "New Mexico, Michigan and Virginia in February, under the calendar the DNC approved on August 15, 2026. "
+                  "Republicans plan to start in Iowa, but no Republican dates are set. Super Tuesday is March 7, 2028.")
+    render("calendar.html", "/2028/calendar/", calendar=config.PRIMARY_CALENDAR_2028, answer=cal_answer, checked=config.CALENDAR_CHECKED,
+           title="2028 Primary Calendar: South Carolina Votes First on Jan 22", description=cal_answer,
+           lastmod=min(datetime.strptime(config.CALENDAR_CHECKED, "%B %d, %Y").date(), as_of))
     render("methodology.html", "/methodology/", title="Methodology: How Our Polling Average Works",
            description="A plain-English, fully reproducible description of the ElectionsUSA polling average, pollster weights and scorecard.")
     render("about.html", "/about/", title="About ElectionsUSA", description="Who runs ElectionsUSA, how it is funded, and how to report an error.")

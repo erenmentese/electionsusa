@@ -55,18 +55,33 @@ MIDTERM_DAY_2026 = date(2026, 11, 3)
 IOWA_CAUCUS_2028 = None  # set once the DNC/RNC calendars are published
 INAUGURATION_2029 = date(2029, 1, 20)
 
+# DNC: early window approved by the full DNC on August 15, 2026 (Rules and Bylaws proposal of July 24).
+# RNC: its nominating-process committee voted in September 2026 to keep Iowa first; no dates are set.
+DNC_CALENDAR_SOURCE = "https://washingtonstatestandard.com/2026/08/15/repub/dnc-approves-2028-presidential-nominating-cycle-starting-in-south-carolina-nevada/"
+BALLOTPEDIA_DNC_SOURCE = "https://news.ballotpedia.org/2026/07/31/democratic-national-committee-announces-proposed-early-states-for-2028-democratic-presidential-calendar/"
+FHQ_CALENDAR = "https://www.frontloadinghq.com/p/the-2028-presidential-primary-calendar.html"
+RNC_IOWA_SOURCE = "https://www.kttc.com/2026/09/10/gop-keep-iowa-first-2028-primary-caucus-calendar/"
+
 PRIMARY_CALENDAR_2028 = [
-    # (approximate month, label, note) - update as parties publish the calendar
-    ("Jan-Feb 2028", "First nominating contests", "Order is set by each party; Iowa/New Hampshire/South Carolina/Nevada traditionally lead."),
-    ("Mar 2028", "Super Tuesday", "The largest single day of delegate allocation."),
-    ("Jun 2028", "Final primaries", "Nominating season ends."),
-    ("Jul-Aug 2028", "National conventions", "Nominees formally selected."),
-    ("Sep-Oct 2028", "General election debates", "Dates set by the Commission on Presidential Debates or the campaigns."),
-    ("Nov 7, 2028", "Election Day", "Polls close; counting begins."),
-    ("Dec 2028", "Electors meet", "Electoral College votes are cast in state capitals."),
-    ("Jan 6, 2029", "Congress counts electoral votes", ""),
-    ("Jan 20, 2029", "Inauguration Day", ""),
+    # (when, what, note, source url, status): status "set" (party-approved) or "tentative"
+    ("Jan 2028", "Republican contests begin in Iowa, then New Hampshire",
+     "The RNC's nominating-process committee voted in September 2026 to keep Iowa first. No dates are set; Jan 3 (Iowa) and Jan 11 (New Hampshire) are estimates.", RNC_IOWA_SOURCE, "tentative"),
+    ("Jan 22, 2028", "South Carolina Democratic primary", "First contest on the Democratic calendar approved by the DNC on August 15, 2026.", DNC_CALENDAR_SOURCE, "set"),
+    ("Feb 1, 2028", "Nevada Democratic primary", "DNC-approved early window.", DNC_CALENDAR_SOURCE, "set"),
+    ("Feb 8, 2028", "New Hampshire Democratic primary", "DNC-approved date; New Hampshire law requires its primary to come first, so the state-run primary may be earlier and this contest party-run.", FHQ_CALENDAR, "tentative"),
+    ("Feb 15, 2028", "New Mexico Democratic primary", "DNC-approved date; New Mexico law currently sets its primary in June, so the date needs a law change or a party-run contest.", FHQ_CALENDAR, "tentative"),
+    ("Feb 22, 2028", "Michigan Democratic primary", "DNC-approved date; Michigan law already sets the fourth Tuesday in February.", DNC_CALENDAR_SOURCE, "set"),
+    ("Feb 29, 2028", "Virginia Democratic primary", "DNC-approved date; Virginia law currently holds its primary on Super Tuesday, so it needs a law change.", FHQ_CALENDAR, "tentative"),
+    ("Mar 7, 2028", "Super Tuesday", "The largest single day of delegate allocation; about 14 states are scheduled so far.", FHQ_CALENDAR, "set"),
+    ("Jun 2028", "Final primaries", "Nominating season ends.", "", "tentative"),
+    ("Jul–Aug 2028", "National conventions", "Nominees formally selected.", "", "tentative"),
+    ("Sep–Oct 2028", "General election debates", "Dates set by the Commission on Presidential Debates or the campaigns.", "", "tentative"),
+    ("Nov 7, 2028", "Election Day", "Set by federal law: the Tuesday after the first Monday in November.", "", "set"),
+    ("Dec 2028", "Electors meet", "Electoral College votes are cast in state capitals.", "", "set"),
+    ("Jan 6, 2029", "Congress counts electoral votes", "", "", "set"),
+    ("Jan 20, 2029", "Inauguration Day", "", "", "set"),
 ]
+CALENDAR_CHECKED = "November 3, 2026"
 
 # Party colours used across charts (kept muted for accessibility)
 PARTY_COLORS = {

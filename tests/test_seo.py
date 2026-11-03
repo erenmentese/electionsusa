@@ -121,3 +121,13 @@ def test_scorecard_claims_and_typical_error_are_consistent(site):
     assert f"all pollsters {typical}" in yougov
     home = (site / "index.html").read_text()
     assert "<th class=\"num\">Adjusted</th>" in home  # the column the table is sorted by is visible
+
+
+def test_calendar_leads_with_the_dnc_date_and_marks_gop_tentative(site):
+    html = (site / "2028" / "calendar" / "index.html").read_text()
+    assert "South Carolina holds the first 2028 Democratic primary on January 22, 2028" in html
+    assert "traditionally lead" not in html
+    from pipeline import config
+    gop = [r for r in config.PRIMARY_CALENDAR_2028 if "Republican" in r[1]]
+    assert gop and all(r[4] == "tentative" for r in gop)
+    assert all(r[3] for r in config.PRIMARY_CALENDAR_2028 if "Democratic primary" in r[1])  # every DNC date is sourced

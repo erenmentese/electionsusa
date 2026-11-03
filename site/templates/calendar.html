@@ -2,10 +2,13 @@
 {% block content %}
 <article>
 <header class="page-head"><p class="kicker">2028 cycle</p><h1>2028 election calendar</h1>
-<p class="sub">Key milestones from the first nominating contests to Inauguration Day. Exact primary dates are set by each party and state; this page is updated as they are published.</p></header>
+<p class="sub">{{ answer }}</p></header>
 <section>
+<div class="table-scroll">
 <table class="table"><thead><tr><th>When</th><th>What</th><th>Notes</th></tr></thead>
-<tbody>{% for when, what, note in calendar %}<tr><td class="nowrap"><b>{{ when }}</b></td><td>{{ what }}</td><td class="muted">{{ note }}</td></tr>{% endfor %}</tbody></table>
+<tbody>{% for when, what, note, src, status in calendar %}<tr><td class="nowrap"><b>{{ when }}</b>{% if status == "tentative" %}<br><span class="muted small">tentative</span>{% endif %}</td><td>{{ what }}</td><td class="muted">{{ note }}{% if src %} <a href="{{ src }}" rel="nofollow noopener">Source</a>{% endif %}</td></tr>{% endfor %}</tbody></table>
+</div>
+<p class="muted small">The Democratic early window was approved by the full Democratic National Committee on August 15, 2026; dates marked tentative depend on state law or have not been set by the party. Republican dates are not set. Checked {{ checked }}; this page is updated as parties and states publish dates.</p>
 </section>
 <section class="section prose"><p>See also the <a href="/countdown/">countdown to Election Day</a> and the <a href="/2028/democratic-primary/">Democratic</a> and <a href="/2028/republican-primary/">Republican</a> primary polling averages.</p></section>
 </article>
