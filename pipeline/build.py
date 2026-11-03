@@ -431,10 +431,11 @@ def markets_context(markets: pd.DataFrame, averages: dict[str, average.RaceAvera
 
 # ------------------------------------------------------------------ states
 def build_states(render, dist: Path, states: dict[str, history.StateHistory],
-                 nation: dict[int, history.NationYear]) -> list[dict]:
+                 nation: dict[int, history.NationYear], as_of: date) -> list[dict]:
     """Render /states/, one page per state, their share cards and the results CSV; return finder entries."""
     year, base = max(nation), config.SITE["url"]
     nat, prev_year = nation[year], year - 4
+    revised = min(config.PAGE_REVISED["results"], as_of)
     colors = {p: config.PARTY_COLORS[p] for p in ("DEM", "REP")}
     nat_series = [(y, n.margin) for y, n in sorted(nation.items())]
     hub = [("Results by state", "/states/")]
@@ -463,7 +464,7 @@ def build_states(render, dist: Path, states: dict[str, history.StateHistory],
                answer=answer, st=st, rows=rows, chart=chart, colors=colors, picked=st.picked_winner(nation),
                lean=history.fmt_lean(st.lean(nation)), nation_label=history.fmt_margin(nat.margin, nat.dem, nat.rep),
                prev=ordered[i - 1] if i else None, next=ordered[i + 1] if i + 1 < len(ordered) else None,
-               crumb=st.name, trail=hub, og_image=f"/og/states/{st.slug}.png", ld_dataset=ld)
+               crumb=st.name, trail=hub, og_image=f"/og/states/{st.slug}.png", ld_dataset=ld, lastmod=revised)
         y = st.latest
         index.append(dict(t=f"{st.name} election results", u=st.path, k="State", s=f"{year}: {y.margin_label} · {y.ev} electoral votes",
                           q=f"{st.name} {st.po} state results how did vote voted swing history electoral votes {year}"))
@@ -497,7 +498,7 @@ def build_states(render, dist: Path, states: dict[str, history.StateHistory],
                usmap=usmap.map_context(states, yr), evbar=usmap.ev_bar(n),
                crumb="Results by state" if latest else str(yr), trail=[] if latest else hub,
                split_notes=[st.by_year(yr).split_note for st in ordered if st.by_year(yr).split_note],
-               og_image=og, ld_dataset=ld)
+               og_image=og, ld_dataset=ld, lastmod=revised)
         index.append(dict(t=f"{yr} election results by state", u=path, k="Map",
                           s=f"{history.short(n.rep)} {n.ev_rep}, {history.short(n.dem)} {n.ev_dem} electoral votes",
                           q=f"{yr} map results by state electoral college who won {n.dem} {n.rep} swing states red blue"))
@@ -506,7 +507,7 @@ def build_states(render, dist: Path, states: dict[str, history.StateHistory],
 
 
 def build_map_builder(render, dist: Path, states: dict[str, history.StateHistory],
-                      nation: dict[int, history.NationYear]) -> list[dict]:
+                      nation: dict[int, history.NationYear], as_of: date) -> list[dict]:
     """Render /2028/map/, the electoral map builder that starts from the latest result; return its finder entry."""
     year, base = max(nation), config.SITE["url"]
     n = nation[year]
@@ -531,7 +532,8 @@ def build_map_builder(render, dist: Path, states: dict[str, history.StateHistory
     render("map_builder.html", "/2028/map/", title="2028 Electoral Map: Make Your Own Forecast", description=answer,
            answer=answer, year=year, nation=n, usmap=ctx, closest=closest, tipping=tp,
            evbar=dict(ev_dem=n.ev_dem, ev_rep=n.ev_rep, dem_w=round(100 * n.ev_dem / 538, 2), rep_w=round(100 * n.ev_rep / 538, 2)),
-           builder=dict(year=year, units=ctx["units"]), crumb="2028 electoral map", og_image="/og/map.png", ld_app=ld)
+           builder=dict(year=year, units=ctx["units"]), crumb="2028 electoral map", og_image="/og/map.png", ld_app=ld,
+           lastmod=min(config.PAGE_REVISED["results"], as_of))
     return [dict(t="2028 electoral map builder", u="/2028/map/", k="Map", s="Make your own forecast: flip states, swing the map, share it",
                  q="2028 electoral map interactive make your own forecast prediction 270 to win swing states simulator scenario build")]
 
@@ -626,7 +628,7 @@ def build_pollsters(render, pages: dict[str, pollsters.Pollster], rated: list[sc
                prev=by_rank.get(p.rank - 1) if p.rank else None, next=by_rank.get(p.rank + 1) if p.rank else None,
                title=f"Is {p.name} Accurate? Pollster Rating, Bias and Polls" if r else f"{p.name} Polls: Every Recent Result",
                crumb=p.name, trail=[("Pollster scorecard", "/pollsters/")],
-               lastmod=min(p.polls[0]["end_date"], as_of) if p.polls else None)
+               lastmod=max(min(p.polls[0]["end_date"], as_of) if p.polls else date.min, min(config.PAGE_REVISED["scorecard"], as_of)))
         index.append(dict(t=p.name, u=p.path, k="Pollster",
                           s=f"Avg error {r.mean_abs_error}, bias {r.bias_label}, {r.n_polls} rated polls" if r else f"{len(p.polls)} polls on record",
                           q=f"{p.name} pollster polls poll accuracy accurate rating rated grade bias biased reliable"))
@@ -666,7 +668,7 @@ def build(as_of: date | None = None) -> Path:
         crumbs = None
         if page and out_path != "/":
             crumbs = breadcrumb_ld([*(trail or []), (crumb or ctx.get("title") or "", out_path)])
-        html = env.get_template(template).render(path=out_path, ld_breadcrumb=crumbs, **ctx)
+        html = env.get_template(template).render(path=out_path, ld_breadcrumb=crumbs, updated=lastmod, **ctx)
         target = dist / out_path.strip("/") / "index.html" if out_path != "/" else dist / "index.html"
         if not page:
             target = dist / out_path.strip("/")
@@ -713,7 +715,7 @@ def build(as_of: date | None = None) -> Path:
                shown=shown, title=seo_title(race, ra, as_of), description=answer or race.description, answer=answer,
                faq=faq, ld_faq=faq_ld(faq) if faq else None, related=related_averages(race, averages),
                crumb=race.short_title, og_image=og_image, lastmod=race_lastmod[race.id],
-               ld_dataset=dataset_ld(race, f"/{race.slug}/", as_of))
+               ld_dataset=dataset_ld(race, f"/{race.slug}/", race_lastmod[race.id] or as_of))
         api = dict(race_id=race.id, title=race.title, as_of=as_of.isoformat(), method="https://electionsusa.org/methodology/",
                    average=ra.values, margin=ra.margin, n_polls_weighted=ra.n_polls, n_polls_total=ra.n_polls_total,
                    trend={c: [(d.isoformat(), v) for d, v in s] for c, s in ra.trend.items()},
@@ -758,8 +760,8 @@ def build(as_of: date | None = None) -> Path:
     env.globals["field_error"] = field_error
     index += build_pollsters(render, pollster_pages, sc_rows, cycle_rows, as_of, field_error)
     states, nation = history.load()
-    index += build_states(render, dist, states, nation)
-    index += build_map_builder(render, dist, states, nation)
+    index += build_states(render, dist, states, nation, as_of)
+    index += build_map_builder(render, dist, states, nation, as_of)
     index += build_midterm_hub(render, averages, states, as_of)
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
 
@@ -778,11 +780,11 @@ def build(as_of: date | None = None) -> Path:
            states=[dict(name=st.name, path=st.path, cls=usmap.shade(st.latest.margin)) for st in states.values()])
     render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows, pollster_paths=rated_paths,
            active=sorted((p for p in pollster_pages.values() if not p.rated), key=lambda p: -len(p.polls)),
-           title="Pollster Scorecard: Accuracy and Bias Ratings", description="How accurate has each U.S. pollster been? Mean error, partisan bias and call accuracy for 60+ pollsters, recomputed from 11,000 polls matched to results, plus FiveThirtyEight's final grades.")
+           lastmod=min(config.PAGE_REVISED["scorecard"], as_of), title="Pollster Scorecard: Accuracy and Bias Ratings", description="How accurate has each U.S. pollster been? Mean error, partisan bias and call accuracy for 60+ pollsters, recomputed from 11,000 polls matched to results, plus FiveThirtyEight's final grades.")
     render("markets.html", "/markets/", markets=mk_ctx, stale_snapshots=check_data.STALE_PRICE_SNAPSHOTS, kalshi_url=config.KALSHI_URL, title="2028 Election Odds: Prediction Markets vs. Polls",
            description="Polymarket odds for the 2028 presidential election and party nominations, compared with the polling average.",
            lastmod=markets_lastmod)
-    render("countdown.html", "/countdown/", title="How Many Days Until the 2028 Election?",
+    render("countdown.html", "/countdown/", lastmod=as_of, title="How Many Days Until the 2028 Election?",
            description=f"Live countdown to the November 7, 2028 U.S. presidential election, with the 2026 midterm date and the 2028 primary calendar.")
     cal_answer = ("South Carolina holds the first 2028 Democratic primary on January 22, 2028, followed by Nevada, New Hampshire, "
                   "New Mexico, Michigan and Virginia in February, under the calendar the DNC approved on August 15, 2026. "
@@ -790,9 +792,9 @@ def build(as_of: date | None = None) -> Path:
     render("calendar.html", "/2028/calendar/", calendar=config.PRIMARY_CALENDAR_2028, answer=cal_answer, checked=config.CALENDAR_CHECKED,
            title="2028 Primary Calendar: South Carolina Votes First on Jan 22", description=cal_answer,
            lastmod=min(datetime.strptime(config.CALENDAR_CHECKED, "%B %d, %Y").date(), as_of))
-    render("methodology.html", "/methodology/", title="Methodology: How Our Polling Average Works",
+    render("methodology.html", "/methodology/", lastmod=min(config.PAGE_REVISED["methodology"], as_of), title="Methodology: How Our Polling Average Works",
            description="A plain-English, fully reproducible description of the ElectionsUSA polling average, pollster weights and scorecard.")
-    render("about.html", "/about/", title="About ElectionsUSA", description="Who runs ElectionsUSA, how it is funded, and how to report an error.",
+    render("about.html", "/about/", lastmod=min(config.PAGE_REVISED["about"], as_of), title="About ElectionsUSA", description="Who runs ElectionsUSA, how it is funded, and how to report an error.",
            editor=config.SITE["editor"], report_url=config.SITE["issues_url"])
     corrections = pd.read_csv(config.DATA_DIR / "corrections.csv").fillna("").sort_values("date", ascending=False)
     rows = [dict(r, date_label=datetime.strptime(r["date"], "%Y-%m-%d").strftime("%b %-d, %Y")) for r in corrections.to_dict("records")]
@@ -805,7 +807,7 @@ def build(as_of: date | None = None) -> Path:
            title="Terms of Use", description="How you may reuse ElectionsUSA's data and charts, and what the site does and doesn't promise.",
            lastmod=min(terms_date, as_of))
     render("privacy.html", "/privacy/", title="Privacy Policy", description="How ElectionsUSA uses cookies, advertising and analytics.",
-           lastmod=datetime.strptime(config.SITE["privacy_updated"], "%B %d, %Y").date())
+           lastmod=min(datetime.strptime(config.SITE["privacy_updated"], "%B %d, %Y").date(), as_of))
     # the published file holds every population of every poll (the averages use one; see dedupe)
     raw_polls = pd.read_csv(config.DATA_DIR / "polls.csv") if (config.DATA_DIR / "polls.csv").exists() else pd.DataFrame(columns=POLL_COLUMNS)
     render("data.html", "/data/", title="Open Data: Download Every Poll", description="Download the full ElectionsUSA polls and prediction-market datasets as CSV and JSON.",

@@ -7,7 +7,7 @@
 {% block content %}
 <article>
 <header class="page-head">
-  <p class="kicker">Polling average · updated {{ build_date }}</p>
+  <p class="kicker">{{ "Final polling average" if race.kind == "generic" and midterm and midterm.days <= 0 else "Polling average" }}{% if updated %} · latest poll <time datetime="{{ updated.isoformat() }}">{{ updated.strftime("%B %-d, %Y") }}</time>{% endif %}</p>
   <h1>{{ race.title }}</h1>
   {# the dated one-sentence answer is what search snippets and AI answers quote #}
   <p class="sub">{{ answer or race.description }}</p>

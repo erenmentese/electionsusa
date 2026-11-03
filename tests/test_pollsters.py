@@ -69,4 +69,4 @@ def test_pollster_pages(site):
 
     sitemap = (site / "sitemap.xml").read_text()
     assert "https://electionsusa.org/pollsters/yougov/</loc><lastmod>" in sitemap
-    assert "https://electionsusa.org/pollsters/selzer-and-co/</loc></url>" in sitemap  # no current polls, no lastmod
+    assert "https://electionsusa.org/pollsters/selzer-and-co/</loc><lastmod>2026-10-31</lastmod>" in sitemap  # no current polls: the scorecard's date

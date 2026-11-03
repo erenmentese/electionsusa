@@ -75,12 +75,17 @@ def test_build_seo_output(site):
     assert "data-fold-toggle" in race_html
     assert "data-fold-toggle" not in (dist / "2028" / "president" / "vance-vs-buttigieg" / "index.html").read_text()
 
-    # lastmod only where there is a real date, never in the future
+    # every page carries the date its content last changed, never in the future
     sitemap = (dist / "sitemap.xml").read_text()
     urls = dict(re.findall(r"<loc>https://electionsusa\.org([^<]*)</loc>(?:<lastmod>([^<]*)</lastmod>)?", sitemap))
-    assert urls["/methodology/"] == "" and urls["/about/"] == ""
-    assert urls["/privacy/"] == "2026-10-29"
-    assert all(d <= AS_OF.isoformat() for d in urls.values() if d)
+    assert all(urls.values()), [u for u, d in urls.items() if not d]
+    assert urls["/states/"] == "2026-10-31" and urls["/methodology/"] == AS_OF.isoformat()  # capped at the build date
+    assert all(d <= AS_OF.isoformat() for d in urls.values())
+    # the on-page date and the Dataset's dateModified are the same value
+    approval = (dist / "approval" / "trump" / "index.html").read_text()
+    shown = re.search(r'latest poll <time datetime="([^"]+)"', approval).group(1)
+    assert f'"dateModified": "{shown}"' in approval and urls["/approval/trump/"] == shown
+    assert "Site rebuilt" in approval
 
 
 def test_short_name_keeps_generational_suffix():

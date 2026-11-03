@@ -79,7 +79,7 @@ if (location.hostname === {{ site.domain | tojson }}) {
   <div class="wrap footer-grid">
     <div>
       <p class="brand-foot">Elections<em class="muted">USA</em></p>
-      <p class="muted">{{ site.tagline }}. Updated {{ build_date }}.</p>
+      <p class="muted">{{ site.tagline }}.{% if updated %} This page last changed <time datetime="{{ updated.isoformat() }}">{{ updated.strftime("%B %-d, %Y") }}</time>.{% endif %} Site rebuilt {{ build_date }}.</p>
       <p class="muted small">Poll numbers are facts reported by each pollster and are credited to their source on every row. Historical accuracy data derived from FiveThirtyEight's open dataset (CC BY 4.0). Independent; not affiliated with any campaign, party, pollster or government body.</p>
     </div>
     <div>

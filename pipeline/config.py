@@ -67,6 +67,15 @@ MIDTERM_DAY_2026 = date(2026, 11, 3)
 IOWA_CAUCUS_2028 = None  # set once the DNC/RNC calendars are published
 INAUGURATION_2029 = date(2029, 1, 20)
 
+# When each kind of hand-maintained page last changed in substance: its sitemap lastmod and on-page date.
+# Bump the entry in the same commit that changes the page (data pages date themselves from their data).
+PAGE_REVISED = {
+    "results": date(2026, 10, 31),      # state and year results pages, the 2028 map (certified 1976-2024 data)
+    "scorecard": date(2026, 11, 3),     # /pollsters/ and pollster pages without a recent poll
+    "methodology": date(2026, 11, 3),
+    "about": date(2026, 11, 3),
+}
+
 # DNC: early window approved by the full DNC on August 15, 2026 (Rules and Bylaws proposal of July 24).
 # RNC: its nominating-process committee voted in September 2026 to keep Iowa first; no dates are set.
 DNC_CALENDAR_SOURCE = "https://washingtonstatestandard.com/2026/08/15/repub/dnc-approves-2028-presidential-nominating-cycle-starting-in-south-carolina-nevada/"
