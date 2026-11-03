@@ -29,7 +29,7 @@ if (location.hostname === {{ site.domain | tojson }}) {
 {% if path != "/404.html" and not noindex %}<meta name="robots" content="max-image-preview:large">{% endif %}
 <link rel="canonical" href="{{ site.url }}{{ path }}">
 <meta property="og:site_name" content="{{ site.name }}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="{{ og_type or 'website' }}">
 <meta property="og:title" content="{{ page_title }}">
 <meta property="og:description" content="{{ description or site.description }}">
 <meta property="og:url" content="{{ site.url }}{{ path }}">

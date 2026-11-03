@@ -107,6 +107,11 @@ PRIMARY_CALENDAR_2028 = [
 ]
 CALENDAR_CHECKED = "November 3, 2026"
 
+# Analysis pieces and the day each was first published (datePublished never moves)
+ANALYSIS_PUBLISHED = {
+    "final-generic-ballot-2026": date(2026, 11, 3),
+}
+
 # Party colours used across charts (kept muted for accessibility)
 PARTY_COLORS = {
     "DEM": "#1e40af",

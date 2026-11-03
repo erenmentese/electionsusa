@@ -7,11 +7,8 @@ from pipeline import build, config
 
 
 @pytest.fixture(scope="module")
-def election_day(tmp_path_factory):
-    """The site as built on Election Day, November 3, 2026."""
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(config, "DIST_DIR", tmp_path_factory.mktemp("eday") / "dist")
-        yield build.build(date(2026, 11, 3))
+def election_day(election_day_site):
+    return election_day_site
 
 
 def test_hub_lists_every_state_with_closing_time_and_official_link(election_day):

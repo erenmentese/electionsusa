@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="application/ld+json">{{ ld_dataset | tojson }}</script>
+{% endblock %}
+{% block content %}
+<article>
+<header class="page-head">
+  <p class="kicker">2026 midterms · {% if not result %}pending: no count yet{% elif result.preliminary %}preliminary, updated when states certify{% else %}certified results{% endif %}</p>
+  <h1>Which Pollster Was Most Accurate in 2026?</h1>
+  <p class="sub">{{ answer }}</p>
+</header>
+
+<section class="midterm" aria-labelledby="res-h">
+  <p class="kicker">National House popular vote</p>
+  {% if result %}
+  <h2 id="res-h">{{ fmt(result.margin) }} <span class="muted small">({{ "preliminary" if result.preliminary else "certified" }})</span></h2>
+  <p>Democrats {{ "%.1f" % result.dem_pct }}%, Republicans {{ "%.1f" % result.rep_pct }}%{% if result.counted_pct is not none and result.preliminary %}, with about {{ "%.0f" % result.counted_pct }}% of the expected vote counted{% endif %}, as of <time datetime="{{ result.as_of.isoformat() }}">{{ result.as_of.strftime("%B %-d, %Y") }}</time>. Source: <a href="{{ result.source_url }}" rel="nofollow noopener">{{ result.source }}</a>.</p>
+  {% else %}
+  <h2 id="res-h">Pending</h2>
+  <p>The count is under way. We add the national House popular vote from a published count, with its source, the share of the vote counted and the date, and label every figure preliminary until states certify.</p>
+  {% endif %}
+  <p>Final ElectionsUSA generic ballot average: <a href="/2026/generic-ballot/"><b>{{ fmt(final.margin) }}</b></a> ({{ final.n_polls }} polls).</p>
+</section>
+
+<section class="section">
+  <div class="section-head"><h2>Pollsters, final three weeks</h2><a href="/data/2026-generic-ballot-accuracy.csv">CSV →</a></div>
+  <div class="table-scroll">
+  <table class="table compact">
+    <thead><tr><th>#</th><th>Pollster</th><th class="num">Polls</th><th class="num">Avg margin</th><th class="num">Error</th><th class="num">Bias</th><th>Last poll</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr><td class="muted">{{ loop.index if result else "" }}</td><td>{% if r.path %}<a href="{{ r.path }}">{{ r.pollster }}</a>{% else %}{{ r.pollster }}{% endif %}</td><td class="num">{{ r.n }}</td><td class="num">{{ fmt(r.margin) }}</td><td class="num">{{ "%.1f" % r.error if r.error is not none else "pending" }}</td><td class="num">{{ bias(r.bias) }}</td><td class="nowrap">{{ r.last_end.strftime("%b %-d") }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted small">Margin is Democrats minus Republicans. Error is the average distance between each poll's margin and the result's; bias is the average signed miss (D+ means the polls were more favourable to Democrats than the result). One population per poll, likely voters first; polls are credited to the firm that ran them. Window: polls ending {{ window_start.strftime("%B %-d") }} to November 3, 2026.</p>
+</section>
+
+<section class="section prose">
+  <h2>How this is scored</h2>
+  <p>This is the same method as the historical <a href="/pollsters/">pollster scorecard</a>, applied to the national generic ballot: every poll that finished fieldwork in the final 21 days, compared with the national House popular vote. Some districts have no contested race, which pulls the national House vote away from pure party preference, so even a perfect generic-ballot poll can miss by a point or two. We publish a preliminary score from the unofficial count and update it, with the date, when the count changes and again when states certify.</p>
+  <p>Read the analysis: <a href="/analysis/">ElectionsUSA analysis</a>. The data behind this page is in the <a href="/data/2026-generic-ballot-accuracy.csv">CSV</a>, one row per poll.</p>
+</section>
+</article>
+{% endblock %}
