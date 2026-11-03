@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import figure %}
+{% block content %}
+<article>
+<header class="page-head">
+  <p class="kicker">{{ kicker }}</p>
+  <h1>{{ heading }}</h1>
+  <p class="sub">{{ answer }}</p>
+</header>
+<section class="figures">
+  {% for s in cards %}{{ figure(s) }}{% endfor %}
+</section>
+{% if links %}
+<section class="section">
+  <div class="section-head"><h2>{{ links_heading }}</h2></div>
+  <ul class="related">{% for l in links %}<li><a href="{{ l.path }}"><span class="t">{{ l.title }}</span><span class="v">{{ l.value }}</span></a></li>{% endfor %}</ul>
+</section>
+{% endif %}
+</article>
+{% endblock %}

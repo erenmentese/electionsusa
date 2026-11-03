@@ -17,14 +17,25 @@ from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 
-from . import config
+from . import config, dedupe
 from .schema import validate_polls
 
 # Days without a new poll before we alarm. Hypothetical general-election matchups are polled
 # too rarely to alarm on; the generic ballot stops being polled once the midterm is over.
 STALE_AFTER = {"approval": 7, "generic": 10, "primary": 30}
 MARKETS_STALE_AFTER = 2
+STALE_PRICE_SNAPSHOTS = 4  # same price this many snapshots running: a dead contract, hidden on /markets/
 TWO_WAY = ("general", "generic", "approval")
+
+
+def stale_prices(g: pd.DataFrame, n: int = STALE_PRICE_SNAPSHOTS, min_price: float = 5.0) -> list[str]:
+    """Outcomes of one market whose last n snapshot prices are identical (at min_price% or more)."""
+    out = []
+    for o, s in g.sort_values("snapshot_date").groupby("outcome"):
+        last = pd.to_numeric(s["price"], errors="coerce").tail(n)
+        if len(last) == n and last.nunique() == 1 and float(last.iat[0]) >= min_price:
+            out.append(str(o))
+    return sorted(out)
 
 
 def structure(polls_raw: pd.DataFrame, today: date) -> list[str]:
@@ -44,6 +55,9 @@ def structure(polls_raw: pd.DataFrame, today: date) -> list[str]:
     future = polls[polls["end_date"] > today + timedelta(days=1)]
     if len(future):
         problems.append(f"{future['poll_id'].nunique()} poll(s) end in the future (latest {future['end_date'].max()}), likely a date-parsing error.")
+    copies = dedupe.copies(polls)
+    if copies:
+        problems.append(f"{len(copies)} poll(s) appear twice in polls.csv under different spellings; the average counts them once, but the file should not hold them.")
     two_way = polls[polls["race_id"].map(lambda r: getattr(config.RACE_BY_ID.get(r), "kind", "") in TWO_WAY)]
     sums = two_way.groupby("poll_id")["pct"].sum()
     if (sums > 105).any():
@@ -73,6 +87,19 @@ def check(polls_raw: pd.DataFrame, markets: pd.DataFrame, today: date,
         if limit and (age is None or age > limit):
             problems.append(f"No new {race.short_title} poll for {age if age is not None else 'ever'} days (alert after {limit}).")
 
+    plan = dedupe.plan(polls)
+    left = len(dedupe.plan(dedupe.collapse(polls)))
+    status.append(f"Duplicate groups feeding the averages: {left} ({sum(v[0] == 'copy' for v in plan.values())} copies and "
+                  f"{sum(v[0] == 'population' for v in plan.values())} extra populations set aside)")
+    if left:
+        problems.append(f"{left} duplicate poll group(s) still reach the averages after dedupe.")
+
+    api = markets[markets["source_type"] == "api"] if "source_type" in markets else markets
+    for mid, g in api.groupby("market_id") if len(api) else []:
+        frozen = stale_prices(g)
+        if frozen:
+            problems.append(f"{mid}: price unchanged for {STALE_PRICE_SNAPSHOTS}+ snapshots for {', '.join(frozen)}; "
+                            "the contract may be closed or untraded (hidden on /markets/).")
     snap = pd.to_datetime(markets["snapshot_date"], errors="coerce").dt.date.max() if len(markets) else None
     status.append(f"Markets: latest snapshot {snap}" if snap else "Markets: no snapshots")
     if snap is None or (today - snap).days > MARKETS_STALE_AFTER:

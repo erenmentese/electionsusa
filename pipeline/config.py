@@ -22,17 +22,29 @@ SITE = {
     "name": "ElectionsUSA",
     "domain": "electionsusa.org",
     "url": "https://electionsusa.org",
-    "tagline": "Open poll averages, pollster scorecards and market odds for the 2028 U.S. election",
+    "tagline": "Open poll averages, pollster ratings and odds for U.S. elections",
     "description": (
         "Transparent, free polling averages for the 2028 presidential election, "
         "the Democratic and Republican primaries, presidential approval, "
         "pollster accuracy ratings and prediction-market odds. Open data, open methodology."
     ),
-    "author": "ElectionsUSA Data Desk",  # TODO: replace with a named author for E-E-A-T
+    "author": "ElectionsUSA Data Desk",  # byline used until `editor` is filled in
+    # The named editor shown on About and as founder/author in structured data. Leave name empty to
+    # keep the desk byline; nothing about a person is published until these are filled in.
+    "editor": {
+        "name": "",        # e.g. "Jane Doe"
+        "role": "Founder and editor",
+        "bio": "",         # one or two sentences, first person not needed
+        "same_as": [],     # profile URLs: X, GitHub, LinkedIn, personal site
+    },
+    "founding_date": "2026-10",  # launched October 2026 (see About)
+    "alternate_name": "ElectionsUSA.org",
+    "issues_url": "https://github.com/erenmentese/electionsusa/issues/new",
+    "terms_updated": "November 3, 2026",
     "contact_email": "hello@electionsusa.org",
     "twitter": "@ElectionsUSAorg",  # e.g. "@electionsusa"
     "github_repo": "erenmentese/electionsusa",  # e.g. "yourname/electionsusa" (enables data-download links)
-    "adsense_client": "",  # e.g. "ca-pub-1234567890123456"; empty = render placeholders
+    "adsense_client": "",  # e.g. "ca-pub-1234567890123456"; empty = no ad slots, no ads.txt
     "analytics_snippet": "",  # paste a privacy-friendly analytics tag (Plausible, GoatCounter...)
     "ga4_id": "G-MN0XEQY44B",  # Google Analytics 4 measurement ID; empty = no GA4 tag
     # Google Consent Mode: analytics/ad cookies start "denied" here (EEA + UK + Switzerland)
@@ -45,9 +57,12 @@ SITE = {
         "IS", "LI", "NO",  # rest of the EEA
         "GB", "CH",
     ],
-    "privacy_updated": "October 29, 2026",  # bump whenever privacy.html text changes
+    "privacy_updated": "November 3, 2026",  # bump whenever privacy.html text changes
     "language": "en",
 }
+
+# IndexNow (Bing, Yandex, Seznam, Naver): a public key, served as /<key>.txt to prove we own the host
+INDEXNOW_KEY = "36bf3447839bd9e4905fcd0232434aa0"
 
 # Key dates --------------------------------------------------------------
 ELECTION_DAY_2028 = date(2028, 11, 7)
@@ -55,18 +70,47 @@ MIDTERM_DAY_2026 = date(2026, 11, 3)
 IOWA_CAUCUS_2028 = None  # set once the DNC/RNC calendars are published
 INAUGURATION_2029 = date(2029, 1, 20)
 
+# When each kind of hand-maintained page last changed in substance: its sitemap lastmod and on-page date.
+# Bump the entry in the same commit that changes the page (data pages date themselves from their data).
+PAGE_REVISED = {
+    "results": date(2026, 10, 31),      # state and year results pages, the 2028 map (certified 1976-2024 data)
+    "scorecard": date(2026, 11, 3),     # /pollsters/ and pollster pages without a recent poll
+    "methodology": date(2026, 11, 3),
+    "about": date(2026, 11, 3),
+}
+
+# DNC: early window approved by the full DNC on August 15, 2026 (Rules and Bylaws proposal of July 24).
+# RNC: its nominating-process committee voted in September 2026 to keep Iowa first; no dates are set.
+DNC_CALENDAR_SOURCE = "https://washingtonstatestandard.com/2026/08/15/repub/dnc-approves-2028-presidential-nominating-cycle-starting-in-south-carolina-nevada/"
+BALLOTPEDIA_DNC_SOURCE = "https://news.ballotpedia.org/2026/07/31/democratic-national-committee-announces-proposed-early-states-for-2028-democratic-presidential-calendar/"
+FHQ_CALENDAR = "https://www.frontloadinghq.com/p/the-2028-presidential-primary-calendar.html"
+RNC_IOWA_SOURCE = "https://www.kttc.com/2026/09/10/gop-keep-iowa-first-2028-primary-caucus-calendar/"
+
 PRIMARY_CALENDAR_2028 = [
-    # (approximate month, label, note) - update as parties publish the calendar
-    ("Jan-Feb 2028", "First nominating contests", "Order is set by each party; Iowa/New Hampshire/South Carolina/Nevada traditionally lead."),
-    ("Mar 2028", "Super Tuesday", "The largest single day of delegate allocation."),
-    ("Jun 2028", "Final primaries", "Nominating season ends."),
-    ("Jul-Aug 2028", "National conventions", "Nominees formally selected."),
-    ("Sep-Oct 2028", "General election debates", "Dates set by the Commission on Presidential Debates or the campaigns."),
-    ("Nov 7, 2028", "Election Day", "Polls close; counting begins."),
-    ("Dec 2028", "Electors meet", "Electoral College votes are cast in state capitals."),
-    ("Jan 6, 2029", "Congress counts electoral votes", ""),
-    ("Jan 20, 2029", "Inauguration Day", ""),
+    # (when, what, note, source url, status): status "set" (party-approved) or "tentative"
+    ("Jan 2028", "Republican contests begin in Iowa, then New Hampshire",
+     "The RNC's nominating-process committee voted in September 2026 to keep Iowa first. No dates are set; Jan 3 (Iowa) and Jan 11 (New Hampshire) are estimates.", RNC_IOWA_SOURCE, "tentative"),
+    ("Jan 22, 2028", "South Carolina Democratic primary", "First contest on the Democratic calendar approved by the DNC on August 15, 2026.", DNC_CALENDAR_SOURCE, "set"),
+    ("Feb 1, 2028", "Nevada Democratic primary", "DNC-approved early window.", DNC_CALENDAR_SOURCE, "set"),
+    ("Feb 8, 2028", "New Hampshire Democratic primary", "DNC-approved date; New Hampshire law requires its primary to come first, so the state-run primary may be earlier and this contest party-run.", FHQ_CALENDAR, "tentative"),
+    ("Feb 15, 2028", "New Mexico Democratic primary", "DNC-approved date; New Mexico law currently sets its primary in June, so the date needs a law change or a party-run contest.", FHQ_CALENDAR, "tentative"),
+    ("Feb 22, 2028", "Michigan Democratic primary", "DNC-approved date; Michigan law already sets the fourth Tuesday in February.", DNC_CALENDAR_SOURCE, "set"),
+    ("Feb 29, 2028", "Virginia Democratic primary", "DNC-approved date; Virginia law currently holds its primary on Super Tuesday, so it needs a law change.", FHQ_CALENDAR, "tentative"),
+    ("Mar 7, 2028", "Super Tuesday", "The largest single day of delegate allocation; about 14 states are scheduled so far.", FHQ_CALENDAR, "set"),
+    ("Jun 2028", "Final primaries", "Nominating season ends.", "", "tentative"),
+    ("Jul–Aug 2028", "National conventions", "Nominees formally selected.", "", "tentative"),
+    ("Sep–Oct 2028", "General election debates", "Dates set by the Commission on Presidential Debates or the campaigns.", "", "tentative"),
+    ("Nov 7, 2028", "Election Day", "Set by federal law: the Tuesday after the first Monday in November.", "", "set"),
+    ("Dec 2028", "Electors meet", "Electoral College votes are cast in state capitals.", "", "set"),
+    ("Jan 6, 2029", "Congress counts electoral votes", "", "", "set"),
+    ("Jan 20, 2029", "Inauguration Day", "", "", "set"),
 ]
+CALENDAR_CHECKED = "November 3, 2026"
+
+# Analysis pieces and the day each was first published (datePublished never moves)
+ANALYSIS_PUBLISHED = {
+    "final-generic-ballot-2026": date(2026, 11, 3),
+}
 
 # Party colours used across charts (kept muted for accessibility)
 PARTY_COLORS = {
@@ -207,28 +251,26 @@ RACES: list[Race] = [
 RACE_BY_ID = {r.id: r for r in RACES}
 
 # Prediction markets -----------------------------------------------------
-# Polymarket "gamma" API event slugs and Kalshi series tickers. Verify these
-# against the live sites; markets get renamed between cycles.
+# Polymarket "gamma" API event slugs. Verify these against the live site; markets get renamed
+# between cycles. Kalshi lists the same contests; it is linked from /markets/, not republished.
+KALSHI_URL = "https://kalshi.com/"
 MARKETS = [
     {
         "id": "pres-2028-winner",
         "title": "2028 Presidential Election Winner",
         "polymarket_slug": "presidential-election-winner-2028",
-        "kalshi_series": "KXPRESNOM2028",  # placeholder: confirm ticker on kalshi.com
         "compare_race": None,
     },
     {
         "id": "dem-nominee-2028",
         "title": "2028 Democratic Nominee",
         "polymarket_slug": "democratic-presidential-nominee-2028",
-        "kalshi_series": "KXDEMNOM2028",
         "compare_race": "dem-primary-2028",
     },
     {
         "id": "gop-nominee-2028",
         "title": "2028 Republican Nominee",
         "polymarket_slug": "republican-presidential-nominee-2028",
-        "kalshi_series": "KXREPNOM2028",
         "compare_race": "gop-primary-2028",
     },
 ]

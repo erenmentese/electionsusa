@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% from "_macros.html" import ad, midterm_block %}
 {% block head %}
+{% if thin %}<meta name="robots" content="noindex, follow">{% endif %}
 <script type="application/ld+json">{{ ld_dataset | tojson }}</script>
 {% if ld_faq %}<script type="application/ld+json">{{ ld_faq | tojson }}</script>{% endif %}
 {% endblock %}
 {% block content %}
 <article>
 <header class="page-head">
-  <p class="kicker">Polling average · updated {{ build_date }}</p>
+  <p class="kicker">{{ "Final polling average" if race.kind == "generic" and midterm and midterm.days <= 0 else "Polling average" }}{% if updated %} · latest poll <time datetime="{{ updated.isoformat() }}">{{ updated.strftime("%B %-d, %Y") }}</time>{% endif %}</p>
   <h1>{{ race.title }}</h1>
   {# the dated one-sentence answer is what search snippets and AI answers quote #}
   <p class="sub">{{ answer or race.description }}</p>
@@ -25,6 +26,7 @@
     {% if avg.margin is not none %}<div class="avg-big margin"><span class="who">{{ "Net" if race.kind == "approval" else "Margin" }}</span><span class="val">{{ avg.margin | signed(race.candidates[0] | short, race.candidates[1] | short) }}</span></div>{% endif %}
   </div>
   {% endif %}
+  {% if thin %}<p class="thin-note"><b>Limited data.</b> Only {{ avg.n_polls }} poll{{ "s" if avg.n_polls != 1 }} carry weight in this average, so one new poll can move it a lot. Read it as a rough indication, not a measurement.</p>{% endif %}
   <p class="avg-note">Weighted average of {{ avg.n_polls }} poll{{ "s" if avg.n_polls != 1 }} (of {{ avg.n_polls_total }} on record), as of {{ build_date }}. Half-life {{ race.half_life_days }} days. <a href="/methodology/">Method</a> · <a href="/api/{{ race.id }}.json">JSON</a></p>
 </section>
 
@@ -41,15 +43,37 @@
 
 {% if midterm and race.kind == "approval" %}{{ midterm_block(midterm) }}{% endif %}
 
+{% if race.kind == "generic" and midterm and midterm.days <= 0 %}
+<section class="section prose" id="vs-result">
+  <h2>Final average vs. House popular vote <span class="muted">(pending)</span></h2>
+  <table class="table compact">
+    <thead><tr><th></th><th class="num">Democrats</th><th class="num">Republicans</th><th class="num">Margin</th></tr></thead>
+    <tbody>
+      <tr><td>Final ElectionsUSA average, Nov 3</td>{% for c in race.candidates %}<td class="num">{{ "%.1f%%" % avg.values[c] if c in avg.values else "—" }}</td>{% endfor %}<td class="num">{{ avg.margin | signed("D", "R") }}</td></tr>
+      <tr><td>National House popular vote</td><td class="num muted">pending</td><td class="num muted">pending</td><td class="num muted">pending</td></tr>
+    </tbody>
+  </table>
+  <p>The House popular vote is still being counted. When a national count is available we add it here, labelled preliminary until states certify, and score every poll from the final three weeks on the <a href="/2026/pollster-accuracy/">2026 pollster scorecard</a>. Poll closing times and each state's official results are on the <a href="/2026/">2026 midterms page</a>.</p>
+</section>
+{% endif %}
+
 {{ ad("race-mid") }}
+
+{% if faq %}
+<section class="section prose faq" id="faq">
+  <h2>Questions about this average</h2>
+  {% for q, a in faq %}<h3>{{ q }}</h3><p>{{ a }}{% if loop.index0 and "methodology" in a %} <a href="/methodology/">Read the method.</a>{% elif "CC BY" in a %} <a href="/data/">Download the data.</a>{% endif %}</p>{% endfor %}
+</section>
+{% endif %}
 
 {% if table %}
 <section class="section">
-  <div class="section-head"><h2>All polls <span class="muted">({{ table | length }})</span></h2><a href="/data/polls.csv">CSV →</a></div>
+  {% set html_rows = table[:max_rows] %}
+  <div class="section-head"><h2>{% if table | length > max_rows %}Latest {{ max_rows }} polls <span class="muted">(of {{ table | length }})</span>{% else %}All polls <span class="muted">({{ table | length }})</span>{% endif %}</h2><a href="/data/polls.csv">CSV →</a></div>
   {# long tables render the newest rows; the rest wait in a <template> (parsed, not laid out, so the page stays light)
      until "See all" moves them into the table. Every poll is also in the CSV. #}
   {% set preview_rows = 25 %}
-  {% set foldable = table | length > preview_rows + 3 %}
+  {% set foldable = html_rows | length > preview_rows + 3 %}
   <div class="table-fold{{ ' is-folded' if foldable }}" id="all-polls">
   <div class="table-scroll">
   <table class="table polls">
@@ -60,7 +84,7 @@
       <th class="num" title="Share of the current average contributed by this poll">Weight</th>
     </tr></thead>
     <tbody>
-    {% for r in table %}
+    {% for r in html_rows %}
     {% if foldable and loop.index == preview_rows + 1 %}<template data-fold-rows>{% endif %}
     <tr{% if foldable and loop.index > preview_rows %} class="fold"{% endif %}>
       <td>{% if r.pollster_path %}<a href="{{ r.pollster_path }}">{{ r.pollster }}</a>{% else %}{{ r.pollster }}{% endif %}{% if r.sponsor %}<span class="muted small"> / {{ r.sponsor }}</span>{% endif %}{% if r.source_url %} <a class="src" href="{{ r.source_url }}" rel="nofollow noopener" target="_blank" title="Source" aria-label="Source">↗</a>{% endif %}{% if r.notes %}<span class="note" title="{{ r.notes }}">ⓘ</span>{% endif %}</td>
@@ -75,7 +99,8 @@
   </table>
   </div>
   </div>
-  {% if foldable %}<button type="button" class="fold-toggle" aria-controls="all-polls" aria-expanded="false" data-fold-toggle data-less="Show fewer polls">See all {{ table | length }} polls</button>{% endif %}
+  {% if foldable %}<button type="button" class="fold-toggle" aria-controls="all-polls" aria-expanded="false" data-fold-toggle data-less="Show fewer polls">See all {{ html_rows | length }} polls</button>{% endif %}
+  {% if table | length > max_rows %}<p class="small">The page shows the latest {{ max_rows }}. All {{ table | length }} polls, with weights, are in the <a href="/api/{{ race.id }}.json">JSON</a>; every poll and population is in <a href="/data/polls.csv">polls.csv</a>.</p>{% endif %}
   <p class="muted small">Click a pollster for its accuracy record and every poll it has released; ↗ opens the poll's source. Rows marked ⓘ carry a note (for example, fieldwork dates inferred from press coverage). Weight is the poll's share of the current average after recency, sample-size, pollster-quality and frequency adjustments.</p>
 </section>
 {% endif %}
@@ -88,19 +113,13 @@
   {% elif race.kind == "primary" %}
   <p>Primary polls are volatile: the field is not set, many respondents name whoever is in the news, and "undecided" is often the largest answer. Candidates are shown only when at least one poll in the window tested them, so a candidate's average can move simply because different pollsters include different names. Use the trend chart, not any single poll.</p>
   {% elif race.kind == "approval" %}
-  <p>Approval is the most frequently polled question in American politics, so this tracker uses a short {{ race.half_life_days }}-day half-life and damps pollsters that publish weekly so no single tracker dominates. Adult, registered-voter and likely-voter samples are pooled; registered and likely-voter samples typically read one to three points more favourable for the president than all-adult samples.</p>
+  <p>Approval is the most frequently polled question in American politics, so this tracker uses a short {{ race.half_life_days }}-day half-life and damps pollsters that publish weekly so no single tracker dominates. Adult, registered-voter and likely-voter polls all count, one population per poll (likely voters first); registered and likely-voter samples typically read one to three points more favourable for the president than all-adult samples.</p>
   {% else %}
   <p>The generic ballot asks which party's candidate for Congress a respondent would support. It is a national number and does not map directly onto seats: because of district geography a party usually needs a national lead of a few points to be favoured to win the House.</p>
   {% endif %}
-  <p>Something wrong? Every row links to its source. Report an error through the <a href="/about/#corrections">corrections page</a> and it will be fixed in the data, not just on the page.</p>
+  <p>Something wrong? Every row links to its source. Report an error through the <a href="/corrections/">corrections page</a> and it will be fixed in the data, not just on the page.</p>
 </section>
 
-{% if faq %}
-<section class="section prose faq" id="faq">
-  <h2>Questions about this average</h2>
-  {% for q, a in faq %}<h3>{{ q }}</h3><p>{{ a }}{% if loop.index0 and "methodology" in a %} <a href="/methodology/">Read the method.</a>{% elif "CC BY" in a %} <a href="/data/">Download the data.</a>{% endif %}</p>{% endfor %}
-</section>
-{% endif %}
 
 {% if related %}
 <section class="section">

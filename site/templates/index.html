@@ -2,16 +2,17 @@
 {% from "_macros.html" import ad, figure, us_map, ev_bar, midterm_block %}
 {% block content %}
 <section class="greet">
-  <p class="kicker">Updated {{ build_date }} · {{ days_to_election }} days to Election Day</p>
-  <h1>How is 2028 looking?</h1>
-  <p class="sub">Polling averages, pollster accuracy and prediction-market odds for the next presidential election. Ask a question or pick one below.</p>
+  <p class="kicker">Updated {{ build_date }} · {{ days_to_election }} days to the 2028 election</p>
+  <h1>{{ head.h1 }}</h1>
+  <p class="sub">{{ head.sub }}</p>
   <div class="finder" data-finder>
     <form role="search" action="/" onsubmit="return false">
-      <input type="search" placeholder="Who leads the Dem primary?" aria-label="Ask about the 2028 election" autocomplete="off" data-finder-input autofocus>
+      <input type="search" placeholder="{{ 'When do polls close?' if midterm else 'Who leads the Dem primary?' }}" aria-label="Search polls, states and pollsters" autocomplete="off" data-finder-input>
       <button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </form>
     <div class="finder-results" data-finder-results role="listbox"></div>
     <div class="chips" aria-label="Suggested questions">
+      {% if midterm %}<a href="/2026/">{{ "When do polls close?" if midterm.days >= 0 else "2026 midterm results" }}</a>{% endif %}
       <a href="/approval/trump/">What is Trump's approval rating?</a>
       <a href="/2028/president/vance-vs-newsom/">Vance vs. Newsom</a>
       <a href="/2028/democratic-primary/">Who leads the Democratic primary?</a>
@@ -60,22 +61,22 @@
   </div>
   <div>
     <div class="section-head"><h2>Most accurate pollsters</h2><a href="/pollsters/">Full scorecard →</a></div>
-    <p class="muted small">Mean error on the final margin, 2016–2022, shrunk toward the field average so a hot streak over ten polls doesn't outrank 300 polls of steady work.</p>
+    <p class="muted small">Ranked by adjusted error: the mean error on the final margin, 2016–2022, shrunk toward the field average ({{ "%.1f" % field_error }}) so a hot streak over ten polls doesn't outrank 300 polls of steady work.</p>
     <table class="table compact">
-      <thead><tr><th>Pollster</th><th class="num">Polls</th><th class="num">Avg error</th><th class="num">Bias</th></tr></thead>
+      <thead><tr><th>Pollster</th><th class="num">Polls</th><th class="num">Avg error</th><th class="num">Adjusted</th><th class="num">Bias</th></tr></thead>
       <tbody>
       {% for r in scorecard %}
-      <tr><td><a href="{{ pollster_paths[r.pollster] }}">{{ r.pollster }}</a></td><td class="num">{{ r.n_polls }}</td><td class="num">{{ "%.1f" % r.mean_abs_error }}</td><td class="num">{{ r.bias_label }}</td></tr>
+      <tr><td><a href="{{ pollster_paths[r.pollster] }}">{{ r.pollster }}</a></td><td class="num">{{ r.n_polls }}</td><td class="num">{{ "%.1f" % r.mean_abs_error }}</td><td class="num"><b>{{ "%.1f" % r.adj_error }}</b></td><td class="num">{{ r.bias_label }}</td></tr>
       {% endfor %}
       </tbody>
     </table>
     <div class="section-head" style="margin-top:40px"><h2>Markets</h2><a href="/markets/">Polls vs. markets →</a></div>
     {% for m in markets %}
       {% if m.rows %}
-      <p class="muted small">{{ m.market.title }} · snapshot {{ m.latest.strftime("%b %-d, %Y") }}{% if m.note %} · {{ m.note }}{% endif %}</p>
+      <p class="muted small">{{ m.market.title }} · Polymarket, {{ m.latest.strftime("%b %-d, %Y") }}</p>
       <table class="table compact">
-        <thead><tr><th>Outcome</th><th class="num">Polymarket</th><th class="num">Kalshi</th></tr></thead>
-        <tbody>{% for r in m.rows[:5] %}<tr><td>{{ r.outcome }}</td><td class="num">{{ "%.0f%%" % r.polymarket if r.polymarket is not none else "—" }}</td><td class="num">{{ "%.0f%%" % r.kalshi if r.kalshi is not none else "—" }}</td></tr>{% endfor %}</tbody>
+        <thead><tr><th>Outcome</th><th class="num">Polymarket</th></tr></thead>
+        <tbody>{% for r in m.rows[:5] %}<tr><td>{{ r.outcome }}</td><td class="num">{{ "%.0f%%" % r.polymarket }}</td></tr>{% endfor %}</tbody>
       </table>
       {% else %}<p class="muted">{{ m.note }}</p>{% endif %}
     {% endfor %}
@@ -87,6 +88,6 @@
 <section class="section prose">
   <h2>What this is</h2>
   <p>ElectionsUSA tracks public opinion ahead of the November 7, 2028 United States presidential election. It averages polls with a published, reproducible method; it keeps score of how close each pollster's final polls came to actual results; and it puts prediction-market prices next to the polls so readers can see when traders and survey respondents disagree.</p>
-  <p>The site is independent, carries no campaign, party or government affiliation, and is funded by advertising. The complete dataset is <a href="/data/">downloadable</a> and every figure links back to the pollster that published it.</p>
+  <p>The site is independent, carries no campaign, party or government affiliation, and {{ "is funded by advertising" if site.adsense_client else "runs without advertising or sponsorship" }}. The complete dataset is <a href="/data/">downloadable</a> and every figure links back to the pollster that published it.</p>
 </section>
 {% endblock %}

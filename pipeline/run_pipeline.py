@@ -15,7 +15,7 @@ import sys
 
 import pandas as pd
 
-from . import config, fetch_markets, fetch_wikipedia
+from . import config, dedupe, fetch_markets, fetch_wikipedia
 from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 
 log = logging.getLogger("pipeline")
@@ -34,6 +34,8 @@ def merge_polls(existing: pd.DataFrame, fresh: pd.DataFrame) -> pd.DataFrame:
     auto = existing[existing["source_type"] != "manual"]
     merged = pd.concat([auto, fresh]).drop_duplicates(subset=key, keep="last")
     merged = pd.concat([merged, manual]).drop_duplicates(subset=key, keep="last")
+    # the same poll listed twice under different spellings (see dedupe); population variants stay in the file
+    merged = merged[~merged["poll_id"].isin(dedupe.copies(merged))]
     return merged.sort_values(["race_id", "end_date"], ascending=[True, False]).reset_index(drop=True)
 
 

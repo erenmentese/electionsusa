@@ -147,7 +147,8 @@ def compute_race(polls: pd.DataFrame, race: config.Race, ratings: pd.DataFrame |
     if wide.empty:
         return ra
     ra.n_polls_total = len(wide)
-    ra.latest_end_date = wide["end_date"].max()
+    done = wide.loc[wide["end_date"] <= as_of, "end_date"]  # a build for an earlier date ignores later polls
+    ra.latest_end_date = done.max() if len(done) else None
     static = static_weights(wide, grades)
     ra.values, ra.n_polls = average_as_of(wide, race, as_of, grades, static)
     if ra.values:

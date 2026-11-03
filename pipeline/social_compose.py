@@ -16,6 +16,7 @@ from datetime import date, datetime, timedelta, timezone
 import pandas as pd
 
 from . import average, config
+from .dedupe import collapse
 from .schema import validate_polls
 from .social_cards import CardSpec, Figure
 from .social_text import fit_lines
@@ -282,7 +283,7 @@ def campaign_posts(polls: pd.DataFrame, ratings, now: datetime) -> list[Post]:
 def plan(polls: pd.DataFrame, ratings, state: dict, today: date, now: datetime | None = None) -> list[Post]:
     """Return the posts to publish this run, highest priority first, within caps."""
     now = now or datetime.now(timezone.utc)
-    polls = validate_polls(polls)
+    polls = collapse(validate_polls(polls))
     posted = state.get("posted", {})
     candidates: list[Post] = []
 

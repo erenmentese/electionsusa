@@ -50,6 +50,15 @@ jobs:
           git diff --cached --quiet || git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ)"
           git push || true
 
+      # Bing and the other IndexNow engines hear about changed pages right away (Google reads the sitemap).
+      # Waits for Vercel to deploy the push above, then submits URLs whose lastmod changed.
+      - name: Notify IndexNow
+        if: github.event_name != 'pull_request' && github.ref_name == 'main'
+        run: |
+          python -m pipeline.build
+          python -m pipeline.indexnow --sitemap dist/sitemap.xml --wait 150
+        continue-on-error: true
+
       - name: Post new polls to X
         # Enable with repository variable BOT_ENABLED=true and the four X_* secrets.
         # Runs on the schedule and manual runs only, never on pushes, so a code push cannot double-post.

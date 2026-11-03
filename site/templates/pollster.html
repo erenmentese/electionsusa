@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import ad %}
+{% block head %}{% for b in ld_page %}<script type="application/ld+json">{{ b | tojson }}</script>{% endfor %}{% endblock %}
 {% block content %}
 {% set r = p.rated %}
 <article>
@@ -44,14 +45,14 @@
 
 {% if cycle %}
 <section class="section" id="2026">
-  <div class="section-head"><h2>2026 midterm polls</h2><a href="/pollsters/#2026">All pollsters →</a></div>
+  <div class="section-head"><h2>2026 midterm polls</h2><a href="/2026/pollster-accuracy/">All pollsters →</a></div>
   <div class="table-scroll">
   <table class="table">
     <thead><tr><th>Race</th><th>Poll end</th><th class="num">Poll margin</th><th class="num">Result</th><th class="num">Error</th><th>Right call</th></tr></thead>
     <tbody>{% for c in cycle %}<tr><td>{{ c.race_id }}</td><td class="nowrap">{{ c.end_date }}</td><td class="num">{{ "%+.1f" % c.poll_margin }}</td><td class="num">{{ "%+.1f" % c.actual_margin }}</td><td class="num">{{ c.error }}</td><td>{{ "✓" if c.right_call else "✗" }}</td></tr>{% endfor %}</tbody>
   </table>
   </div>
-  <p class="muted small">Final-three-weeks polls compared with the result used on the <a href="/pollsters/#2026">2026 scorecard</a>, which says whether that result is preliminary or certified.</p>
+  <p class="muted small">Final-three-weeks polls compared with the result used on the <a href="/2026/pollster-accuracy/">2026 scorecard</a>, which says whether that result is preliminary or certified.</p>
 </section>
 {% endif %}
 
@@ -86,10 +87,17 @@
   {% if r %}
   <p>Accuracy covers polls taken in the final three weeks of races from 2016 to 2022, from FiveThirtyEight's open archive of polls matched to certified results (CC BY 4.0). Average error is the mean absolute difference between the poll's margin and the actual margin. The adjusted error shrinks it toward the field average (k = 15 polls) so a short hot streak can't outrank a long record, and the ranking uses it. Bias is the average signed miss: D+ means the polls were more favourable to Democrats than the result, R+ more favourable to Republicans.</p>
   {% else %}
-  <p>The scorecard rates pollsters on polls taken in the final three weeks of races from 2016 to 2022, using FiveThirtyEight's open archive. {{ p.name }} doesn't have ten such polls there yet. Its 2026 midterm polls are scored against the result once it is in, on the <a href="/pollsters/#2026">2026 scorecard</a>.</p>
+  <p>The scorecard rates pollsters on polls taken in the final three weeks of races from 2016 to 2022, using FiveThirtyEight's open archive. {{ p.name }} doesn't have ten such polls there yet. Its 2026 midterm polls are scored against the result once it is in, on the <a href="/2026/pollster-accuracy/">2026 scorecard</a>.</p>
   {% endif %}
-  <p>{% if p.polls %}Polls are listed under the firm that conducted them, even when the source names a media partner first (for example "The Economist/YouGov" or "CNN/SSRS"). {% endif %}Full method on the <a href="/pollsters/">scorecard</a> and <a href="/methodology/">methodology</a> pages. Something wrong? Report it through the <a href="/about/#corrections">corrections page</a>.</p>
+  <p>{% if p.polls %}Polls are listed under the firm that conducted them, even when the source names a media partner first (for example "The Economist/YouGov" or "CNN/SSRS"). {% endif %}Full method on the <a href="/pollsters/">scorecard</a> and <a href="/methodology/">methodology</a> pages. Something wrong? Report it through the <a href="/corrections/">corrections page</a>.</p>
 </section>
+
+{% if faq %}
+<section class="section prose faq">
+  <h2>Questions about {{ p.name }}</h2>
+  {% for q, a in faq %}<h3>{{ q }}</h3><p>{{ a }}</p>{% endfor %}
+</section>
+{% endif %}
 
 <nav class="pager" aria-label="Other pollsters">
   {% if prev %}<a href="{{ prev.path }}">← {{ prev.rank | ordinal }}: {{ prev.name }}</a>{% else %}<span></span>{% endif %}

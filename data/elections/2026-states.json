@@ -1,0 +1,521 @@
+{
+ "election": "2026-11-03",
+ "times": "Eastern Standard Time; 00:00 and 01:00 are early on November 4",
+ "closing_sources": [
+  "https://www.270towin.com/poll-closing-times",
+  "https://www.270towin.com/content/local-poll-closing-times-november-2026-general-election"
+ ],
+ "checked": "2026-11-03: closing times from 270toWin's 2026 table; links are each state's official election office",
+ "states": [
+  {
+   "po": "AL",
+   "name": "Alabama",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Alabama Secretary of State",
+   "url": "https://www.sos.alabama.gov/alabama-votes",
+   "note": ""
+  },
+  {
+   "po": "AK",
+   "name": "Alaska",
+   "close_et": "00:00",
+   "last_close_et": "01:00",
+   "next_day": true,
+   "authority": "Alaska Division of Elections",
+   "url": "https://www.elections.alaska.gov/",
+   "note": ""
+  },
+  {
+   "po": "AZ",
+   "name": "Arizona",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Arizona Secretary of State",
+   "url": "https://azsos.gov/elections",
+   "note": ""
+  },
+  {
+   "po": "AR",
+   "name": "Arkansas",
+   "close_et": "20:30",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Arkansas Secretary of State",
+   "url": "https://www.sos.arkansas.gov/elections",
+   "note": ""
+  },
+  {
+   "po": "CA",
+   "name": "California",
+   "close_et": "23:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "California Secretary of State",
+   "url": "https://www.sos.ca.gov/elections",
+   "note": ""
+  },
+  {
+   "po": "CO",
+   "name": "Colorado",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Colorado Secretary of State",
+   "url": "https://www.coloradosos.gov/pubs/elections/main.html",
+   "note": ""
+  },
+  {
+   "po": "CT",
+   "name": "Connecticut",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Connecticut Secretary of the State",
+   "url": "https://portal.ct.gov/sots/election-services",
+   "note": ""
+  },
+  {
+   "po": "DE",
+   "name": "Delaware",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Delaware Department of Elections",
+   "url": "https://elections.delaware.gov/",
+   "note": ""
+  },
+  {
+   "po": "DC",
+   "name": "District of Columbia",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "District of Columbia Board of Elections",
+   "url": "https://www.dcboe.org/",
+   "note": ""
+  },
+  {
+   "po": "FL",
+   "name": "Florida",
+   "close_et": "19:00",
+   "last_close_et": "20:00",
+   "next_day": false,
+   "authority": "Florida Department of State, Division of Elections",
+   "url": "https://dos.fl.gov/elections/",
+   "note": ""
+  },
+  {
+   "po": "GA",
+   "name": "Georgia",
+   "close_et": "19:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Georgia Secretary of State, Elections Division",
+   "url": "https://sos.ga.gov/elections-division-georgia-secretary-states-office",
+   "note": ""
+  },
+  {
+   "po": "HI",
+   "name": "Hawaii",
+   "close_et": "00:00",
+   "last_close_et": "",
+   "next_day": true,
+   "authority": "Hawaii Office of Elections",
+   "url": "https://elections.hawaii.gov/",
+   "note": ""
+  },
+  {
+   "po": "ID",
+   "name": "Idaho",
+   "close_et": "22:00",
+   "last_close_et": "23:00",
+   "next_day": false,
+   "authority": "Idaho Secretary of State",
+   "url": "https://voteidaho.gov/",
+   "note": ""
+  },
+  {
+   "po": "IL",
+   "name": "Illinois",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Illinois State Board of Elections",
+   "url": "https://www.elections.il.gov/",
+   "note": ""
+  },
+  {
+   "po": "IN",
+   "name": "Indiana",
+   "close_et": "18:00",
+   "last_close_et": "19:00",
+   "next_day": false,
+   "authority": "Indiana Secretary of State / Indiana Election Division",
+   "url": "https://www.in.gov/sos/elections/",
+   "note": ""
+  },
+  {
+   "po": "IA",
+   "name": "Iowa",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Iowa Secretary of State",
+   "url": "https://sos.iowa.gov/elections/",
+   "note": ""
+  },
+  {
+   "po": "KS",
+   "name": "Kansas",
+   "close_et": "20:00",
+   "last_close_et": "21:00",
+   "next_day": false,
+   "authority": "Kansas Secretary of State",
+   "url": "https://sos.ks.gov/elections/elections.html",
+   "note": ""
+  },
+  {
+   "po": "KY",
+   "name": "Kentucky",
+   "close_et": "18:00",
+   "last_close_et": "19:00",
+   "next_day": false,
+   "authority": "Kentucky State Board of Elections",
+   "url": "https://elect.ky.gov/",
+   "note": ""
+  },
+  {
+   "po": "LA",
+   "name": "Louisiana",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Louisiana Secretary of State",
+   "url": "https://voterportal.sos.la.gov/graphical",
+   "note": ""
+  },
+  {
+   "po": "ME",
+   "name": "Maine",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Maine Secretary of State, Bureau of Corporations, Elections & Commissions",
+   "url": "https://www.maine.gov/sos/cec/elec/",
+   "note": ""
+  },
+  {
+   "po": "MD",
+   "name": "Maryland",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Maryland State Board of Elections",
+   "url": "https://elections.maryland.gov/",
+   "note": ""
+  },
+  {
+   "po": "MA",
+   "name": "Massachusetts",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Secretary of the Commonwealth of Massachusetts, Elections Division",
+   "url": "https://www.sec.state.ma.us/divisions/elections/elections-and-voting.htm",
+   "note": ""
+  },
+  {
+   "po": "MI",
+   "name": "Michigan",
+   "close_et": "20:00",
+   "last_close_et": "21:00",
+   "next_day": false,
+   "authority": "Michigan Department of State, Bureau of Elections",
+   "url": "https://www.michigan.gov/sos/elections",
+   "note": ""
+  },
+  {
+   "po": "MN",
+   "name": "Minnesota",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Minnesota Secretary of State",
+   "url": "https://www.sos.mn.gov/elections-voting/",
+   "note": ""
+  },
+  {
+   "po": "MS",
+   "name": "Mississippi",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Mississippi Secretary of State",
+   "url": "https://www.sos.ms.gov/elections-voting",
+   "note": ""
+  },
+  {
+   "po": "MO",
+   "name": "Missouri",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Missouri Secretary of State",
+   "url": "https://www.sos.mo.gov/elections",
+   "note": ""
+  },
+  {
+   "po": "MT",
+   "name": "Montana",
+   "close_et": "22:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Montana Secretary of State",
+   "url": "https://sosmt.gov/elections/",
+   "note": ""
+  },
+  {
+   "po": "NE",
+   "name": "Nebraska",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Nebraska Secretary of State",
+   "url": "https://sos.nebraska.gov/elections",
+   "note": ""
+  },
+  {
+   "po": "NV",
+   "name": "Nevada",
+   "close_et": "22:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Nevada Secretary of State",
+   "url": "https://www.nvsos.gov/sos/elections",
+   "note": ""
+  },
+  {
+   "po": "NH",
+   "name": "New Hampshire",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "New Hampshire Secretary of State",
+   "url": "https://www.sos.nh.gov/elections",
+   "note": "Many polling places close at 7 p.m."
+  },
+  {
+   "po": "NJ",
+   "name": "New Jersey",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "New Jersey Division of Elections (Department of State)",
+   "url": "https://www.nj.gov/state/elections/",
+   "note": ""
+  },
+  {
+   "po": "NM",
+   "name": "New Mexico",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "New Mexico Secretary of State",
+   "url": "https://www.sos.nm.gov/voting-and-elections/",
+   "note": ""
+  },
+  {
+   "po": "NY",
+   "name": "New York",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "New York State Board of Elections",
+   "url": "https://www.elections.ny.gov/",
+   "note": ""
+  },
+  {
+   "po": "NC",
+   "name": "North Carolina",
+   "close_et": "19:30",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "North Carolina State Board of Elections",
+   "url": "https://www.ncsbe.gov/",
+   "note": ""
+  },
+  {
+   "po": "ND",
+   "name": "North Dakota",
+   "close_et": "20:00",
+   "last_close_et": "21:00",
+   "next_day": false,
+   "authority": "North Dakota Secretary of State",
+   "url": "https://vip.sos.nd.gov/",
+   "note": ""
+  },
+  {
+   "po": "OH",
+   "name": "Ohio",
+   "close_et": "19:30",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Ohio Secretary of State",
+   "url": "https://www.ohiosos.gov/elections/",
+   "note": ""
+  },
+  {
+   "po": "OK",
+   "name": "Oklahoma",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Oklahoma State Election Board",
+   "url": "https://oklahoma.gov/elections.html",
+   "note": ""
+  },
+  {
+   "po": "OR",
+   "name": "Oregon",
+   "close_et": "22:00",
+   "last_close_et": "23:00",
+   "next_day": false,
+   "authority": "Oregon Secretary of State, Elections Division",
+   "url": "https://sos.oregon.gov/elections/",
+   "note": "Vote by mail; ballots are due by 8 p.m. local time (11 p.m. ET for most of the state)."
+  },
+  {
+   "po": "PA",
+   "name": "Pennsylvania",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Pennsylvania Department of State",
+   "url": "https://www.pa.gov/agencies/vote",
+   "note": ""
+  },
+  {
+   "po": "RI",
+   "name": "Rhode Island",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Rhode Island Board of Elections / Secretary of State",
+   "url": "https://elections.ri.gov/",
+   "note": ""
+  },
+  {
+   "po": "SC",
+   "name": "South Carolina",
+   "close_et": "19:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "South Carolina Election Commission",
+   "url": "https://scvotes.gov/",
+   "note": ""
+  },
+  {
+   "po": "SD",
+   "name": "South Dakota",
+   "close_et": "20:00",
+   "last_close_et": "21:00",
+   "next_day": false,
+   "authority": "South Dakota Secretary of State",
+   "url": "https://sdsos.gov/elections-voting/",
+   "note": ""
+  },
+  {
+   "po": "TN",
+   "name": "Tennessee",
+   "close_et": "20:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Tennessee Secretary of State, Division of Elections",
+   "url": "https://sos.tn.gov/elections",
+   "note": ""
+  },
+  {
+   "po": "TX",
+   "name": "Texas",
+   "close_et": "20:00",
+   "last_close_et": "21:00",
+   "next_day": false,
+   "authority": "Texas Secretary of State, Elections Division",
+   "url": "https://www.sos.state.tx.us/elections/",
+   "note": ""
+  },
+  {
+   "po": "UT",
+   "name": "Utah",
+   "close_et": "22:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Utah Lieutenant Governor's Office, Elections",
+   "url": "https://vote.utah.gov/",
+   "note": ""
+  },
+  {
+   "po": "VT",
+   "name": "Vermont",
+   "close_et": "19:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Vermont Secretary of State, Elections Division",
+   "url": "https://sos.vermont.gov/elections/",
+   "note": ""
+  },
+  {
+   "po": "VA",
+   "name": "Virginia",
+   "close_et": "19:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Virginia Department of Elections",
+   "url": "https://www.elections.virginia.gov/",
+   "note": ""
+  },
+  {
+   "po": "WA",
+   "name": "Washington",
+   "close_et": "23:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Washington Secretary of State",
+   "url": "https://www.sos.wa.gov/elections",
+   "note": ""
+  },
+  {
+   "po": "WV",
+   "name": "West Virginia",
+   "close_et": "19:30",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "West Virginia Secretary of State",
+   "url": "https://sos.wv.gov/elections",
+   "note": ""
+  },
+  {
+   "po": "WI",
+   "name": "Wisconsin",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Wisconsin Elections Commission",
+   "url": "https://elections.wi.gov/",
+   "note": ""
+  },
+  {
+   "po": "WY",
+   "name": "Wyoming",
+   "close_et": "21:00",
+   "last_close_et": "",
+   "next_day": false,
+   "authority": "Wyoming Secretary of State",
+   "url": "https://sos.wyo.gov/Elections/",
+   "note": ""
+  }
+ ]
+}

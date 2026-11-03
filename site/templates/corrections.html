@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<article>
+<header class="page-head"><p class="kicker">Corrections</p><h1>Corrections log</h1>
+<p class="sub">Every material correction to a published number or claim, newest first: the date, the page, what it said and what it says now. Corrections are made in the underlying data, so they reach every chart, table and the API.</p></header>
+<section>
+<div class="table-scroll">
+<table class="table">
+  <thead><tr><th>Date</th><th>Page</th><th>Was</th><th>Now</th><th>Why</th></tr></thead>
+  <tbody>
+  {% for c in corrections %}
+  <tr><td class="nowrap"><time datetime="{{ c.date }}">{{ c.date_label }}</time></td><td>{% if c.page.startswith("/") %}<a href="{{ c.page }}">{{ c.page }}</a>{% else %}{{ c.page }}{% endif %}</td><td>{{ c.was }}</td><td>{{ c.now }}</td><td class="muted small">{{ c.why }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+</section>
+<section class="section prose">
+  <h2>Report an error</h2>
+  <p>If a number doesn't match the pollster's release, <a href="{{ report_url }}" rel="noopener">open an issue on GitHub</a> with the page, the pollster and the correct figure{% if site.contact_email %}, or email <a href="mailto:{{ site.contact_email }}">{{ site.contact_email }}</a>{% endif %}. Method changes are dated on the <a href="/methodology/">methodology page</a>. This log is also published as <a href="/data/corrections.csv">corrections.csv</a>.</p>
+</section>
+</article>
+{% endblock %}

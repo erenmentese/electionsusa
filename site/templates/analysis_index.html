@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<article>
+<header class="page-head"><p class="kicker">Analysis</p><h1>ElectionsUSA analysis</h1>
+<p class="sub">Short, dated pieces on what the polls say, built from the same open data as every average on the site.</p></header>
+<ul class="related">{% for a in articles %}<li><a href="{{ a.path }}"><span class="t">{{ a.headline }}</span><span class="v"><time datetime="{{ a.published.isoformat() }}">{{ a.published.strftime("%b %-d, %Y") }}</time></span></a></li>{% endfor %}</ul>
+</article>
+{% endblock %}

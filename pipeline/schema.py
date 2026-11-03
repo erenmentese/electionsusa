@@ -70,6 +70,9 @@ def canonical_pollster(name: str) -> str:
         "ABC/Washington Post/Ipsos": "ABC News/Washington Post/Ipsos",
         "ABC News/Washington Post": "ABC News/Washington Post/Ipsos",
         "Big Data Poll": "Big Data Poll",
+        "Zogby": "Zogby Analytics",
+        "Tuft Public Opinion Lab": "Tufts University",
+        "Tufts Public Opinion Lab": "Tufts University",
     }
     return aliases.get(n, n)
 

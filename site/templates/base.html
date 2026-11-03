@@ -26,9 +26,10 @@ if (location.hostname === {{ site.domain | tojson }}) {
 {% set page_title = (title ~ " | " ~ site.name) if title else (site.name ~ " – " ~ site.tagline) %}
 <title>{{ page_title }}</title>
 <meta name="description" content="{{ description or site.description }}">
+{% if path != "/404.html" and not noindex %}<meta name="robots" content="max-image-preview:large">{% endif %}
 <link rel="canonical" href="{{ site.url }}{{ path }}">
 <meta property="og:site_name" content="{{ site.name }}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="{{ og_type or 'website' }}">
 <meta property="og:title" content="{{ page_title }}">
 <meta property="og:description" content="{{ description or site.description }}">
 <meta property="og:url" content="{{ site.url }}{{ path }}">
@@ -39,7 +40,11 @@ if (location.hostname === {{ site.domain | tojson }}) {
 <meta property="og:image:alt" content="{{ description or site.description }}">
 <meta name="twitter:card" content="summary_large_image">
 {% if site.twitter %}<meta name="twitter:site" content="{{ site.twitter }}">{% endif %}
+<link rel="alternate" type="application/atom+xml" title="{{ site.name }}" href="/feed.xml">
 <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -59,12 +64,17 @@ if (location.hostname === {{ site.domain | tojson }}) {
   <div class="wrap header-inner">
     <a class="brand" href="/" aria-label="{{ site.name }} home">Elections<em>USA</em></a>
     <nav class="nav" aria-label="Primary">
-      {% for label, href in nav %}<a href="{{ href }}" {% if path == href or (href in ("/states/", "/pollsters/") and path.startswith(href)) %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+      {% for label, href in nav %}<a href="{{ href }}" {% if path == href or (href in ("/states/", "/pollsters/", "/2028/president/") and path.startswith(href)) %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
     </nav>
+    <details class="nav-more">
+      <summary>More</summary>
+      <div class="nav-more-menu">{% for label, href in nav_more %}<a href="{{ href }}" {% if path == href %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</div>
+    </details>
     {% if path != "/" %}
+    <button type="button" class="search-toggle" aria-label="Search the site" aria-expanded="false" data-search-toggle><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     <div class="hdr-search finder" data-finder>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input type="search" placeholder="Ask about 2028…" aria-label="Search the site" autocomplete="off" data-finder-input>
+      <input type="search" placeholder="Search polls, states…" aria-label="Search the site" autocomplete="off" data-finder-input>
       <div class="finder-results" data-finder-results role="listbox"></div>
     </div>
     {% endif %}
@@ -79,7 +89,7 @@ if (location.hostname === {{ site.domain | tojson }}) {
   <div class="wrap footer-grid">
     <div>
       <p class="brand-foot">Elections<em class="muted">USA</em></p>
-      <p class="muted">{{ site.tagline }}. Updated {{ build_date }}.</p>
+      <p class="muted">{{ site.tagline }}.{% if updated %} This page last changed <time datetime="{{ updated.isoformat() }}">{{ updated.strftime("%B %-d, %Y") }}</time>.{% endif %} Site rebuilt {{ build_date }}.</p>
       <p class="muted small">Poll numbers are facts reported by each pollster and are credited to their source on every row. Historical accuracy data derived from FiveThirtyEight's open dataset (CC BY 4.0). Independent; not affiliated with any campaign, party, pollster or government body.</p>
     </div>
     <div>
@@ -88,7 +98,7 @@ if (location.hostname === {{ site.domain | tojson }}) {
     </div>
     <div>
       <h4>Site</h4>
-      <a href="/methodology/">Methodology</a><a href="/states/">Results by state</a><a href="/pollsters/">Pollster scorecard</a><a href="/markets/">Prediction markets</a><a href="/countdown/">Countdown</a><a href="/2028/calendar/">2028 calendar</a><a href="/data/">Open data &amp; API</a><a href="/about/">About &amp; corrections</a><a href="/privacy/">Privacy</a>
+      <a href="/2026/">2026 midterms</a><a href="/methodology/">Methodology</a><a href="/states/">Results by state</a><a href="/pollsters/">Pollster scorecard</a><a href="/markets/">Prediction markets</a><a href="/countdown/">Countdown</a><a href="/2028/calendar/">2028 calendar</a><a href="/data/">Open data &amp; API</a><a href="/about/">About</a><a href="/corrections/">Corrections</a><a href="/terms/">Terms</a><a href="/privacy/">Privacy</a>
     </div>
   </div>
   <div class="wrap copyright muted small">© {{ year }} {{ site.name }} · {{ site.domain }}</div>
