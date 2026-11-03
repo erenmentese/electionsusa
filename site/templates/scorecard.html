@@ -5,13 +5,13 @@
 <header class="page-head">
   <p class="kicker">Pollster scorecard</p>
   <h1>How accurate is each pollster?</h1>
-  <p class="sub">We recompute simple, explainable accuracy statistics for every pollster with at least ten polls in the final three weeks of a race since 2016, using FiveThirtyEight's open archive of 11,000+ polls matched to results. FiveThirtyEight's final letter grade (2023) is shown alongside for reference; it is no longer updated since the site closed in 2025.</p>
+  <p class="sub">We recompute simple, explainable accuracy statistics for every pollster with at least ten polls in the final three weeks of a race since 2016, using FiveThirtyEight's open archive of 11,000+ polls matched to results. The archive ends with the 2022 cycle, so 2024 polls are not yet scored. FiveThirtyEight's final letter grade (2023) is shown alongside for reference; it is no longer updated since the site closed in 2025.</p>
 </header>
 
 <section class="section prose">
   <h2>How to read this table</h2>
   <ul>
-    <li><b>Avg error</b>: mean absolute difference, in points, between the poll's margin and the actual margin. Lower is better. A typical final-three-weeks poll misses by about 5 points.</li>
+    <li><b>Avg error</b>: mean absolute difference, in points, between the poll's margin and the actual margin. Lower is better. Across every rated poll since 2016, a final-three-weeks poll missed by {{ "%.1f" % field_error }} points on average.</li>
     <li><b>Adjusted error</b>: the same figure shrunk toward the field average (k = 15 polls), so pollsters with few polls aren't ranked on luck. Rows are sorted by this column.</li>
     <li><b>Bias</b>: average signed error. <b>D+</b> means the pollster's polls were, on average, more favourable to Democrats than the result; <b>R+</b> more favourable to Republicans.</li>
     <li><b>Right call</b>: share of polls whose leader won.</li>
@@ -49,7 +49,7 @@
   <table class="table"><thead><tr><th>Race</th><th>Pollster</th><th>Poll end</th><th class="num">Poll margin</th><th class="num">Actual</th><th class="num">Error</th><th>Right call</th></tr></thead>
   <tbody>{% for r in cycle_rows %}<tr><td>{{ r.race_id }}</td><td>{% if r.pollster_path %}<a href="{{ r.pollster_path }}">{{ r.pollster }}</a>{% else %}{{ r.pollster }}{% endif %}</td><td>{{ r.end_date }}</td><td class="num">{{ "%+.1f" % r.poll_margin }}</td><td class="num">{{ "%+.1f" % r.actual_margin }}</td><td class="num">{{ r.error }}</td><td>{{ "✓" if r.right_call else "✗" }}</td></tr>{% endfor %}</tbody></table>
   {% else %}
-  <p>The 2026 midterms are on November 3, 2026. Once results are certified we score every final-three-weeks poll against them, which makes this the first independent pollster rating built since FiveThirtyEight stopped publishing. Results are added as a small CSV in the open dataset; the table appears here automatically.</p>
+  <p>The 2026 midterms are on November 3, 2026. Once results are counted we score every final-three-weeks poll against them with the same method, from open data and open code, first with the unofficial count (labelled preliminary) and again after certification. Results are added as a small CSV in the open dataset; the table appears here automatically.</p>
   {% endif %}
 </section>
 

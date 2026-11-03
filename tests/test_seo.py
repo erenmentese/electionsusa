@@ -110,3 +110,14 @@ def test_home_title_follows_the_midterm_calendar():
     assert build.home_head(date(2026, 11, 6), True)["title"] == "Did the Polls Get the 2026 Midterms Right?"
     assert build.home_head(date(2027, 3, 1), False)["h1"] == "How is 2028 looking?"
     assert all(len(build.home_head(d, r)["title"] + " | ElectionsUSA") <= 60 for d in (date(2026, 11, 3), date(2027, 1, 1)) for r in (True, False))
+
+
+def test_scorecard_claims_and_typical_error_are_consistent(site):
+    import re
+    sc = (site / "pollsters" / "index.html").read_text()
+    assert "first independent pollster rating" not in sc
+    typical = re.search(r"missed by (\d+\.\d) points on average", sc).group(1)
+    yougov = (site / "pollsters" / "yougov" / "index.html").read_text()
+    assert f"all pollsters {typical}" in yougov
+    home = (site / "index.html").read_text()
+    assert "<th class=\"num\">Adjusted</th>" in home  # the column the table is sorted by is visible

@@ -2,7 +2,7 @@
 {% from "_macros.html" import ad, figure, us_map, ev_bar, midterm_block %}
 {% block content %}
 <section class="greet">
-  <p class="kicker">Updated {{ build_date }} · {{ days_to_election }} days to Election Day</p>
+  <p class="kicker">Updated {{ build_date }} · {{ days_to_election }} days to the 2028 election</p>
   <h1>{{ head.h1 }}</h1>
   <p class="sub">{{ head.sub }}</p>
   <div class="finder" data-finder>
@@ -61,12 +61,12 @@
   </div>
   <div>
     <div class="section-head"><h2>Most accurate pollsters</h2><a href="/pollsters/">Full scorecard →</a></div>
-    <p class="muted small">Mean error on the final margin, 2016–2022, shrunk toward the field average so a hot streak over ten polls doesn't outrank 300 polls of steady work.</p>
+    <p class="muted small">Ranked by adjusted error: the mean error on the final margin, 2016–2022, shrunk toward the field average ({{ "%.1f" % field_error }}) so a hot streak over ten polls doesn't outrank 300 polls of steady work.</p>
     <table class="table compact">
-      <thead><tr><th>Pollster</th><th class="num">Polls</th><th class="num">Avg error</th><th class="num">Bias</th></tr></thead>
+      <thead><tr><th>Pollster</th><th class="num">Polls</th><th class="num">Avg error</th><th class="num">Adjusted</th><th class="num">Bias</th></tr></thead>
       <tbody>
       {% for r in scorecard %}
-      <tr><td><a href="{{ pollster_paths[r.pollster] }}">{{ r.pollster }}</a></td><td class="num">{{ r.n_polls }}</td><td class="num">{{ "%.1f" % r.mean_abs_error }}</td><td class="num">{{ r.bias_label }}</td></tr>
+      <tr><td><a href="{{ pollster_paths[r.pollster] }}">{{ r.pollster }}</a></td><td class="num">{{ r.n_polls }}</td><td class="num">{{ "%.1f" % r.mean_abs_error }}</td><td class="num"><b>{{ "%.1f" % r.adj_error }}</b></td><td class="num">{{ r.bias_label }}</td></tr>
       {% endfor %}
       </tbody>
     </table>

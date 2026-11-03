@@ -596,10 +596,9 @@ def year_path(yr: int, latest: int) -> str:
 
 # --------------------------------------------------------------- pollsters
 def build_pollsters(render, pages: dict[str, pollsters.Pollster], rated: list[scorecard.PollsterRow],
-                    cycle_rows: list[dict], as_of: date) -> list[dict]:
+                    cycle_rows: list[dict], as_of: date, field: float) -> list[dict]:
     """Render one page per pollster (see pollsters.registry); return finder entries."""
     raw, _ = scorecard.load_538()
-    field = pollsters.field_error(raw)
     by_rank = {p.rank: p for p in pages.values() if p.rank}
     index = []
     for p in pages.values():
@@ -737,7 +736,10 @@ def build(as_of: date | None = None) -> Path:
         dict(t="Open data & API", u="/data/", k="Data", s="Download every poll as CSV or JSON", q="data download csv json api dataset"),
         dict(t="About & corrections", u="/about/", k="About", s="Who runs ElectionsUSA and how to report an error", q="about contact who correction error report funding ads independent"),
     ]
-    index += build_pollsters(render, pollster_pages, sc_rows, cycle_rows, as_of)
+    # one figure for "a typical poll's error" everywhere it is quoted
+    field_error = pollsters.field_error(scorecard.load_538()[0])
+    env.globals["field_error"] = field_error
+    index += build_pollsters(render, pollster_pages, sc_rows, cycle_rows, as_of, field_error)
     states, nation = history.load()
     index += build_states(render, dist, states, nation)
     index += build_map_builder(render, dist, states, nation)
