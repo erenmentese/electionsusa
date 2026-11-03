@@ -32,10 +32,11 @@ SITE = {
     # The named editor shown on About and as founder/author in structured data. Leave name empty to
     # keep the desk byline; nothing about a person is published until these are filled in.
     "editor": {
-        "name": "",        # e.g. "Jane Doe"
+        "name": "Eren Menteşe",
         "role": "Founder and editor",
-        "bio": "",         # one or two sentences, first person not needed
-        "same_as": [],     # profile URLs: X, GitHub, LinkedIn, personal site
+        "bio": ("Eren works in marketing communications in Istanbul, on brand strategy and campaign management, "
+                "and built ElectionsUSA as an independent, personal project."),
+        "same_as": ["https://www.linkedin.com/in/ernmentese/", "https://github.com/erenmentese"],
     },
     "founding_date": "2026-10",  # launched October 2026 (see About)
     "alternate_name": "ElectionsUSA.org",
@@ -76,7 +77,7 @@ PAGE_REVISED = {
     "results": date(2026, 10, 31),      # state and year results pages, the 2028 map (certified 1976-2024 data)
     "scorecard": date(2026, 11, 3),     # /pollsters/ and pollster pages without a recent poll
     "methodology": date(2026, 11, 3),
-    "about": date(2026, 11, 3),
+    "about": date(2026, 11, 4),
 }
 
 # DNC: early window approved by the full DNC on August 15, 2026 (Rules and Bylaws proposal of July 24).
