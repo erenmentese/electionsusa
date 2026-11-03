@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% from "_macros.html" import ad %}
+{% from "_macros.html" import ad, midterm_block %}
 {% block head %}
 <script type="application/ld+json">{{ ld_dataset | tojson }}</script>
+{% if ld_faq %}<script type="application/ld+json">{{ ld_faq | tojson }}</script>{% endif %}
 {% endblock %}
 {% block content %}
 <article>
@@ -38,13 +39,16 @@
 </section>
 {% endif %}
 
+{% if midterm and race.kind == "approval" %}{{ midterm_block(midterm) }}{% endif %}
+
 {{ ad("race-mid") }}
 
 {% if table %}
 <section class="section">
   <div class="section-head"><h2>All polls <span class="muted">({{ table | length }})</span></h2><a href="/data/polls.csv">CSV →</a></div>
-  {# long tables show the newest rows and fade out; every row stays in the HTML, so search engines and no-JS readers get all of them #}
-  {% set preview_rows = 12 %}
+  {# long tables render the newest rows; the rest wait in a <template> (parsed, not laid out, so the page stays light)
+     until "See all" moves them into the table. Every poll is also in the CSV. #}
+  {% set preview_rows = 25 %}
   {% set foldable = table | length > preview_rows + 3 %}
   <div class="table-fold{{ ' is-folded' if foldable }}" id="all-polls">
   <div class="table-scroll">
@@ -57,6 +61,7 @@
     </tr></thead>
     <tbody>
     {% for r in table %}
+    {% if foldable and loop.index == preview_rows + 1 %}<template data-fold-rows>{% endif %}
     <tr{% if foldable and loop.index > preview_rows %} class="fold"{% endif %}>
       <td>{% if r.pollster_path %}<a href="{{ r.pollster_path }}">{{ r.pollster }}</a>{% else %}{{ r.pollster }}{% endif %}{% if r.sponsor %}<span class="muted small"> / {{ r.sponsor }}</span>{% endif %}{% if r.source_url %} <a class="src" href="{{ r.source_url }}" rel="nofollow noopener" target="_blank" title="Source" aria-label="Source">↗</a>{% endif %}{% if r.notes %}<span class="note" title="{{ r.notes }}">ⓘ</span>{% endif %}</td>
       <td class="nowrap">{{ r.dates }}</td><td class="nowrap">{{ r.sample }}</td><td>{{ r.grade }}</td>
@@ -64,6 +69,7 @@
       {% if race.kind != "primary" %}<td class="num">{{ r.margin_label }}</td>{% endif %}
       <td class="num muted">{{ "%.1f%%" % r.weight if r.weight >= 0.1 else "<0.1%" }}</td>
     </tr>
+    {% if foldable and loop.last %}</template>{% endif %}
     {% endfor %}
     </tbody>
   </table>
@@ -88,6 +94,20 @@
   {% endif %}
   <p>Something wrong? Every row links to its source. Report an error through the <a href="/about/#corrections">corrections page</a> and it will be fixed in the data, not just on the page.</p>
 </section>
+
+{% if faq %}
+<section class="section prose faq" id="faq">
+  <h2>Questions about this average</h2>
+  {% for q, a in faq %}<h3>{{ q }}</h3><p>{{ a }}{% if loop.index0 and "methodology" in a %} <a href="/methodology/">Read the method.</a>{% elif "CC BY" in a %} <a href="/data/">Download the data.</a>{% endif %}</p>{% endfor %}
+</section>
+{% endif %}
+
+{% if related %}
+<section class="section">
+  <div class="section-head"><h2>Related averages</h2><a href="/">All averages →</a></div>
+  <ul class="related">{% for r in related %}<li><a href="{{ r.path }}"><span class="t">{{ r.title }}</span><span class="v">{{ r.value }}</span></a></li>{% endfor %}</ul>
+</section>
+{% endif %}
 
 {{ ad("race-bottom") }}
 </article>

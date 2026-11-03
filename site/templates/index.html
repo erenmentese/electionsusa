@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import ad, figure, us_map, ev_bar %}
+{% from "_macros.html" import ad, figure, us_map, ev_bar, midterm_block %}
 {% block content %}
 <section class="greet">
   <p class="kicker">Updated {{ build_date }} · {{ days_to_election }} days to Election Day</p>
@@ -21,6 +21,8 @@
     </div>
   </div>
 </section>
+
+{% if midterm %}{{ midterm_block(midterm) }}{% endif %}
 
 {% if usmap %}
 <section class="section statemap" aria-labelledby="map-h">

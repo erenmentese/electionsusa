@@ -154,6 +154,94 @@ def answer_sentence(race: config.Race, ra: average.RaceAverage, as_of: date) -> 
     return f"{lead} {verb} {trail} {v[lead]:.1f}% to {v[trail]:.1f}% {what}, according to {src}, {when}."
 
 
+def seo_title(race: config.Race, ra: average.RaceAverage, as_of: date) -> str:
+    """The <title>: the query people type plus today's number and date, e.g. "Trump Approval Rating Today: 37.4% (Nov 3, 2026)"."""
+    v, when = ra.values, as_of.strftime("%b %-d, %Y")
+    if not v:
+        return race.title
+    if race.kind == "approval":
+        return f"{race.short_title.removesuffix(' approval')} Approval Rating Today: {v['Approve']:.1f}% ({when})"
+    if race.kind == "primary":
+        lead = og_cards.ranked(ra)[0]
+        return f"{race.title.removesuffix(' Polls')} Polls Today: {short_name(lead)} {v[lead]:.1f}% ({when})"
+    a, b = race.candidates[:2]
+    lead = signed(ra.margin, short_name(a), short_name(b)) if ra.margin is not None else "Tie"
+    if race.kind == "generic":
+        return f"Generic Ballot Polls Today: {lead} ({when})"
+    return f"{short_name(a)} vs. {short_name(b)} 2028 Polls Today: {lead} ({when})"
+
+
+def faq_items(race: config.Race, ra: average.RaceAverage, answer: str) -> list[tuple[str, str]]:
+    """Questions and plain-text answers shown at the foot of an average page and marked up as FAQPage."""
+    if not ra.values:
+        return []
+    first = {
+        "approval": f"What is {race.short_title.removesuffix(' approval')}'s approval rating today?",
+        "generic": "Who leads the generic congressional ballot?",
+        "general": f"Who leads the {race.title.removeprefix('2028 Presidential Election Polls: ')} 2028 polls?",
+        "primary": f"Who is leading the {race.title.removesuffix(' Polls').replace('Primary', 'primary')}?",
+    }[race.kind]
+    items = [(first, answer)]
+    trend = ra.trend.get(race.candidates[0], [])
+    month = next((v for d, v in reversed(trend) if (ra.as_of - d).days >= 30), None)
+    if race.kind == "approval" and month is not None:
+        change = ra.values["Approve"] - month
+        items.append(("How has it changed over the last month?",
+                      f"Approval is {abs(change):.1f} points {'higher' if change > 0 else 'lower'} than 30 days ago, when the average stood at {month:.1f}%."
+                      if abs(change) >= 0.05 else f"It is unchanged from 30 days ago, at {month:.1f}%."))
+    items += [
+        ("How is this average calculated?",
+         f"Every poll is weighted by how recent it is (a {race.half_life_days}-day half-life), its sample size, the pollster's track "
+         "record and how often the firm publishes, so a daily tracker can't dominate. The method is fully described on the "
+         "methodology page and can be reproduced from the open data."),
+        ("Which polls are included?",
+         f"Every public national poll we can source, {ra.n_polls_total} on record for this page and {ra.n_polls} carrying weight today. "
+         "Each row in the table links to the pollster's own release; adult, registered-voter and likely-voter samples are all included."),
+        ("How often is it updated?",
+         "Automatically, every six hours: new polls are collected, checked and added, and the average and chart are recomputed."),
+        ("Can I use this data?",
+         "Yes. Every poll is free to download as CSV, and every average as JSON, under CC BY 4.0. Please credit ElectionsUSA with a link."),
+    ]
+    return items
+
+
+def faq_ld(items: list[tuple[str, str]]) -> dict:
+    return {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in items]}
+
+
+def related_averages(race: config.Race, averages: dict[str, average.RaceAverage]) -> list[dict]:
+    """Other averages to read next, with their current number, plus the scorecard and the map."""
+    out = []
+    for r in config.RACES:
+        ra = averages[r.id]
+        if r.id == race.id or not ra.values:
+            continue
+        if r.kind == "primary":
+            lead = og_cards.ranked(ra)[0]
+            value = f"{short_name(lead)} {ra.values[lead]:.1f}%"
+        elif r.kind == "approval":
+            value = f"{ra.values['Approve']:.1f}% approve"
+        else:
+            value = signed(ra.margin, short_name(r.candidates[0]), short_name(r.candidates[1]))
+        out.append(dict(title=r.short_title, path=f"/{r.slug}/", value=value))
+    return out + [dict(title="Pollster scorecard", path="/pollsters/", value="Which pollsters are most accurate"),
+                  dict(title="2028 electoral map", path="/2028/map/", value="Make your own forecast")]
+
+
+MIDTERM_RACE = "generic-ballot-2026"
+
+
+def midterm_context(averages: dict[str, average.RaceAverage], as_of: date) -> dict | None:
+    """The generic-ballot block shown on the home and approval pages from a week before the midterms to a month after."""
+    days = (config.MIDTERM_DAY_2026 - as_of).days
+    ra = averages.get(MIDTERM_RACE)
+    if not ra or not ra.values or not -30 <= days <= 7:
+        return None
+    race = config.RACE_BY_ID[MIDTERM_RACE]
+    return dict(days=days, ra=ra, race=race, path=f"/{race.slug}/", colors=race_colors(race))
+
+
 def race_charts(ra: average.RaceAverage, race: config.Race) -> dict[str, str]:
     colors = race_colors(race)
     wide = ra.polls if ra.polls is not None else pd.DataFrame()
@@ -480,12 +568,13 @@ def build(as_of: date | None = None) -> Path:
     for q in all_polls:
         q["pollster_path"] = pollster_path(q["pollster"], q["sponsor"])
 
-    averages: dict[str, average.RaceAverage] = {}
+    # every average first, so any page can point at another (the midterm block, related averages)
+    averages = {race.id: average.compute_race(polls, race, ratings, as_of=as_of) for race in config.RACES}
+    env.globals["midterm"] = midterm_context(averages, as_of)
     summaries = []
     race_lastmod: dict[str, date | None] = {}
     for race in config.RACES:
-        ra = average.compute_race(polls, race, ratings, as_of=as_of)
-        averages[race.id] = ra
+        ra = averages[race.id]
         table = race_table(ra, race, ratings, pollster_path)
         ch = race_charts(ra, race)
         summaries.append(dict(race=race, avg=ra, colors=race_colors(race), path=f"/{race.slug}/"))
@@ -499,8 +588,10 @@ def build(as_of: date | None = None) -> Path:
         # a page changes meaningfully when a new poll lands, not every time the build runs
         race_lastmod[race.id] = min(pd.Timestamp(ra.latest_end_date).date(), as_of) if ra.latest_end_date is not None else None
         answer = answer_sentence(race, ra, as_of)
+        faq = faq_items(race, ra, answer)
         render("race.html", f"/{race.slug}/", race=race, avg=ra, table=table, charts=ch, colors=race_colors(race),
-               shown=shown, title=race.title, description=answer or race.description, answer=answer,
+               shown=shown, title=seo_title(race, ra, as_of), description=answer or race.description, answer=answer,
+               faq=faq, ld_faq=faq_ld(faq) if faq else None, related=related_averages(race, averages),
                crumb=race.short_title, og_image=og_image, lastmod=race_lastmod[race.id],
                ld_dataset=dataset_ld(race, f"/{race.slug}/", as_of))
         api = dict(race_id=race.id, title=race.title, as_of=as_of.isoformat(), method="https://electionsusa.org/methodology/",
