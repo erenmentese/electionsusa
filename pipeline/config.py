@@ -207,28 +207,26 @@ RACES: list[Race] = [
 RACE_BY_ID = {r.id: r for r in RACES}
 
 # Prediction markets -----------------------------------------------------
-# Polymarket "gamma" API event slugs and Kalshi series tickers. Verify these
-# against the live sites; markets get renamed between cycles.
+# Polymarket "gamma" API event slugs. Verify these against the live site; markets get renamed
+# between cycles. Kalshi lists the same contests; it is linked from /markets/, not republished.
+KALSHI_URL = "https://kalshi.com/"
 MARKETS = [
     {
         "id": "pres-2028-winner",
         "title": "2028 Presidential Election Winner",
         "polymarket_slug": "presidential-election-winner-2028",
-        "kalshi_series": "KXPRESNOM2028",  # placeholder: confirm ticker on kalshi.com
         "compare_race": None,
     },
     {
         "id": "dem-nominee-2028",
         "title": "2028 Democratic Nominee",
         "polymarket_slug": "democratic-presidential-nominee-2028",
-        "kalshi_series": "KXDEMNOM2028",
         "compare_race": "dem-primary-2028",
     },
     {
         "id": "gop-nominee-2028",
         "title": "2028 Republican Nominee",
         "polymarket_slug": "republican-presidential-nominee-2028",
-        "kalshi_series": "KXREPNOM2028",
         "compare_race": "gop-primary-2028",
     },
 ]

@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import average, charts, config, dedupe, history, og_cards, pollsters, scorecard, usmap
+from . import average, charts, check_data, config, dedupe, fetch_markets, history, og_cards, pollsters, scorecard, usmap
 from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 
 NAV = [
@@ -329,53 +329,36 @@ def poll_list(polls: pd.DataFrame) -> list[dict]:
 
 
 def markets_context(markets: pd.DataFrame, averages: dict[str, average.RaceAverage]) -> list[dict]:
+    """Polymarket prices from the API only: no hand-entered press snapshots, no frozen contracts, one spelling per name."""
     out = []
     if markets.empty:
         return out
-    markets = markets.copy()
+    markets = markets[(markets["platform"] == "polymarket") & (markets["source_type"] == "api")].copy()
     markets["snapshot_date"] = pd.to_datetime(markets["snapshot_date"]).dt.date
+    markets["outcome"] = markets["outcome"].map(fetch_markets.canonical_outcome)
+    markets = markets.drop_duplicates(["snapshot_date", "market_id", "outcome"], keep="last")
     for mk in config.MARKETS:
         sub = markets[markets["market_id"] == mk["id"]]
         if sub.empty:
-            out.append(dict(market=mk, rows=[], chart="", latest=None, note="No snapshot yet. The pipeline records one on each run."))
+            out.append(dict(market=mk, rows=[], chart="", latest=None, hidden=[], note="No snapshot yet. The pipeline records one on each run."))
             continue
-        latest_by_platform = {}
-        for platform, g in sub.groupby("platform"):
-            d = g["snapshot_date"].max()
-            snap = g[g["snapshot_date"] == d].sort_values("price", ascending=False)
-            latest_by_platform[platform] = (d, snap)
-        outcomes = sorted({o for _, (_, s) in latest_by_platform.items() for o in s["outcome"]},
-                          key=lambda o: -max(float(s[s["outcome"] == o]["price"].max()) if (s["outcome"] == o).any() else 0 for _, (_, s) in latest_by_platform.items()))
-        rows = []
-        for o in outcomes:
-            row = {"outcome": o}
-            for p in ("polymarket", "kalshi"):
-                if p in latest_by_platform:
-                    s = latest_by_platform[p][1]
-                    v = s[s["outcome"] == o]["price"]
-                    row[p] = float(v.iat[0]) if len(v) else None
-                else:
-                    row[p] = None
-            rows.append(row)
+        latest = sub["snapshot_date"].max()
+        hidden = check_data.stale_prices(sub)
+        snap = sub[(sub["snapshot_date"] == latest) & ~sub["outcome"].isin(hidden)].sort_values("price", ascending=False)
+        rows = [dict(outcome=o, polymarket=float(p)) for o, p in zip(snap["outcome"], snap["price"])]
         chart = ""
         cmp_race = mk.get("compare_race")
         if cmp_race and cmp_race in averages and averages[cmp_race].values:
             av = averages[cmp_race].values
             groups = {}
-            for o in outcomes[:8]:
-                g = {}
-                for p in ("polymarket", "kalshi"):
-                    v = next((r[p] for r in rows if r["outcome"] == o), None)
-                    if v is not None:
-                        g[p.capitalize()] = v
-                if o in av:
-                    g["Poll average"] = av[o]
-                groups[o] = g
-            chart = charts.grouped_bars(groups, {"Poll average": "#111827", "Polymarket": "#2563eb", "Kalshi": "#16a34a"},
+            for r in rows[:8]:
+                g = {"Polymarket": r["polymarket"]}
+                if r["outcome"] in av:
+                    g["Poll average"] = av[r["outcome"]]
+                groups[r["outcome"]] = g
+            chart = charts.grouped_bars(groups, {"Poll average": "#111827", "Polymarket": "#2563eb"},
                                         title=f"{mk['title']}: polls vs. prediction markets", chart_id=f"cmp-{mk['id']}")
-        latest = max(d for d, _ in latest_by_platform.values())
-        notes = sorted({n for n in sub["notes"].dropna().astype(str) if n})
-        out.append(dict(market=mk, rows=rows, chart=chart, latest=latest, note="; ".join(notes)))
+        out.append(dict(market=mk, rows=rows, chart=chart, latest=latest, hidden=hidden, note=""))
     return out
 
 
@@ -626,7 +609,7 @@ def build(as_of: date | None = None) -> Path:
                           q=" ".join([r.title, r.short_title, r.description] + r.candidates + [short_name(c) for c in r.candidates])))
     index += [
         dict(t="Pollster scorecard", u="/pollsters/", k="Scorecard", s="Which pollster is most accurate? Error, bias and call rate for 60+ pollsters", q="pollster accuracy accurate bias rating grade scorecard most accurate pollsters"),
-        dict(t="Prediction markets", u="/markets/", k="Markets", s="Polymarket and Kalshi odds vs. the polls", q="odds betting polymarket kalshi prediction market chance probability favourite favorite"),
+        dict(t="Prediction markets", u="/markets/", k="Markets", s="Polymarket odds vs. the polls", q="odds betting polymarket kalshi prediction market chance probability favourite favorite"),
         dict(t="Days until the 2028 election", u="/countdown/", k="Countdown", s=f"{(config.ELECTION_DAY_2028 - as_of).days} days to November 7, 2028", q="countdown days until when is election day date 2028 november 7 midterms 2026"),
         dict(t="2028 election calendar", u="/2028/calendar/", k="Calendar", s="Primaries, conventions, Election Day, inauguration", q="calendar schedule primary dates super tuesday convention iowa new hampshire inauguration"),
         dict(t="Methodology", u="/methodology/", k="About", s="How the polling average is computed", q="methodology method how weighted average half-life sample size house effects"),
@@ -654,8 +637,8 @@ def build(as_of: date | None = None) -> Path:
     render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows, pollster_paths=rated_paths,
            active=sorted((p for p in pollster_pages.values() if not p.rated), key=lambda p: -len(p.polls)),
            title="Pollster Scorecard: Accuracy and Bias Ratings", description="How accurate has each U.S. pollster been? Mean error, partisan bias and call accuracy for 60+ pollsters, recomputed from 11,000 polls matched to results, plus FiveThirtyEight's final grades.")
-    render("markets.html", "/markets/", markets=mk_ctx, title="2028 Election Odds: Prediction Markets vs. Polls",
-           description="Polymarket and Kalshi odds for the 2028 presidential election and party nominations, compared with the polling average.",
+    render("markets.html", "/markets/", markets=mk_ctx, stale_snapshots=check_data.STALE_PRICE_SNAPSHOTS, kalshi_url=config.KALSHI_URL, title="2028 Election Odds: Prediction Markets vs. Polls",
+           description="Polymarket odds for the 2028 presidential election and party nominations, compared with the polling average.",
            lastmod=markets_lastmod)
     render("countdown.html", "/countdown/", title="How Many Days Until the 2028 Election?",
            description=f"Live countdown to the November 7, 2028 U.S. presidential election, with the 2026 midterm date and the 2028 primary calendar.")
@@ -667,15 +650,16 @@ def build(as_of: date | None = None) -> Path:
     render("privacy.html", "/privacy/", title="Privacy Policy", description="How ElectionsUSA uses cookies, advertising and analytics.",
            lastmod=datetime.strptime(config.SITE["privacy_updated"], "%B %d, %Y").date())
     render("data.html", "/data/", title="Open Data: Download Every Poll", description="Download the full ElectionsUSA polls and prediction-market datasets as CSV and JSON.",
-           n_polls=int(polls["poll_id"].nunique()) if not polls.empty else 0, n_rows=len(polls), n_markets=len(markets),
+           n_polls=int(polls["poll_id"].nunique()) if not polls.empty else 0, n_rows=len(polls), n_markets=int(((markets["platform"] == "polymarket") & (markets["source_type"] == "api")).sum()) if not markets.empty else 0,
            lastmod=data_lastmod)
     render("404.html", "/404.html", title="Page not found", description="")
 
     # data downloads + sitemap/robots
-    for f in ("polls.csv", "markets.csv"):
-        src = config.DATA_DIR / f
-        if src.exists():
-            shutil.copy(src, dist / "data" / f)
+    if (config.DATA_DIR / "polls.csv").exists():
+        shutil.copy(config.DATA_DIR / "polls.csv", dist / "data" / "polls.csv")
+    # only prices we read from Polymarket's public API; hand-entered press quotes and Kalshi prices are not republished
+    if not markets.empty:
+        markets[(markets["platform"] == "polymarket") & (markets["source_type"] == "api")].to_csv(dist / "data" / "markets.csv", index=False)
     (dist / "data" / "pollster-scorecard.csv").write_text(pd.DataFrame([asdict(r) for r in sc_rows]).to_csv(index=False))
     base = config.SITE["url"]
     sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']

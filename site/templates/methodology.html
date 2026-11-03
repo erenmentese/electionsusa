@@ -28,7 +28,7 @@
 <p>Historical accuracy is computed from FiveThirtyEight's open archive (CC BY 4.0) of polls conducted in the final 21 days before an election, 2016–2022. For each pollster we report mean absolute error on the margin, mean signed error (bias), the share of races called correctly, and an adjusted error shrunk toward the field mean with <i>k</i> = 15. After the November 3, 2026 midterms we apply the same calculation to this site's own 2026 polls.</p>
 
 <h2>6. Prediction markets</h2>
-<p>Prices are read from Polymarket's and Kalshi's public APIs once per update and stored as implied probabilities. We show them next to poll shares for the same outcome but do not combine them; they measure different things.</p>
+<p>Prices are read from Polymarket's public API once per update and stored as implied probabilities. Closed, inactive and thinly traded contracts (under $10,000 traded) are skipped, and a price that hasn't moved in four snapshots is hidden as a dead contract. Kalshi is linked rather than republished. We show them next to poll shares for the same outcome but do not combine them; they measure different things.</p>
 
 <h2>7. Updates and corrections</h2>
 <p>Data refreshes several times a day; the timestamp on every page is the build date. Errors reported via the <a href="/about/#corrections">corrections page</a> are fixed in the dataset so the correction propagates to every chart, table and the API.</p>
