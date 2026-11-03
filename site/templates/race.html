@@ -41,6 +41,20 @@
 
 {% if midterm and race.kind == "approval" %}{{ midterm_block(midterm) }}{% endif %}
 
+{% if race.kind == "generic" and midterm and midterm.days <= 0 %}
+<section class="section prose" id="vs-result">
+  <h2>Final average vs. House popular vote <span class="muted">(pending)</span></h2>
+  <table class="table compact">
+    <thead><tr><th></th><th class="num">Democrats</th><th class="num">Republicans</th><th class="num">Margin</th></tr></thead>
+    <tbody>
+      <tr><td>Final ElectionsUSA average, Nov 3</td>{% for c in race.candidates %}<td class="num">{{ "%.1f%%" % avg.values[c] if c in avg.values else "—" }}</td>{% endfor %}<td class="num">{{ avg.margin | signed("D", "R") }}</td></tr>
+      <tr><td>National House popular vote</td><td class="num muted">pending</td><td class="num muted">pending</td><td class="num muted">pending</td></tr>
+    </tbody>
+  </table>
+  <p>The House popular vote is still being counted. When a national count is available we add it here, labelled preliminary until states certify, and score every poll from the final three weeks on the <a href="/pollsters/#2026">2026 pollster scorecard</a>. Poll closing times and each state's official results are on the <a href="/2026/">2026 midterms page</a>.</p>
+</section>
+{% endif %}
+
 {{ ad("race-mid") }}
 
 {% if table %}

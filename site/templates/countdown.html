@@ -16,10 +16,20 @@
   <p class="sub">The next United States presidential election is on <b>Tuesday, November 7, 2028</b>. That is {{ days_to_election }} days from {{ build_date }}. The live counter below updates every second in your browser: <span class="live" data-live>—</span></p>
 </section>
 
-{% if days_to_midterm >= 0 %}
+{% if days_to_midterm > 0 %}
 <section class="count-secondary" data-target="{{ midterm_day.isoformat() }}">
-  <h2>{{ days_to_midterm }} days until the 2026 midterm elections</h2>
+  <h2>{{ days_to_midterm }} day{{ "s" if days_to_midterm != 1 }} until the 2026 midterm elections</h2>
   <p>All 435 House seats, 35 Senate seats and 36 governorships are on the ballot on <b>Tuesday, November 3, 2026</b>. Follow the <a href="/2026/generic-ballot/">generic ballot average</a>.</p>
+</section>
+{% elif days_to_midterm == 0 %}
+<section class="count-secondary">
+  <h2>Today is Election Day for the 2026 midterms</h2>
+  <p>All 435 House seats, 35 Senate seats and 36 governorships are on the ballot today, <b>Tuesday, November 3, 2026</b>. See <a href="/2026/">poll closing times and every state's official results site</a>, and the <a href="/2026/generic-ballot/">final generic ballot average</a>.</p>
+</section>
+{% elif days_to_midterm >= -60 %}
+<section class="count-secondary">
+  <h2>The 2026 midterms: results and what the polls said</h2>
+  <p>The midterm elections were held on <b>Tuesday, November 3, 2026</b>. Find each state's official results and the final generic ballot average on the <a href="/2026/">2026 midterms page</a>, and how close each pollster came on the <a href="/pollsters/#2026">2026 pollster scorecard</a>.</p>
 </section>
 {% endif %}
 

@@ -13,7 +13,7 @@ import json
 import shutil
 import sys
 from dataclasses import asdict
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -33,6 +33,14 @@ NAV = [
     ("Pollsters", "/pollsters/"),
     ("Data", "/data/"),
 ]
+
+
+MIDTERM_NAV = ("2026 Midterms", "/2026/")
+
+
+def nav_items(as_of: date) -> list[tuple[str, str]]:
+    """The primary nav; the 2026 hub leads it from a week before the midterms to six weeks after."""
+    return [MIDTERM_NAV, *NAV] if -42 <= (config.MIDTERM_DAY_2026 - as_of).days <= 7 else NAV
 
 
 # ----------------------------------------------------------------- helpers
@@ -512,6 +520,76 @@ def build_map_builder(render, dist: Path, states: dict[str, history.StateHistory
                  q="2028 electoral map interactive make your own forecast prediction 270 to win swing states simulator scenario build")]
 
 
+def clock(hhmm: str) -> str:
+    """"19:00" -> "7 p.m.", "19:30" -> "7:30 p.m.", "00:00" -> "midnight"."""
+    h, m = map(int, hhmm.split(":"))
+    if h == 0 and m == 0:
+        return "midnight"
+    return f"{(h - 1) % 12 + 1}{f':{m:02d}' if m else ''} {'a.m.' if h < 12 else 'p.m.'}"
+
+
+def midterm_status(as_of: date) -> str:
+    days = (config.MIDTERM_DAY_2026 - as_of).days
+    if days > 1:
+        return f"in {days} days"
+    if days == 1:
+        return "tomorrow"
+    if days == 0:
+        return "Election Day is today"
+    return "votes are being counted; results are unofficial until certified" if days >= -35 else "results certified"
+
+
+def build_midterm_hub(render, averages: dict[str, average.RaceAverage], states: dict[str, history.StateHistory],
+                      as_of: date, result: str = "") -> list[dict]:
+    """Render /2026/: the final generic ballot average, poll closing times and each state's official results site."""
+    ra = averages[MIDTERM_RACE]
+    race = config.RACE_BY_ID[MIDTERM_RACE]
+    src = json.loads((config.DATA_DIR / "elections" / "2026-states.json").read_text())
+    by_po = {st.po: st.path for st in states.values()}
+    rows = []
+    for s in src["states"]:
+        close = clock(s["close_et"]) + (f"–{clock(s['last_close_et'])}" if s["last_close_et"] else "")
+        rows.append(dict(name=s["name"], path=by_po.get(s["po"], "/states/"), url=s["url"], authority=s["authority"],
+                         close=close + (" (Nov 4)" if s["next_day"] else ""), note=s["note"]))
+    first = min(src["states"], key=lambda s: s["close_et"] if not s["next_day"] else "99")
+    earliest = [s for s in src["states"] if s["close_et"] == first["close_et"] and not s["next_day"]]
+    where = ("parts of " if all(s["last_close_et"] for s in earliest) else "") + " and ".join(s["name"] for s in earliest)
+    margin = signed(ra.margin, "Democrats", "Republicans") if ra.margin is not None else "even"
+    answer = (f"The 2026 midterm elections were held on Tuesday, November 3, 2026. The final ElectionsUSA generic ballot "
+              f"average had {margin} ({ra.n_polls} polls). Official results come from each state's election office, "
+              f"linked below with poll closing times.") if as_of > config.MIDTERM_DAY_2026 else (
+              f"The 2026 midterm elections are on Tuesday, November 3, 2026; the first polls close at {clock(first['close_et'])} ET. "
+              f"The final ElectionsUSA generic ballot average has {margin} ({ra.n_polls} polls). Official results come "
+              f"from each state's election office, linked below with every state's poll closing time.")
+    faq = [
+        ("When do polls close on November 3, 2026?",
+         f"The first polls close at {clock(first['close_et'])} Eastern Time in {where}; most of the East closes "
+         "between 7 and 8 p.m. ET, and the last polls, in Alaska and Hawaii, close at midnight to 1 a.m. ET on November 4. "
+         "The table lists every state."),
+        ("Who won the House and the Senate?",
+         "ElectionsUSA does not call races. Each state's election office publishes the unofficial count on election night and "
+         "certifies the result in the following weeks; news organisations project winners from those counts. Use the "
+         "official results links in the table for each state."),
+        ("What did the final polls say?",
+         f"The final generic ballot average had {margin}: {', '.join(f'{c} {ra.values[c]:.1f}%' for c in race.candidates if c in ra.values)}, "
+         f"from {ra.n_polls} national polls. The generic ballot measures the national House vote, not seats."),
+        ("How will you check the polls against the results?",
+         "We compare the final average with the national House popular vote and score every poll from the last three weeks "
+         "of the campaign on the 2026 pollster scorecard: first with the unofficial count, labelled preliminary, then with "
+         "certified results."),
+    ]
+    hub = dict(ra=ra, race=race, path=f"/{race.slug}/", colors=race_colors(race), states=rows, status=midterm_status(as_of),
+               sources=src["closing_sources"], checked="November 3, 2026", result=result)
+    render("midterm_hub.html", "/2026/", hub=hub, answer=answer, faq=faq, ld_faq=faq_ld(faq),
+           title="2026 Midterm Elections: Final Polls, Poll Closing Times, Results",
+           description=answer, crumb="2026 midterms", og_image=f"/og/{MIDTERM_RACE}.png",
+           lastmod=min(as_of, config.MIDTERM_DAY_2026 + timedelta(days=1)))
+    return [dict(t="2026 midterms: House and Senate results, poll closing times", u="/2026/", k="Midterms",
+                 s=f"Final generic ballot {margin} · when polls close · official results by state",
+                 q="2026 midterm midterms election elections house senate governor governors congress control results result "
+                   "won win winner winners called call election night tonight today poll closing times close vote count")]
+
+
 def year_path(yr: int, latest: int) -> str:
     return "/states/" if yr == latest else f"/states/{yr}/"
 
@@ -549,7 +627,7 @@ def build(as_of: date | None = None) -> Path:
     env.filters["signed"] = signed
     env.filters["short"] = short_name
     env.filters["ordinal"] = pollsters.ordinal
-    env.globals.update(site=config.SITE, nav=NAV, build_date=as_of.strftime("%B %-d, %Y"),
+    env.globals.update(site=config.SITE, nav=nav_items(as_of), build_date=as_of.strftime("%B %-d, %Y"),
                        build_iso=as_of.isoformat(), year=as_of.year,
                        election_day=config.ELECTION_DAY_2028, midterm_day=config.MIDTERM_DAY_2026,
                        days_to_election=(config.ELECTION_DAY_2028 - as_of).days,
@@ -663,6 +741,7 @@ def build(as_of: date | None = None) -> Path:
     states, nation = history.load()
     index += build_states(render, dist, states, nation)
     index += build_map_builder(render, dist, states, nation)
+    index += build_midterm_hub(render, averages, states, as_of)
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
 
     (dist / "og" / "site.png").write_bytes(og_cards.site_image(summaries, as_of))

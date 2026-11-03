@@ -42,7 +42,7 @@
   <h2 id="midterm-h"><a href="{{ m.path }}">{{ "Final generic ballot average" if m.days <= 0 else "Generic ballot" }}: {{ r.margin | signed("Democrats", "Republicans") }}</a></h2>
   <div class="midterm-figs">{% for c in m.race.candidates if c in r.values %}<span style="--c: {{ m.colors[c] }}">{{ c }} <b>{{ "%.1f" % r.values[c] }}%</b></span>{% endfor %}</div>
   <p>{% if m.days > 0 %}The ElectionsUSA average of {{ r.n_polls }} national polls for the House vote on November 3.{% elif m.days == 0 %}Our average of {{ r.n_polls }} national polls going into today's House vote. Once results are in, every final-weeks poll is scored against them.{% else %}How close did the polls get? Every final-weeks poll is scored against the result on the 2026 pollster scorecard.{% endif %}</p>
-  <p class="midterm-links"><a class="cta" href="{{ m.path }}">Generic ballot polls →</a><a href="/pollsters/#2026">2026 pollster scorecard</a><a href="/pollsters/">Most accurate pollsters</a></p>
+  <p class="midterm-links"><a class="cta" href="/2026/">{{ "Poll closing times and results →" if m.days >= 0 else "Results and the final polls →" }}</a><a href="{{ m.path }}">Generic ballot polls</a><a href="/pollsters/#2026">2026 pollster scorecard</a></p>
 </section>
 {% endmacro %}
 

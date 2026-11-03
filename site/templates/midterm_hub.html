@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad %}
+{% block head %}
+{% if ld_faq %}<script type="application/ld+json">{{ ld_faq | tojson }}</script>{% endif %}
+{% endblock %}
+{% block content %}
+{% set r = hub.ra %}
+<article>
+<header class="page-head">
+  <p class="kicker">2026 midterms · {{ hub.status }}</p>
+  <h1>2026 Midterm Elections: Final Polls and Official Results</h1>
+  <p class="sub">{{ answer }}</p>
+</header>
+
+<section class="midterm" aria-labelledby="final-h">
+  <p class="kicker">Final generic ballot average · Election Day, November 3, 2026</p>
+  <h2 id="final-h"><a href="{{ hub.path }}">{{ r.margin | signed("Democrats", "Republicans") }}</a></h2>
+  <div class="midterm-figs">{% for c in hub.race.candidates if c in r.values %}<span style="--c: {{ hub.colors[c] }}">{{ c }} <b>{{ "%.1f" % r.values[c] }}%</b></span>{% endfor %}</div>
+  <p>Weighted average of {{ r.n_polls }} national polls of the House vote ({{ r.n_polls_total }} on record), the last ending {{ r.latest_end_date.strftime("%B %-d") }}. It is a measure of the national popular vote for the House, not a seat forecast.</p>
+  <p class="midterm-links"><a class="cta" href="{{ hub.path }}">Every generic ballot poll →</a><a href="{{ hub.path }}#vs-result">Final average vs. result</a><a href="/pollsters/">Pollster scorecard</a></p>
+</section>
+
+<section class="section prose" id="compare">
+  <h2>Polls vs. results: what happens next</h2>
+  {% if hub.result %}
+  <p>{{ hub.result }}</p>
+  {% else %}
+  <p>We don't call races or report vote counts. Once the national House popular vote has been counted, we will compare it with the final average above and score every poll from the final three weeks, pollster by pollster, on the <a href="/pollsters/#2026">2026 pollster scorecard</a>. A first comparison uses the unofficial count and is labelled preliminary; it is updated when states certify their results, which takes several weeks.</p>
+  {% endif %}
+  <p>On the ballot: all 435 House seats, 35 Senate seats and 36 governorships.</p>
+</section>
+
+{{ ad("hub-mid") }}
+
+<section class="section" id="poll-closing-times">
+  <div class="section-head"><h2>Poll closing times and official results by state</h2><span class="muted small">Eastern Time, November 3</span></div>
+  <div class="table-scroll">
+  <table class="table compact">
+    <thead><tr><th>State</th><th>Polls close (ET)</th><th>Official results</th></tr></thead>
+    <tbody>
+    {% for s in hub.states %}
+    <tr><td><a href="{{ s.path }}">{{ s.name }}</a></td><td class="nowrap">{{ s.close }}{% if s.note %}<span class="muted small"> · {{ s.note }}</span>{% endif %}</td><td><a href="{{ s.url }}" rel="nofollow noopener" target="_blank">{{ s.authority }}</a></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted small">Where a state spans two time zones, the first time is when its earliest polls close and the second when the last ones close. Anyone in line when polls close can still vote. Times from <a href="{{ hub.sources[0] }}" rel="nofollow noopener">270toWin</a>, checked {{ hub.checked }}. Results links go to each state's election office, which publishes the unofficial count on election night and the certified result later; the state name links to its presidential results since 1976.</p>
+</section>
+
+{% if faq %}
+<section class="section prose faq" id="faq">
+  <h2>Questions about the 2026 midterms</h2>
+  {% for q, a in faq %}<h3>{{ q }}</h3><p>{{ a }}</p>{% endfor %}
+</section>
+{% endif %}
+</article>
+{% endblock %}
