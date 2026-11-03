@@ -88,7 +88,7 @@
   {% elif race.kind == "primary" %}
   <p>Primary polls are volatile: the field is not set, many respondents name whoever is in the news, and "undecided" is often the largest answer. Candidates are shown only when at least one poll in the window tested them, so a candidate's average can move simply because different pollsters include different names. Use the trend chart, not any single poll.</p>
   {% elif race.kind == "approval" %}
-  <p>Approval is the most frequently polled question in American politics, so this tracker uses a short {{ race.half_life_days }}-day half-life and damps pollsters that publish weekly so no single tracker dominates. Adult, registered-voter and likely-voter samples are pooled; registered and likely-voter samples typically read one to three points more favourable for the president than all-adult samples.</p>
+  <p>Approval is the most frequently polled question in American politics, so this tracker uses a short {{ race.half_life_days }}-day half-life and damps pollsters that publish weekly so no single tracker dominates. Adult, registered-voter and likely-voter polls all count, one population per poll (likely voters first); registered and likely-voter samples typically read one to three points more favourable for the president than all-adult samples.</p>
   {% else %}
   <p>The generic ballot asks which party's candidate for Congress a respondent would support. It is a national number and does not map directly onto seats: because of district geography a party usually needs a national lead of a few points to be favoured to win the House.</p>
   {% endif %}

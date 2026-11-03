@@ -6,6 +6,7 @@
 
 <h2>1. Which polls are included</h2>
 <p>Any publicly released poll of the relevant population (national adults, registered or likely voters, or a party's primary voters) with a stated pollster and fieldwork dates. We don't exclude partisan or internal polls, but they are rarely graded well and so carry low weight. Polls are collected from pollsters' releases and from community-maintained compilations that cite them; the row's link always points to the source we used.</p>
+<p><b>One entry per poll.</b> When a pollster releases one poll for several populations, only one enters the average, in this order: likely voters, then registered voters, then all adults. A poll is identified by its race, fieldwork dates, the firm that ran it and its media partners, so the same poll listed twice in a source table (sponsor and pollster swapped, or "Zogby" next to "Zogby Analytics") counts once, while two different polls by the same firm in the same days (for The Washington Post and for Reuters, say) both count. Every population stays in the <a href="/data/">open dataset</a>.</p>
 
 <h2>2. Weights</h2>
 <p>Each poll's weight is the product of four factors:</p>
@@ -31,6 +32,7 @@
 
 <h2>7. Updates and corrections</h2>
 <p>Data refreshes several times a day; the timestamp on every page is the build date. Errors reported via the <a href="/about/#corrections">corrections page</a> are fixed in the dataset so the correction propagates to every chart, table and the API.</p>
-<p><b>Method changes.</b> November 2026: pollster grades and frequency damping now follow the firm that conducted each poll rather than the first name in the source table, which was often the media sponsor. Earlier, partial name matches also gave some polls another pollster's grade (co/efficient got the A+ of The New York Times/Siena College). Every average and trend line was recomputed with the corrected weights.</p>
+<p><b>Method changes.</b> November 3, 2026: polls are now de-duplicated before averaging (one population per poll, likely voters first, and copies of the same poll removed). Until then a poll published for likely voters, registered voters and adults counted up to three times, and ten polls were listed twice. The <a href="/corrections/">corrections log</a> lists the averages that moved.</p>
+<p>November 2026: pollster grades and frequency damping now follow the firm that conducted each poll rather than the first name in the source table, which was often the media sponsor. Earlier, partial name matches also gave some polls another pollster's grade (co/efficient got the A+ of The New York Times/Siena College). Every average and trend line was recomputed with the corrected weights.</p>
 </article>
 {% endblock %}

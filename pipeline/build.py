@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import average, charts, config, history, og_cards, pollsters, scorecard, usmap
+from . import average, charts, config, dedupe, history, og_cards, pollsters, scorecard, usmap
 from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 
 NAV = [
@@ -72,7 +72,8 @@ def short_name(c: str) -> str:
 
 def load_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     polls_path = config.DATA_DIR / "polls.csv"
-    polls = validate_polls(pd.read_csv(polls_path)) if polls_path.exists() else pd.DataFrame(columns=POLL_COLUMNS)
+    # one row set per real poll: copies and secondary populations never reach an average (see dedupe)
+    polls = dedupe.collapse(validate_polls(pd.read_csv(polls_path))) if polls_path.exists() else pd.DataFrame(columns=POLL_COLUMNS)
     mpath = config.DATA_DIR / "markets.csv"
     markets = pd.read_csv(mpath) if mpath.exists() else pd.DataFrame(columns=MARKET_COLUMNS)
     _, ratings = scorecard.load_538()
@@ -196,7 +197,7 @@ def faq_items(race: config.Race, ra: average.RaceAverage, answer: str) -> list[t
          "methodology page and can be reproduced from the open data."),
         ("Which polls are included?",
          f"Every public national poll we can source, {ra.n_polls_total} on record for this page and {ra.n_polls} carrying weight today. "
-         "Each row in the table links to the pollster's own release; adult, registered-voter and likely-voter samples are all included."),
+         "Each row in the table links to the pollster's own release; adult, registered-voter and likely-voter polls all count, but a poll released for several populations counts once (likely voters first)."),
         ("How often is it updated?",
          "Automatically, every six hours: new polls are collected, checked and added, and the average and chart are recomputed."),
         ("Can I use this data?",
