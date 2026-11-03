@@ -332,6 +332,21 @@ def editor_ld() -> dict | None:
     return person
 
 
+def write_icons(dist: Path) -> None:
+    """favicon.ico (48 px), a 180 px apple-touch-icon, 192/512 px app icons and a web manifest, from the avatar."""
+    from PIL import Image
+    src = Image.open(config.ROOT / "assets" / "social" / "x-avatar.png").convert("RGBA")
+    src.resize((48, 48), Image.LANCZOS).save(dist / "favicon.ico", sizes=[(48, 48), (32, 32), (16, 16)])
+    img = dist / "static" / "img"
+    src.convert("RGB").resize((180, 180), Image.LANCZOS).save(img / "apple-touch-icon.png")
+    for n in (192, 512):
+        src.resize((n, n), Image.LANCZOS).save(img / f"icon-{n}.png")
+    manifest = {"name": config.SITE["name"], "short_name": config.SITE["name"], "start_url": "/", "display": "browser",
+                "background_color": "#fbfbf9", "theme_color": "#0e0e0f",
+                "icons": [{"src": f"/static/img/icon-{n}.png", "sizes": f"{n}x{n}", "type": "image/png"} for n in (192, 512)]}
+    (dist / "site.webmanifest").write_text(json.dumps(manifest, indent=1))
+
+
 def site_ld() -> dict:
     """WebSite + Organization structured data, emitted on every page."""
     s = config.SITE
@@ -359,7 +374,7 @@ def breadcrumb_ld(trail: list[tuple[str, str]]) -> dict:
     ]}
 
 
-def dataset_ld(race: config.Race, path: str, as_of: date) -> dict:
+def dataset_ld(race: config.Race, path: str, as_of: date, start: date | None = None) -> dict:
     base = config.SITE["url"]
     return {
         "@context": "https://schema.org", "@type": "Dataset", "name": f"{race.title} – polling average",
@@ -367,6 +382,8 @@ def dataset_ld(race: config.Race, path: str, as_of: date) -> dict:
         "license": "https://creativecommons.org/licenses/by/4.0/", "isAccessibleForFree": True,
         "creator": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
         "maintainer": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
+        "spatialCoverage": {"@type": "Country", "name": "United States"},
+        **({"temporalCoverage": f"{start.isoformat()}/{as_of.isoformat()}"} if start else {}),
         "distribution": [
             {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{base}/api/{race.id}.json"},
             {"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": f"{base}/data/polls.csv"},
@@ -942,6 +959,7 @@ def build(as_of: date | None = None) -> Path:
     dist.mkdir(parents=True)
     shutil.copytree(config.STATIC_DIR, dist / "static")
     shutil.copy(config.ROOT / "assets" / "social" / "x-avatar.png", dist / "static" / "img" / "logo.png")
+    write_icons(dist)
     (dist / "api").mkdir()
     (dist / "data").mkdir()
     (dist / "og").mkdir()
@@ -1004,7 +1022,8 @@ def build(as_of: date | None = None) -> Path:
                shown=shown, title=seo_title(race, ra, as_of), description=answer or race.description, answer=answer,
                faq=faq, ld_faq=faq_ld(faq) if faq else None, related=related_averages(race, averages),
                crumb=race.short_title, trail=race_trail(race), og_image=og_image, lastmod=race_lastmod[race.id],
-               ld_dataset=dataset_ld(race, f"/{race.slug}/", race_lastmod[race.id] or as_of))
+               ld_dataset=dataset_ld(race, f"/{race.slug}/", race_lastmod[race.id] or as_of,
+                                     ra.polls["end_date"].min() if ra.polls is not None and not ra.polls.empty else None))
         api = dict(race_id=race.id, title=race.title, as_of=as_of.isoformat(), method="https://electionsusa.org/methodology/",
                    average=ra.values, margin=ra.margin, n_polls_weighted=ra.n_polls, n_polls_total=ra.n_polls_total,
                    trend={c: [(d.isoformat(), v) for d, v in s] for c, s in ra.trend.items()},

@@ -59,3 +59,19 @@ def test_llms_txt_feed_and_api_table(site):
     assert 'type="application/atom+xml"' in (site / "index.html").read_text()
     data = (site / "data" / "index.html").read_text()
     assert "/api/search-index.json" in data and "/llms.txt" in data
+
+
+def test_icons_manifest_contrast_and_countdown_schema(site):
+    import re
+    assert (site / "favicon.ico").exists() and (site / "static" / "img" / "apple-touch-icon.png").exists()
+    assert json.loads((site / "site.webmanifest").read_text())["icons"]
+    css = (config.STATIC_DIR / "css" / "style.css").read_text()
+
+    def lum(h):
+        c = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        c = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    mute, paper = re.search(r"--mute:(#[0-9a-f]{6})", css).group(1), re.search(r"--paper:(#[0-9a-f]{6})", css).group(1)
+    assert (lum(paper) + 0.05) / (lum(mute) + 0.05) >= 4.5  # WCAG AA for small text
+    countdown = (site / "countdown" / "index.html").read_text()
+    assert '"@type":"Event"' not in countdown and '"@type":"WebPage"' in countdown

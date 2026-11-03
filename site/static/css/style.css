@@ -1,5 +1,5 @@
 :root{
-  --paper:#fbfbf9;--ink:#0e0e0f;--ink2:#3a3a3c;--mute:#77777a;--rule:#e4e3de;--rule2:#cfcec8;--wash:#f3f2ee;
+  --paper:#fbfbf9;--ink:#0e0e0f;--ink2:#3a3a3c;--mute:#6b6b6e;--rule:#e4e3de;--rule2:#cfcec8;--wash:#f3f2ee;
   --blue:#1d3f8f;--red:#b3262e;--dem:#1e40af;--rep:#b91c1c;--green:#1f7a4d;
   --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
   --sans:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -284,3 +284,5 @@ main{padding:0 20px 72px}
 
 /* phones: three suggestion chips, so the election card stays on the first screen */
 @media(max-width:640px){.chips a:nth-child(n+4){display:none}}
+.th-sort{all:inherit;cursor:pointer;display:inline}
+.th-sort:focus-visible{outline:2px solid var(--ink);outline-offset:2px}

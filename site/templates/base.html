@@ -42,6 +42,9 @@ if (location.hostname === {{ site.domain | tojson }}) {
 {% if site.twitter %}<meta name="twitter:site" content="{{ site.twitter }}">{% endif %}
 <link rel="alternate" type="application/atom+xml" title="{{ site.name }}" href="/feed.xml">
 <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">

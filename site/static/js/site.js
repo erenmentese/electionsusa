@@ -22,8 +22,13 @@
   document.querySelectorAll("table.sortable").forEach(function (table) {
     var ths = table.querySelectorAll("thead th");
     ths.forEach(function (th, idx) {
-      th.style.cursor = "pointer";
-      th.addEventListener("click", function () {
+      // a real button inside each header, so the sort works from the keyboard and screen readers announce it
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "th-sort";
+      while (th.firstChild) btn.appendChild(th.firstChild);
+      th.appendChild(btn);
+      btn.addEventListener("click", function () {
         var rows = Array.prototype.slice.call(table.querySelectorAll("tbody tr"));
         var asc = th.getAttribute("data-asc") !== "true";
         rows.sort(function (a, b) {
@@ -34,8 +39,9 @@
           if (!isNaN(nx) && !isNaN(ny)) return asc ? nx - ny : ny - nx;
           return asc ? x.localeCompare(y) : y.localeCompare(x);
         });
-        ths.forEach(function (t) { t.removeAttribute("data-asc"); });
+        ths.forEach(function (t) { t.removeAttribute("data-asc"); t.removeAttribute("aria-sort"); });
         th.setAttribute("data-asc", asc);
+        th.setAttribute("aria-sort", asc ? "ascending" : "descending");
         var tb = table.querySelector("tbody");
         rows.forEach(function (r) { tb.appendChild(r); });
       });
