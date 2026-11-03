@@ -71,6 +71,19 @@
     });
   });
 
+  // ---- phone header: the search icon opens the search box; "More" closes on outside click --
+  document.querySelectorAll("[data-search-toggle]").forEach(function (btn) {
+    var box = btn.parentNode.querySelector(".hdr-search");
+    btn.addEventListener("click", function () {
+      var open = box.classList.toggle("is-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) box.querySelector("input").focus();
+    });
+  });
+  document.addEventListener("click", function (ev) {
+    document.querySelectorAll(".nav-more[open]").forEach(function (d) { if (!d.contains(ev.target)) d.removeAttribute("open"); });
+  });
+
   // ---- finder ------------------------------------------------------------
   var finders = document.querySelectorAll("[data-finder]");
   if (!finders.length) return;

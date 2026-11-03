@@ -42,7 +42,31 @@ h3{font-size:1rem;font-weight:600;margin:0 0 .4em}
 .hdr-search input{width:200px;max-width:30vw;height:36px;border:1px solid var(--rule2);border-radius:999px;background:var(--paper);color:var(--ink);padding:0 14px 0 34px;font:inherit;font-size:.9rem;outline:none}
 .hdr-search input:focus{border-color:var(--ink)}
 .hdr-search svg{position:absolute;left:12px;top:10px;width:16px;height:16px;color:var(--mute);pointer-events:none}
-@media(max-width:760px){.hdr-search{display:none}.header-inner{gap:12px}}
+.nav-more{position:relative;flex:none}
+.nav-more summary{list-style:none;cursor:pointer;color:var(--ink2);padding:6px 9px;font-size:.88rem;border-radius:6px;white-space:nowrap}
+.nav-more summary::-webkit-details-marker{display:none}
+.nav-more summary::after{content:" ▾";font-size:.7rem}
+.nav-more summary:hover,.nav-more[open] summary{color:var(--ink);background:var(--wash)}
+.nav-more-menu{position:absolute;right:0;top:calc(100% + 8px);background:var(--paper);border:1px solid var(--rule2);border-radius:10px;padding:6px;min-width:180px;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(0,0,0,.08);z-index:6}
+.nav-more-menu a{text-decoration:none;color:var(--ink2);padding:8px 10px;font-size:.9rem;border-radius:6px}
+.nav-more-menu a:hover{background:var(--wash);color:var(--ink)}
+.nav-more-menu a[aria-current="page"]{font-weight:600;color:var(--ink)}
+.search-toggle{display:none;flex:none;width:36px;height:36px;border:1px solid var(--rule2);border-radius:999px;background:var(--paper);color:var(--ink2);padding:0;cursor:pointer}
+.search-toggle svg{width:16px;height:16px;display:block;margin:auto}
+@media(max-width:760px){
+  /* phones: brand, More and search on the first row; the nav gets its own full-width row,
+     scrolling sideways, with a fade that shows there is more to the right */
+  .header-inner{gap:8px;flex-wrap:wrap;height:auto;padding-top:8px;padding-bottom:4px}
+  .brand{margin-right:auto}
+  .nav{order:3;flex-basis:100%;box-sizing:border-box;margin:0;-webkit-mask-image:linear-gradient(to right,#000 85%,transparent);mask-image:linear-gradient(to right,#000 85%,transparent);padding-right:18px}
+  .search-toggle{display:block}
+  .hdr-search{display:none;position:absolute;left:0;right:0;top:100%;padding:10px 20px;background:var(--paper);border-bottom:1px solid var(--rule)}
+  .hdr-search.is-open{display:block}
+  .hdr-search input{width:100%;max-width:none}
+  .hdr-search svg{left:32px;top:20px}
+  .site-header .hdr-search .finder-results{left:20px;right:20px;width:auto}
+}
+.header-inner{position:relative}
 
 main{padding:0 20px 72px}
 

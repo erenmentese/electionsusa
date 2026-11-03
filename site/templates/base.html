@@ -60,9 +60,14 @@ if (location.hostname === {{ site.domain | tojson }}) {
   <div class="wrap header-inner">
     <a class="brand" href="/" aria-label="{{ site.name }} home">Elections<em>USA</em></a>
     <nav class="nav" aria-label="Primary">
-      {% for label, href in nav %}<a href="{{ href }}" {% if path == href or (href in ("/states/", "/pollsters/") and path.startswith(href)) %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+      {% for label, href in nav %}<a href="{{ href }}" {% if path == href or (href in ("/states/", "/pollsters/", "/2028/president/") and path.startswith(href)) %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
     </nav>
+    <details class="nav-more">
+      <summary>More</summary>
+      <div class="nav-more-menu">{% for label, href in nav_more %}<a href="{{ href }}" {% if path == href %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</div>
+    </details>
     {% if path != "/" %}
+    <button type="button" class="search-toggle" aria-label="Search the site" aria-expanded="false" data-search-toggle><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     <div class="hdr-search finder" data-finder>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input type="search" placeholder="Search polls, states…" aria-label="Search the site" autocomplete="off" data-finder-input>

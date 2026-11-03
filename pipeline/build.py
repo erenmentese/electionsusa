@@ -22,16 +22,21 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from . import average, charts, check_data, config, dedupe, fetch_markets, history, og_cards, pollsters, scorecard, usmap
 from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 
+# One nav on every page: the main sections, then a "More" menu
 NAV = [
     ("Approval", "/approval/trump/"),
-    ("2028 President", "/2028/president/vance-vs-newsom/"),
+    ("2028 President", "/2028/president/"),
     ("2028 Map", "/2028/map/"),
     ("States", "/states/"),
+    ("Pollsters", "/pollsters/"),
+]
+NAV_MORE = [
     ("Dem Primary", "/2028/democratic-primary/"),
     ("GOP Primary", "/2028/republican-primary/"),
+    ("2028 Calendar", "/2028/calendar/"),
     ("Markets", "/markets/"),
-    ("Pollsters", "/pollsters/"),
-    ("Data", "/data/"),
+    ("Data & API", "/data/"),
+    ("Countdown", "/countdown/"),
 ]
 
 
@@ -696,7 +701,7 @@ def build(as_of: date | None = None) -> Path:
     env.filters["signed"] = signed
     env.filters["short"] = short_name
     env.filters["ordinal"] = pollsters.ordinal
-    env.globals.update(site=config.SITE, nav=nav_items(as_of), build_date=as_of.strftime("%B %-d, %Y"),
+    env.globals.update(site=config.SITE, nav=nav_items(as_of), nav_more=NAV_MORE, build_date=as_of.strftime("%B %-d, %Y"),
                        build_iso=as_of.isoformat(), year=as_of.year,
                        election_day=config.ELECTION_DAY_2028, midterm_day=config.MIDTERM_DAY_2026,
                        days_to_election=(config.ELECTION_DAY_2028 - as_of).days,

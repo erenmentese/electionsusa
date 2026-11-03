@@ -28,3 +28,14 @@ def test_vercel_redirects_and_404_noindex(site):
     page = (site / "404.html").read_text()
     assert '<meta name="robots" content="noindex">' in page and "max-image-preview" not in page
     assert '<meta name="robots" content="max-image-preview:large">' in (site / "index.html").read_text()
+
+
+def test_one_nav_on_every_page_with_more_menu_and_mobile_search(site):
+    def links(html):
+        head = re.search(r'<header class="site-header">(.*?)</header>', html, re.S).group(1)
+        return re.findall(r'<a href="(/[^"]*)"', head)
+    home = links((site / "index.html").read_text())
+    inner_html = (site / "markets" / "index.html").read_text()
+    assert home == links(inner_html)
+    assert "/pollsters/" in home and "/data/" in home and "/markets/" in home
+    assert "data-search-toggle" in inner_html  # phones get a search icon on inner pages
