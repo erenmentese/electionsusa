@@ -23,7 +23,7 @@ if (location.hostname === {{ site.domain | tojson }}) {
 }
 </script>
 {% endif %}
-{% set page_title = (title ~ " | " ~ site.name) if title else (site.name ~ " – " ~ site.tagline) %}
+{% set page_title = page_title or ((title ~ " | " ~ site.name) if title else site.name) %}
 <title>{{ page_title }}</title>
 <meta name="description" content="{{ description or site.description }}">
 {% if path != "/404.html" and not noindex %}<meta name="robots" content="max-image-preview:large">{% endif %}
