@@ -23,7 +23,7 @@ def test_vercel_redirects_and_404_noindex(site):
     assert redirects[("/approval/", "/approval/trump/")]["statusCode"] == 301
     assert redirects[("/index.html", "/")]["statusCode"] == 301
     host = next(r for r in v["redirects"] if r.get("has"))
-    assert host["has"][0]["value"] == "electionsusa.vercel.app" and host["destination"].startswith("https://electionsusa.org/")
+    assert re.fullmatch(host["has"][0]["value"], "electionsusa.vercel.app") and host["destination"] == "https://electionsusa.org/$1"
     assert host["permanent"] is True  # 308
     page = (site / "404.html").read_text()
     assert '<meta name="robots" content="noindex">' in page and "max-image-preview" not in page

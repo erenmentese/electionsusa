@@ -97,6 +97,26 @@ def map_card(n: history.NationYear, colors: dict[str, str]) -> CardSpec:
                     footer_left="2028 electoral map builder")
 
 
+def pollster_card(p) -> CardSpec:
+    """A pollster's record (rated) or its polling volume (unrated)."""
+    r = p.rated
+    if r:
+        lean = "no lean" if abs(r.mean_bias) < 0.3 else f"{'D' if r.mean_bias > 0 else 'R'}+{abs(r.mean_bias):.1f}"
+        return CardSpec(kind="figures", kicker=f"Pollster scorecard · ranked {p.rank}", title=p.name,
+                        figures=[Figure("Avg error", f"{r.mean_abs_error:.1f}"), Figure("Bias", lean),
+                                 Figure("Right call", f"{r.right_call_pct:.0f}%")],
+                        note=f"{r.n_polls} final-three-weeks polls, {r.cycles}",
+                        footer_left="How accurate is each pollster?")
+    return CardSpec(kind="figures", kicker="Pollster · not yet rated", title=p.name,
+                    figures=[Figure("Polls on record", str(len(p.polls))),
+                             Figure("Latest", p.polls[0]["end_date"].strftime("%b %-d") if p.polls else "—")],
+                    note="Every poll linked to its source", footer_left="ElectionsUSA pollster pages")
+
+
+def pollster_image(p) -> bytes:
+    return to_og(render(pollster_card(p)))
+
+
 def map_image(n: history.NationYear, colors: dict[str, str]) -> bytes:
     return to_og(render(map_card(n, colors)))
 

@@ -58,3 +58,14 @@ def test_built_markets_page_has_no_kalshi_column_or_internal_notes(site):
     assert "Press snapshot" not in html and "possibly stale" not in html
     published = pd.read_csv(site / "data" / "markets.csv")
     assert set(published["platform"]) == {"polymarket"} and set(published["source_type"]) == {"api"}
+
+
+def test_frozen_price_alerts_only_while_still_fetched():
+    rows = [snap(d, "Robert F. Kennedy Jr.", 49.0) | dict(fetched_at=f"2026-11-0{d}T14:00:00Z") for d in range(1, 5)]
+    rows += [snap(4, "JD Vance", 36.0) | dict(fetched_at="2026-11-04T20:00:00Z")]  # a later run no longer returned RFK
+    problems, status = check_data.frozen_markets(pd.DataFrame(rows))
+    assert not any("Kennedy" in p for p in problems)
+    assert any("no longer fetched: Robert F. Kennedy Jr." in s for s in status)
+    rows[-1]["fetched_at"] = "2026-11-04T14:00:00Z"  # same run: RFK still being returned
+    problems, _ = check_data.frozen_markets(pd.DataFrame(rows))
+    assert any("Kennedy" in p for p in problems)

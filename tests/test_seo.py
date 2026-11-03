@@ -63,7 +63,7 @@ def test_build_seo_output(site):
     assert "og/approval-trump-2.png" in race_html
     assert "in the ElectionsUSA average of" in race_html
     # dated, number-first titles; an FAQ marked up as FAQPage; links to the other averages
-    assert re.search(r"<title>Trump Approval Rating Today: \d+\.\d% \(Oct \d+, 2026\) \| ElectionsUSA</title>", race_html)
+    assert re.search(r"<title>Trump Approval Rating Today: \d+\.\d% \(Oct \d+, 2026\)</title>", race_html)  # too long for the suffix
     assert '"@type": "FAQPage"' in race_html and "What is Trump&#39;s approval rating today?" in race_html
     assert 'class="related"' in race_html and 'href="/2026/generic-ballot/"' in race_html
 
@@ -159,3 +159,25 @@ def test_thin_matchup_is_flagged_and_noindexed(site):
     assert '<meta name="robots" content="noindex, follow">' in html and "Limited data." in html
     assert "max-image-preview" not in html
     assert "/2028/president/vance-vs-buttigieg/</loc>" not in (site / "sitemap.xml").read_text()
+
+
+def test_title_and_description_lengths(site):
+    import html as h, re
+    long_titles = []
+    for p in site.rglob("index.html"):
+        s = p.read_text()
+        t = h.unescape(re.search(r"<title>([^<]*)", s).group(1))
+        d = h.unescape(re.search(r'<meta name="description" content="([^"]*)', s).group(1))
+        assert len(d) <= build.DESCRIPTION_MAX, (p, d)
+        if len(t) > build.TITLE_MAX:
+            long_titles.append(t)
+        if " | ElectionsUSA" in t:
+            assert len(t) <= build.TITLE_MAX, t
+    # only pages whose own subject name is long run past 60 characters
+    assert all(len(t) <= 70 or t.startswith("Is ") for t in long_titles), long_titles
+    assert build.clip("One. Two words here that run on " * 10).endswith((".", "…"))
+
+
+def test_pollster_pages_have_their_own_share_card(site):
+    html = (site / "pollsters" / "yougov" / "index.html").read_text()
+    assert "/og/pollsters/yougov.png" in html and (site / "og" / "pollsters" / "yougov.png").exists()

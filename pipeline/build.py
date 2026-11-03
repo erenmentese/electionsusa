@@ -49,6 +49,28 @@ def nav_items(as_of: date) -> list[tuple[str, str]]:
 
 
 # ----------------------------------------------------------------- helpers
+TITLE_MAX, DESCRIPTION_MAX = 60, 155
+SUFFIX = f" | {config.SITE['name']}"
+
+
+def page_title(title: str | None) -> str:
+    """The <title>: the page's own title, plus " | ElectionsUSA" only while that still fits in a search result."""
+    if not title:
+        return config.SITE["name"]
+    return title + SUFFIX if len(title + SUFFIX) <= TITLE_MAX else title
+
+
+def clip(text: str, limit: int = DESCRIPTION_MAX) -> str:
+    """A meta description of at most `limit` characters: whole sentences if they fit, else whole words and an ellipsis."""
+    text = " ".join(str(text).split())
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    end = max(cut.rfind(". "), cut.rfind("? "))
+    if end >= limit // 2:
+        return cut[:end + 1]
+    return cut[:cut.rfind(" ")].rstrip(",;:") + "…"
+
 def fmt_dates(start, end) -> str:
     if pd.isna(end):
         return ""
@@ -518,7 +540,7 @@ def build_states(render, dist: Path, states: dict[str, history.StateHistory],
         render("states.html", path, description=answer, answer=answer, year=yr, latest_year=year, years=years,
                prev_year=prev, nation=n, rows=rows, show_other=n.other_pct >= history.NOTABLE_OTHER,
                title=f"{yr} Election Results by State: Map, Margins and Electoral Votes" if latest
-               else f"{yr} Presidential Election Results by State: Map and Electoral Votes",
+               else f"{yr} Election Results by State: Map and Electoral Votes",
                usmap=usmap.map_context(states, yr), evbar=usmap.ev_bar(n),
                crumb="Results by state" if latest else str(yr), trail=[] if latest else hub,
                split_notes=[st.by_year(yr).split_note for st in ordered if st.by_year(yr).split_note],
@@ -792,7 +814,7 @@ def build_accuracy_and_analysis(render, dist: Path, polls: pd.DataFrame,
         published = config.ANALYSIS_PUBLISHED[slug]
         modified = max(published, min(pd.Timestamp(final.latest_end_date).date(), as_of))
         a = dict(path=f"/analysis/{slug}/", published=min(published, as_of), modified=min(modified, as_of),
-                 headline=f"Final generic ballot {fmt(final.margin)}: what the polls said going into Election Day",
+                 headline=f"Final generic ballot {fmt(final.margin)}: what the polls said",
                  dek=(f"The final ElectionsUSA average of {final.n_polls} national polls had Democrats at {final.values['Democrats']:.1f}% "
                       f"and Republicans at {final.values['Republicans']:.1f}%, a {fmt(final.margin)} margin, going into the "
                       "November 3, 2026 midterms."))
@@ -874,6 +896,13 @@ def year_path(yr: int, latest: int) -> str:
 
 
 # --------------------------------------------------------------- pollsters
+def pollster_title(p: pollsters.Pollster) -> str:
+    """The longest of a few title shapes that fits TITLE_MAX (with the site suffix if possible)."""
+    shapes = ([f"Is {p.name} Accurate? Pollster Rating, Bias and Polls", f"Is {p.name} Accurate? Rating and Bias",
+               f"Is {p.name} Accurate?"] if p.rated else [f"{p.name} Polls: Every Recent Result", f"{p.name} Polls"])
+    return next((t for t in shapes if len(t) <= TITLE_MAX), shapes[-1])
+
+
 def pollster_ld(p: pollsters.Pollster, answer: str, lastmod: date, faq: list[tuple[str, str]]) -> list[dict]:
     """WebPage about the pollster's Organization, a Dataset of its scored record, and the FAQ."""
     base = config.SITE["url"]
@@ -912,9 +941,10 @@ def pollster_faq(p: pollsters.Pollster, n_rated: int, field: float) -> list[tupl
     ]
 
 
-def build_pollsters(render, pages: dict[str, pollsters.Pollster], rated: list[scorecard.PollsterRow],
+def build_pollsters(render, dist: Path, pages: dict[str, pollsters.Pollster], rated: list[scorecard.PollsterRow],
                     cycle_rows: list[dict], as_of: date, field: float) -> list[dict]:
-    """Render one page per pollster (see pollsters.registry); return finder entries."""
+    """Render one page per pollster (see pollsters.registry) with its share card; return finder entries."""
+    (dist / "og" / "pollsters").mkdir(parents=True, exist_ok=True)
     raw, _ = scorecard.load_538()
     by_rank = {p.rank: p for p in pages.values() if p.rank}
     index = []
@@ -923,12 +953,14 @@ def build_pollsters(render, pages: dict[str, pollsters.Pollster], rated: list[sc
         answer = pollsters.answer_sentence(p, len(rated))
         lastmod = max(min(p.polls[0]["end_date"], as_of) if p.polls else date.min, min(config.PAGE_REVISED["scorecard"], as_of))
         faq = pollster_faq(p, len(rated), field)
+        og = f"/og/pollsters/{p.slug}.png"
+        (dist / og.lstrip("/")).write_bytes(og_cards.pollster_image(p))
         render("pollster.html", p.path, p=p, answer=answer, description=answer, n_rated=len(rated), field_error=field,
-               faq=faq, ld_page=pollster_ld(p, answer, lastmod, faq),
+               faq=faq, ld_page=pollster_ld(p, answer, lastmod, faq), og_image=og,
                record=pollsters.track_record(raw, r.rating_id) if r else None,
                cycle=[c for c in cycle_rows if c["pollster_path"] == p.path],
                prev=by_rank.get(p.rank - 1) if p.rank else None, next=by_rank.get(p.rank + 1) if p.rank else None,
-               title=f"Is {p.name} Accurate? Pollster Rating, Bias and Polls" if r else f"{p.name} Polls: Every Recent Result",
+               title=pollster_title(p),
                crumb=p.name, trail=[("Pollster scorecard", "/pollsters/")],
                lastmod=lastmod)
         index.append(dict(t=p.name, u=p.path, k="Pollster",
@@ -971,6 +1003,9 @@ def build(as_of: date | None = None) -> Path:
         crumbs = None
         if page and out_path != "/":
             crumbs = breadcrumb_ld([*(trail or []), (crumb or ctx.get("title") or "", out_path)])
+        if page:
+            ctx["page_title"] = page_title(ctx.get("title"))
+            ctx["description"] = clip(ctx.get("description") or config.SITE["description"])
         html = env.get_template(template).render(path=out_path, ld_breadcrumb=crumbs, updated=lastmod, **ctx)
         target = dist / out_path.strip("/") / "index.html" if out_path != "/" else dist / "index.html"
         if not page:
@@ -1066,7 +1101,7 @@ def build(as_of: date | None = None) -> Path:
     # one figure for "a typical poll's error" everywhere it is quoted
     field_error = pollsters.field_error(scorecard.load_538()[0])
     env.globals["field_error"] = field_error
-    index += build_pollsters(render, pollster_pages, sc_rows, cycle_rows, as_of, field_error)
+    index += build_pollsters(render, dist, pollster_pages, sc_rows, cycle_rows, as_of, field_error)
     states, nation = history.load()
     index += build_states(render, dist, states, nation, as_of)
     index += build_map_builder(render, dist, states, nation, as_of)
