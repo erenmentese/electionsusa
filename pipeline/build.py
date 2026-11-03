@@ -608,6 +608,58 @@ def build_midterm_hub(render, averages: dict[str, average.RaceAverage], states: 
                    "won win winner winners called call election night tonight today poll closing times close vote count")]
 
 
+HUB_2028 = ("2028 election", "/2028/")
+HUB_PRESIDENT = ("2028 president", "/2028/president/")
+
+
+def race_trail(race: config.Race) -> list[tuple[str, str]]:
+    """Breadcrumb levels above a race page: /2028/ and, for matchups, /2028/president/."""
+    if race.slug.startswith("2028/president/"):
+        return [HUB_2028, HUB_PRESIDENT]
+    return [HUB_2028] if race.slug.startswith("2028/") else []
+
+
+def build_2028_hubs(render, summaries: list[dict], race_lastmod: dict[str, date | None], as_of: date) -> list[dict]:
+    """Render /2028/ (every 2028 average plus the map, calendar and markets) and /2028/president/ (the matchups)."""
+    matchups = [s for s in summaries if s["race"].slug.startswith("2028/president/")]
+    all_2028 = [s for s in summaries if s["race"].slug.startswith("2028/")]
+
+    def lead(s) -> str:
+        r, a = s["race"], s["avg"]
+        if not a.values:
+            return f"{r.short_title}: no polls yet"
+        if r.kind == "primary":
+            top = og_cards.ranked(a)[0]
+            return f"{top} leads the {r.short_title} at {a.values[top]:.1f}%"
+        return f"{r.short_title}: {signed(a.margin, short_name(r.candidates[0]), short_name(r.candidates[1]))}"
+
+    def newest(group) -> date | None:
+        return max((race_lastmod[s["race"].id] for s in group if race_lastmod.get(s["race"].id)), default=None)
+
+    answer = (f"ElectionsUSA tracks {len(matchups)} hypothetical 2028 general-election matchups. "
+              + "; ".join(lead(s) for s in matchups) + ". Early matchup polls measure name recognition as much as preference.")
+    render("hub.html", "/2028/president/", kicker="2028 presidential election", heading="2028 Presidential Election Polls",
+           answer=answer, cards=matchups, links=[dict(title="2028 electoral map", path="/2028/map/", value="Make your own forecast"),
+                                                 dict(title="Prediction markets", path="/markets/", value="Odds vs. the polls")],
+           links_heading="More on 2028", title="2028 Presidential Election Polls: Every Matchup", description=answer,
+           crumb="2028 president", trail=[HUB_2028], lastmod=newest(matchups))
+    answer = ("The 2028 presidential election is on November 7, 2028. "
+              + "; ".join(lead(s) for s in all_2028 if s["race"].kind == "primary")
+              + ". Every poll average, the primary calendar, the electoral map and market odds for 2028, in one place.")
+    render("hub.html", "/2028/", kicker="2028 election", heading="2028 Election: Polls, Primaries and Map", answer=answer,
+           cards=all_2028, links_heading="Plan the race",
+           links=[dict(title="2028 presidential matchups", path="/2028/president/", value=f"{len(matchups)} head-to-head averages"),
+                  dict(title="2028 electoral map", path="/2028/map/", value="Make your own forecast"),
+                  dict(title="2028 primary calendar", path="/2028/calendar/", value="South Carolina votes first, Jan 22"),
+                  dict(title="Prediction markets", path="/markets/", value="Odds vs. the polls"),
+                  dict(title="Countdown", path="/countdown/", value=f"{(config.ELECTION_DAY_2028 - as_of).days} days to go")],
+           title="2028 Election Polls, Primaries, Map and Calendar", description=answer, crumb="2028 election", lastmod=newest(all_2028))
+    return [dict(t="2028 presidential election polls", u="/2028/president/", k="Hub", s="Every 2028 head-to-head matchup average",
+                 q="2028 president presidential election general matchup head to head polls hub all"),
+            dict(t="2028 election hub", u="/2028/", k="Hub", s="Every 2028 average, the primary calendar, map and odds",
+                 q="2028 election hub overview primaries president all averages")]
+
+
 def year_path(yr: int, latest: int) -> str:
     return "/states/" if yr == latest else f"/states/{yr}/"
 
@@ -714,7 +766,7 @@ def build(as_of: date | None = None) -> Path:
         render("race.html", f"/{race.slug}/", race=race, avg=ra, table=table, charts=ch, colors=race_colors(race),
                shown=shown, title=seo_title(race, ra, as_of), description=answer or race.description, answer=answer,
                faq=faq, ld_faq=faq_ld(faq) if faq else None, related=related_averages(race, averages),
-               crumb=race.short_title, og_image=og_image, lastmod=race_lastmod[race.id],
+               crumb=race.short_title, trail=race_trail(race), og_image=og_image, lastmod=race_lastmod[race.id],
                ld_dataset=dataset_ld(race, f"/{race.slug}/", race_lastmod[race.id] or as_of))
         api = dict(race_id=race.id, title=race.title, as_of=as_of.isoformat(), method="https://electionsusa.org/methodology/",
                    average=ra.values, margin=ra.margin, n_polls_weighted=ra.n_polls, n_polls_total=ra.n_polls_total,
@@ -763,6 +815,7 @@ def build(as_of: date | None = None) -> Path:
     index += build_states(render, dist, states, nation, as_of)
     index += build_map_builder(render, dist, states, nation, as_of)
     index += build_midterm_hub(render, averages, states, as_of)
+    index += build_2028_hubs(render, summaries, race_lastmod, as_of)
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
 
     (dist / "og" / "site.png").write_bytes(og_cards.site_image(summaries, as_of))

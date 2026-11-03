@@ -26,6 +26,7 @@ if (location.hostname === {{ site.domain | tojson }}) {
 {% set page_title = (title ~ " | " ~ site.name) if title else (site.name ~ " – " ~ site.tagline) %}
 <title>{{ page_title }}</title>
 <meta name="description" content="{{ description or site.description }}">
+{% if path != "/404.html" and not noindex %}<meta name="robots" content="max-image-preview:large">{% endif %}
 <link rel="canonical" href="{{ site.url }}{{ path }}">
 <meta property="og:site_name" content="{{ site.name }}">
 <meta property="og:type" content="website">
