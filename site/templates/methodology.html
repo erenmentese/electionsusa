@@ -31,7 +31,7 @@
 <p>Prices are read from Polymarket's public API once per update and stored as implied probabilities. Closed, inactive and thinly traded contracts (under $10,000 traded) are skipped, and a price that hasn't moved in four snapshots is hidden as a dead contract. Kalshi is linked rather than republished. We show them next to poll shares for the same outcome but do not combine them; they measure different things.</p>
 
 <h2>7. Updates and corrections</h2>
-<p>Data refreshes several times a day; the timestamp on every page is the build date. Errors reported via the <a href="/about/#corrections">corrections page</a> are fixed in the dataset so the correction propagates to every chart, table and the API.</p>
+<p>Data refreshes several times a day; the timestamp on every page is the build date. Errors reported via the <a href="/corrections/">corrections page</a> are fixed in the dataset so the correction propagates to every chart, table and the API.</p>
 <p><b>Method changes.</b> November 3, 2026: polls are now de-duplicated before averaging (one population per poll, likely voters first, and copies of the same poll removed). Until then a poll published for likely voters, registered voters and adults counted up to three times, and ten polls were listed twice. The <a href="/corrections/">corrections log</a> lists the averages that moved.</p>
 <p>November 2026: pollster grades and frequency damping now follow the firm that conducted each poll rather than the first name in the source table, which was often the media sponsor. Earlier, partial name matches also gave some polls another pollster's grade (co/efficient got the A+ of The New York Times/Siena College). Every average and trend line was recomputed with the corrected weights.</p>
 </article>

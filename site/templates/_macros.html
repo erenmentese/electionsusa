@@ -1,12 +1,11 @@
+{# An ad slot only when the site runs AdSense; otherwise nothing at all (no empty box) #}
 {% macro ad(slot, label="Advertisement") %}
-<aside class="ad" aria-label="{{ label }}">
 {% if site.adsense_client %}
+<aside class="ad" aria-label="{{ label }}">
   <ins class="adsbygoogle" style="display:block" data-ad-client="{{ site.adsense_client }}" data-ad-slot="{{ slot }}" data-ad-format="auto" data-full-width-responsive="true"></ins>
   <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-{% else %}
-  <div class="ad-placeholder">{{ label }}</div>
-{% endif %}
 </aside>
+{% endif %}
 {% endmacro %}
 
 {% macro figure(s) %}

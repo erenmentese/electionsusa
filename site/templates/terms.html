@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="prose">
+<header class="page-head"><p class="kicker">Legal</p><h1>Terms of use</h1><p class="sub">Last updated {{ terms_updated }}</p></header>
+<h2>Using our data</h2>
+<p>Our compilation of polls, the averages we compute, the pollster scorecard and our charts are licensed under <a href="https://creativecommons.org/licenses/by/4.0/" rel="license noopener">CC BY 4.0</a>: reuse them for any purpose, including commercially, with credit to ElectionsUSA and a link to the page or <a href="/data/">dataset</a> you used. Poll results are facts published by each pollster and credited on every row. Fields compiled from Wikipedia are available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="license noopener">CC BY-SA 4.0</a>. Prediction-market prices remain subject to the terms of the platform that publishes them. Historical accuracy data derives from FiveThirtyEight's open dataset (CC BY 4.0) and presidential results from the MIT Election Data and Science Lab (CC0).</p>
+<h2>No advice, no guarantees</h2>
+<p>ElectionsUSA reports polls and market prices; it does not forecast results or call races. Nothing on the site is investment, betting or legal advice. We work to keep every number right and correct errors openly on the <a href="/corrections/">corrections log</a>, but the data is provided as is, without warranty.</p>
+<h2>Links</h2>
+<p>Links to pollsters, publishers, election offices and markets are provided for sourcing; we are not responsible for their content.</p>
+<h2>Contact</h2>
+<p>Questions or corrections: <a href="{{ report_url }}" rel="noopener">GitHub issues</a>{% if site.contact_email %} or <a href="mailto:{{ site.contact_email }}">{{ site.contact_email }}</a>{% endif %}. See also the <a href="/privacy/">privacy policy</a>.</p>
+</article>
+{% endblock %}

@@ -28,11 +28,23 @@ SITE = {
         "the Democratic and Republican primaries, presidential approval, "
         "pollster accuracy ratings and prediction-market odds. Open data, open methodology."
     ),
-    "author": "ElectionsUSA Data Desk",  # TODO: replace with a named author for E-E-A-T
+    "author": "ElectionsUSA Data Desk",  # byline used until `editor` is filled in
+    # The named editor shown on About and as founder/author in structured data. Leave name empty to
+    # keep the desk byline; nothing about a person is published until these are filled in.
+    "editor": {
+        "name": "",        # e.g. "Jane Doe"
+        "role": "Founder and editor",
+        "bio": "",         # one or two sentences, first person not needed
+        "same_as": [],     # profile URLs: X, GitHub, LinkedIn, personal site
+    },
+    "founding_date": "2026-10",  # launched October 2026 (see About)
+    "alternate_name": "ElectionsUSA.org",
+    "issues_url": "https://github.com/erenmentese/electionsusa/issues/new",
+    "terms_updated": "November 3, 2026",
     "contact_email": "hello@electionsusa.org",
     "twitter": "@ElectionsUSAorg",  # e.g. "@electionsusa"
     "github_repo": "erenmentese/electionsusa",  # e.g. "yourname/electionsusa" (enables data-download links)
-    "adsense_client": "",  # e.g. "ca-pub-1234567890123456"; empty = render placeholders
+    "adsense_client": "",  # e.g. "ca-pub-1234567890123456"; empty = no ad slots, no ads.txt
     "analytics_snippet": "",  # paste a privacy-friendly analytics tag (Plausible, GoatCounter...)
     "ga4_id": "G-MN0XEQY44B",  # Google Analytics 4 measurement ID; empty = no GA4 tag
     # Google Consent Mode: analytics/ad cookies start "denied" here (EEA + UK + Switzerland)
@@ -45,7 +57,7 @@ SITE = {
         "IS", "LI", "NO",  # rest of the EEA
         "GB", "CH",
     ],
-    "privacy_updated": "October 29, 2026",  # bump whenever privacy.html text changes
+    "privacy_updated": "November 3, 2026",  # bump whenever privacy.html text changes
     "language": "en",
 }
 

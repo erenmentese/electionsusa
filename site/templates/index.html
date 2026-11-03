@@ -88,6 +88,6 @@
 <section class="section prose">
   <h2>What this is</h2>
   <p>ElectionsUSA tracks public opinion ahead of the November 7, 2028 United States presidential election. It averages polls with a published, reproducible method; it keeps score of how close each pollster's final polls came to actual results; and it puts prediction-market prices next to the polls so readers can see when traders and survey respondents disagree.</p>
-  <p>The site is independent, carries no campaign, party or government affiliation, and is funded by advertising. The complete dataset is <a href="/data/">downloadable</a> and every figure links back to the pollster that published it.</p>
+  <p>The site is independent, carries no campaign, party or government affiliation, and {{ "is funded by advertising" if site.adsense_client else "runs without advertising or sponsorship" }}. The complete dataset is <a href="/data/">downloadable</a> and every figure links back to the pollster that published it.</p>
 </section>
 {% endblock %}

@@ -313,11 +313,26 @@ def race_charts(ra: average.RaceAverage, race: config.Race) -> dict[str, str]:
     return {"line": line, "bars": ""}
 
 
+def editor_ld() -> dict | None:
+    """The named editor as a Person, once config.SITE["editor"] has a name."""
+    e = config.SITE.get("editor") or {}
+    if not e.get("name"):
+        return None
+    person = {"@type": "Person", "@id": f"{config.SITE['url']}/about/#editor", "name": e["name"], "jobTitle": e.get("role", ""),
+              "url": f"{config.SITE['url']}/about/"}
+    if e.get("same_as"):
+        person["sameAs"] = e["same_as"]
+    return person
+
+
 def site_ld() -> dict:
     """WebSite + Organization structured data, emitted on every page."""
     s = config.SITE
-    org = {"@type": "Organization", "@id": f"{s['url']}/#org", "name": s["name"], "url": s["url"],
-           "logo": f"{s['url']}/static/img/logo.png"}
+    org = {"@type": "Organization", "@id": f"{s['url']}/#org", "name": s["name"], "alternateName": s["alternate_name"],
+           "url": s["url"], "logo": f"{s['url']}/static/img/logo.png", "foundingDate": s["founding_date"],
+           "publishingPrinciples": f"{s['url']}/methodology/", "correctionsPolicy": f"{s['url']}/corrections/"}
+    if editor_ld():
+        org["founder"] = editor_ld()
     same_as = [f"https://x.com/{s['twitter'].lstrip('@')}"] if s.get("twitter") else []
     if s.get("github_repo"):
         same_as.append(f"https://github.com/{s['github_repo']}")
@@ -344,6 +359,7 @@ def dataset_ld(race: config.Race, path: str, as_of: date) -> dict:
         "description": race.description, "url": f"{base}{path}", "dateModified": as_of.isoformat(),
         "license": "https://creativecommons.org/licenses/by/4.0/", "isAccessibleForFree": True,
         "creator": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
+        "maintainer": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
         "distribution": [
             {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{base}/api/{race.id}.json"},
             {"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": f"{base}/data/polls.csv"},
@@ -734,7 +750,8 @@ def build(as_of: date | None = None) -> Path:
         dict(t="2028 election calendar", u="/2028/calendar/", k="Calendar", s="Primaries, conventions, Election Day, inauguration", q="calendar schedule primary dates super tuesday convention iowa new hampshire inauguration"),
         dict(t="Methodology", u="/methodology/", k="About", s="How the polling average is computed", q="methodology method how weighted average half-life sample size house effects"),
         dict(t="Open data & API", u="/data/", k="Data", s="Download every poll as CSV or JSON", q="data download csv json api dataset"),
-        dict(t="About & corrections", u="/about/", k="About", s="Who runs ElectionsUSA and how to report an error", q="about contact who correction error report funding ads independent"),
+        dict(t="About ElectionsUSA", u="/about/", k="About", s="Who runs ElectionsUSA and how it is funded", q="about contact who funding independent editor"),
+        dict(t="Corrections log", u="/corrections/", k="About", s="Every correction, with the old and new value; report an error", q="correction corrections error report mistake wrong fix changed"),
     ]
     # one figure for "a typical poll's error" everywhere it is quoted
     field_error = pollsters.field_error(scorecard.load_538()[0])
@@ -775,12 +792,25 @@ def build(as_of: date | None = None) -> Path:
            lastmod=min(datetime.strptime(config.CALENDAR_CHECKED, "%B %d, %Y").date(), as_of))
     render("methodology.html", "/methodology/", title="Methodology: How Our Polling Average Works",
            description="A plain-English, fully reproducible description of the ElectionsUSA polling average, pollster weights and scorecard.")
-    render("about.html", "/about/", title="About ElectionsUSA", description="Who runs ElectionsUSA, how it is funded, and how to report an error.")
+    render("about.html", "/about/", title="About ElectionsUSA", description="Who runs ElectionsUSA, how it is funded, and how to report an error.",
+           editor=config.SITE["editor"], report_url=config.SITE["issues_url"])
+    corrections = pd.read_csv(config.DATA_DIR / "corrections.csv").fillna("").sort_values("date", ascending=False)
+    rows = [dict(r, date_label=datetime.strptime(r["date"], "%Y-%m-%d").strftime("%b %-d, %Y")) for r in corrections.to_dict("records")]
+    render("corrections.html", "/corrections/", corrections=rows, report_url=config.SITE["issues_url"],
+           title="Corrections Log", description="Every material correction to ElectionsUSA's numbers and claims: date, page, old value and new value.",
+           lastmod=min(datetime.strptime(corrections["date"].max(), "%Y-%m-%d").date(), as_of))
+    corrections.to_csv(dist / "data" / "corrections.csv", index=False)
+    terms_date = datetime.strptime(config.SITE["terms_updated"], "%B %d, %Y").date()
+    render("terms.html", "/terms/", report_url=config.SITE["issues_url"], terms_updated=config.SITE["terms_updated"],
+           title="Terms of Use", description="How you may reuse ElectionsUSA's data and charts, and what the site does and doesn't promise.",
+           lastmod=min(terms_date, as_of))
     render("privacy.html", "/privacy/", title="Privacy Policy", description="How ElectionsUSA uses cookies, advertising and analytics.",
            lastmod=datetime.strptime(config.SITE["privacy_updated"], "%B %d, %Y").date())
+    # the published file holds every population of every poll (the averages use one; see dedupe)
+    raw_polls = pd.read_csv(config.DATA_DIR / "polls.csv") if (config.DATA_DIR / "polls.csv").exists() else pd.DataFrame(columns=POLL_COLUMNS)
     render("data.html", "/data/", title="Open Data: Download Every Poll", description="Download the full ElectionsUSA polls and prediction-market datasets as CSV and JSON.",
-           n_polls=int(polls["poll_id"].nunique()) if not polls.empty else 0, n_rows=len(polls), n_markets=int(((markets["platform"] == "polymarket") & (markets["source_type"] == "api")).sum()) if not markets.empty else 0,
-           lastmod=data_lastmod)
+           n_polls=int(raw_polls["poll_id"].nunique()), n_rows=len(raw_polls), n_markets=int(((markets["platform"] == "polymarket") & (markets["source_type"] == "api")).sum()) if not markets.empty else 0,
+           lastmod=data_lastmod, lastmod_iso=(data_lastmod or as_of).isoformat(), lastmod_label=(data_lastmod or as_of).strftime("%B %-d, %Y"))
     render("404.html", "/404.html", title="Page not found", description="")
 
     # data downloads + sitemap/robots
@@ -798,7 +828,9 @@ def build(as_of: date | None = None) -> Path:
     (dist / "sitemap.xml").write_text("\n".join(sm))
     (dist / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n")
     (dist / "CNAME").write_text(config.SITE["domain"] + "\n")
-    (dist / "ads.txt").write_text("# Replace with the line Google AdSense gives you, e.g.\n# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0\n")
+    if config.SITE["adsense_client"]:  # ads.txt only for a site that actually sells ads
+        pub = config.SITE["adsense_client"].removeprefix("ca-")
+        (dist / "ads.txt").write_text(f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n")
     (dist / ".nojekyll").write_text("")
     print(f"built {len(pages)} pages -> {dist}")
     return dist

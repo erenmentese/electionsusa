@@ -1,13 +1,19 @@
 {% extends "base.html" %}
 {% block head %}
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Dataset","name":"ElectionsUSA polls dataset","description":"Every poll tracked by ElectionsUSA for the 2028 U.S. presidential election, the 2028 primaries, presidential approval and the generic ballot, in long CSV format with source links.","url":"{{ site.url }}/data/","license":"https://creativecommons.org/licenses/by/4.0/","dateModified":"{{ build_iso }}","creator":{"@type":"Organization","name":"{{ site.name }}"},"distribution":[{"@type":"DataDownload","encodingFormat":"text/csv","contentUrl":"{{ site.url }}/data/polls.csv"},{"@type":"DataDownload","encodingFormat":"text/csv","contentUrl":"{{ site.url }}/data/markets.csv"}]}
+{"@context":"https://schema.org","@type":"Dataset","name":"ElectionsUSA polls dataset","description":"Every poll tracked by ElectionsUSA for the 2028 U.S. presidential election, the 2028 primaries, presidential approval and the 2026 generic ballot, in long CSV format with a source link per row. Most rows are compiled from Wikipedia and are available under CC BY-SA 4.0.","url":"{{ site.url }}/data/","license":"https://creativecommons.org/licenses/by-sa/4.0/","dateModified":"{{ lastmod_iso }}","creator":{"@type":"Organization","@id":"{{ site.url }}/#org","name":"{{ site.name }}","url":"{{ site.url }}"},"maintainer":{"@type":"Organization","@id":"{{ site.url }}/#org","name":"{{ site.name }}"},"distribution":[{"@type":"DataDownload","encodingFormat":"text/csv","contentUrl":"{{ site.url }}/data/polls.csv"}]}
 </script>
 {% endblock %}
 {% block content %}
 <article class="prose">
 <header class="page-head"><p class="kicker">Open data</p><h1>Download the data</h1>
-<p class="sub">Everything on this site, as plain CSV and JSON, licensed CC BY 4.0. Cite "ElectionsUSA" with a link. Updated {{ build_date }}.</p></header>
+<p class="sub">Every poll, average and score on this site as plain CSV and JSON, free to reuse with credit. Cite "ElectionsUSA" with a link. Data last changed <time datetime="{{ lastmod_iso }}">{{ lastmod_label }}</time>.</p></header>
+<h2>License</h2>
+<ul>
+  <li><b>Our compilation and everything we compute</b> (averages, trend lines, the pollster scorecard, charts): <a href="https://creativecommons.org/licenses/by/4.0/" rel="license noopener">CC BY 4.0</a>.</li>
+  <li><b>Fields compiled from Wikipedia</b> (most rows of polls.csv, marked <code>source_type = wikipedia</code>): <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="license noopener">CC BY-SA 4.0</a>. The poll results themselves are facts published by each pollster, credited and linked on every row.</li>
+  <li><b>Prediction-market prices</b> (markets.csv): subject to the terms of the platform that publishes them (Polymarket).</li>
+</ul>
 <table class="table">
 <thead><tr><th>File</th><th>What's in it</th><th>Size</th></tr></thead>
 <tbody>

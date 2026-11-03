@@ -234,7 +234,6 @@ main{padding:0 20px 72px}
 
 /* ads: present but quiet */
 .ad{margin:40px 0}
-.ad-placeholder{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);color:var(--mute);text-align:center;padding:34px 12px;font-size:.7rem;text-transform:uppercase;letter-spacing:.14em}
 
 /* countdown */
 .count-hero{padding:20px 0 10px}
