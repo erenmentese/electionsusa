@@ -38,6 +38,24 @@ def stale_prices(g: pd.DataFrame, n: int = STALE_PRICE_SNAPSHOTS, min_price: flo
     return sorted(out)
 
 
+def frozen_markets(markets: pd.DataFrame) -> tuple[list[str], list[str]]:
+    """(problems, status lines) for prices that have stopped moving."""
+    problems, status = [], []
+    api = markets[markets["source_type"] == "api"] if "source_type" in markets else markets
+    for mid, g in api.groupby("market_id") if len(api) else []:
+        frozen = stale_prices(g)
+        # only a frozen price the fetcher still returns needs a human; one it has stopped returning
+        # (a closed or thin contract, skipped since) just ages out of the table
+        newest = g["fetched_at"].max() if "fetched_at" in g else None
+        still = [o for o in frozen if newest is None or g.loc[g["outcome"] == o, "fetched_at"].max() == newest]
+        if still:
+            problems.append(f"{mid}: price unchanged for {STALE_PRICE_SNAPSHOTS}+ snapshots for {', '.join(still)}; "
+                            "the contract may be closed or untraded (hidden on /markets/).")
+        if len(still) < len(frozen):
+            status.append(f"{mid}: hidden as frozen and no longer fetched: {', '.join(o for o in frozen if o not in still)}")
+    return problems, status
+
+
 def structure(polls_raw: pd.DataFrame, today: date) -> list[str]:
     """Problems with the data itself, as opposed to its freshness. The test suite fails on
     these, so a broken parse is never committed; staleness only raises the alert."""
@@ -94,12 +112,9 @@ def check(polls_raw: pd.DataFrame, markets: pd.DataFrame, today: date,
     if left:
         problems.append(f"{left} duplicate poll group(s) still reach the averages after dedupe.")
 
-    api = markets[markets["source_type"] == "api"] if "source_type" in markets else markets
-    for mid, g in api.groupby("market_id") if len(api) else []:
-        frozen = stale_prices(g)
-        if frozen:
-            problems.append(f"{mid}: price unchanged for {STALE_PRICE_SNAPSHOTS}+ snapshots for {', '.join(frozen)}; "
-                            "the contract may be closed or untraded (hidden on /markets/).")
+    p, st = frozen_markets(markets)
+    problems += p
+    status += st
     snap = pd.to_datetime(markets["snapshot_date"], errors="coerce").dt.date.max() if len(markets) else None
     status.append(f"Markets: latest snapshot {snap}" if snap else "Markets: no snapshots")
     if snap is None or (today - snap).days > MARKETS_STALE_AFTER:
