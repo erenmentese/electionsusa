@@ -32,7 +32,9 @@ def test_organization_schema_and_report_link(site):
     org = next(n for b in ld_blocks(about) for n in b.get("@graph", []) if n["@type"] == "Organization")
     assert org["alternateName"] == "ElectionsUSA.org"
     assert org["publishingPrinciples"].endswith("/methodology/") and org["correctionsPolicy"].endswith("/corrections/")
-    assert org["foundingDate"] == "2026-10" and "founder" not in org  # no person is published until named
+    assert org["foundingDate"] == "2026-10"
+    assert org["founder"]["name"] == "Eren Menteşe" and "https://www.linkedin.com/in/ernmentese/" in org["founder"]["sameAs"]
+    assert "Eren Menteşe" in about and 'rel="me noopener"' in about
     assert "github.com/erenmentese/electionsusa/issues/new" in about and "Report a data error".lower() in about.lower()
 
 
