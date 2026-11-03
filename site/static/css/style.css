@@ -264,6 +264,7 @@ main{padding:0 20px 72px}
 .big-count{font-family:var(--serif);font-size:clamp(6rem,22vw,15rem);letter-spacing:-.05em;line-height:.95;margin:0 0 8px}
 .big-count small{font-family:var(--sans);font-size:.14em;margin-left:.25em;font-weight:500;color:var(--mute);letter-spacing:.02em;vertical-align:middle}
 .live{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+.thin-note{border-left:3px solid var(--ink);padding:6px 0 6px 12px;margin:14px 0;color:var(--ink2);font-size:.92rem}
 .count-secondary{margin-top:36px;padding-top:28px;border-top:1px solid var(--ink)}
 .count-secondary h2{margin-top:0}
 

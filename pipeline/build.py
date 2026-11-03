@@ -178,6 +178,8 @@ def answer_sentence(race: config.Race, ra: average.RaceAverage, as_of: date) -> 
 
 
 FRESH_DAYS = 7  # "Today" in a title only while a poll has ended this recently
+THIN_POLLS = 5  # fewer weighted polls than this: a "limited data" note and noindex
+MAX_TABLE_ROWS = 50  # polls listed in a page's HTML; the rest are in the JSON and CSV
 
 
 def seo_title(race: config.Race, ra: average.RaceAverage, as_of: date) -> str:
@@ -716,6 +718,44 @@ def year_path(yr: int, latest: int) -> str:
 
 
 # --------------------------------------------------------------- pollsters
+def pollster_ld(p: pollsters.Pollster, answer: str, lastmod: date, faq: list[tuple[str, str]]) -> list[dict]:
+    """WebPage about the pollster's Organization, a Dataset of its scored record, and the FAQ."""
+    base = config.SITE["url"]
+    org = {"@id": f"{base}/#org", "@type": "Organization", "name": config.SITE["name"], "url": base}
+    page = {"@context": "https://schema.org", "@type": "WebPage", "url": f"{base}{p.path}", "name": f"{p.name}: accuracy, bias and polls",
+            "description": answer, "dateModified": lastmod.isoformat(), "about": {"@type": "Organization", "name": p.name},
+            "publisher": org}
+    out = [page]
+    if p.rated:
+        out.append({"@context": "https://schema.org", "@type": "Dataset", "name": f"{p.name} pollster accuracy record",
+                    "description": answer, "url": f"{base}{p.path}", "dateModified": lastmod.isoformat(),
+                    "license": "https://creativecommons.org/licenses/by/4.0/", "isAccessibleForFree": True,
+                    "creator": org, "temporalCoverage": "2016/2022",
+                    "variableMeasured": ["mean absolute error on the final margin", "mean signed error (partisan bias)", "share of polls with the winner ahead"],
+                    "isBasedOn": "https://github.com/fivethirtyeight/data/tree/master/pollster-ratings",
+                    "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": f"{base}/data/pollster-scorecard.csv"}]})
+    if faq:
+        out.append(faq_ld(faq))
+    return out
+
+
+def pollster_faq(p: pollsters.Pollster, n_rated: int, field: float) -> list[tuple[str, str]]:
+    r = p.rated
+    if not r:
+        return []
+    better = "better" if r.mean_abs_error < field else "worse"
+    lean = ("Its misses show no consistent partisan lean: the average signed error is under 0.3 points." if abs(r.mean_bias) < 0.3 else
+            f"Its polls leaned {abs(r.mean_bias):.1f} points toward {'Democrats' if r.mean_bias > 0 else 'Republicans'} on average, "
+            "measured against the final results.")
+    return [
+        (f"Is {p.name} accurate?",
+         f"In the final three weeks of {r.cycles} races, {pollsters.possessive(p.name)} {r.n_polls} rated polls missed the final margin by "
+         f"{r.mean_abs_error:.1f} points on average, {better} than the {field:.1f}-point average of all rated pollsters, and "
+         f"{r.right_call_pct:.0f}% had the winner ahead. It ranks {pollsters.ordinal(p.rank)} of {n_rated} on the ElectionsUSA scorecard."),
+        (f"Does {p.name} lean Democratic or Republican?", lean),
+    ]
+
+
 def build_pollsters(render, pages: dict[str, pollsters.Pollster], rated: list[scorecard.PollsterRow],
                     cycle_rows: list[dict], as_of: date, field: float) -> list[dict]:
     """Render one page per pollster (see pollsters.registry); return finder entries."""
@@ -725,13 +765,16 @@ def build_pollsters(render, pages: dict[str, pollsters.Pollster], rated: list[sc
     for p in pages.values():
         r = p.rated
         answer = pollsters.answer_sentence(p, len(rated))
+        lastmod = max(min(p.polls[0]["end_date"], as_of) if p.polls else date.min, min(config.PAGE_REVISED["scorecard"], as_of))
+        faq = pollster_faq(p, len(rated), field)
         render("pollster.html", p.path, p=p, answer=answer, description=answer, n_rated=len(rated), field_error=field,
+               faq=faq, ld_page=pollster_ld(p, answer, lastmod, faq),
                record=pollsters.track_record(raw, r.rating_id) if r else None,
                cycle=[c for c in cycle_rows if c["pollster_path"] == p.path],
                prev=by_rank.get(p.rank - 1) if p.rank else None, next=by_rank.get(p.rank + 1) if p.rank else None,
                title=f"Is {p.name} Accurate? Pollster Rating, Bias and Polls" if r else f"{p.name} Polls: Every Recent Result",
                crumb=p.name, trail=[("Pollster scorecard", "/pollsters/")],
-               lastmod=max(min(p.polls[0]["end_date"], as_of) if p.polls else date.min, min(config.PAGE_REVISED["scorecard"], as_of)))
+               lastmod=lastmod)
         index.append(dict(t=p.name, u=p.path, k="Pollster",
                           s=f"Avg error {r.mean_abs_error}, bias {r.bias_label}, {r.n_polls} rated polls" if r else f"{len(p.polls)} polls on record",
                           q=f"{p.name} pollster polls poll accuracy accurate rating rated grade bias biased reliable"))
@@ -777,7 +820,7 @@ def build(as_of: date | None = None) -> Path:
             target = dist / out_path.strip("/")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(html, encoding="utf-8")
-        if page:
+        if page and not ctx.get("noindex"):
             pages.append((out_path, lastmod))
 
     # pollster pages are known before the race pages render, so poll tables can link to them
@@ -816,7 +859,9 @@ def build(as_of: date | None = None) -> Path:
         answer = answer_sentence(race, ra, ra.as_of)
         answers[race.id] = answer
         faq = faq_items(race, ra, answer)
+        thin = bool(ra.values) and ra.n_polls < THIN_POLLS
         render("race.html", f"/{race.slug}/", race=race, avg=ra, table=table, charts=ch, colors=race_colors(race),
+               thin=thin, noindex=thin, max_rows=MAX_TABLE_ROWS,
                shown=shown, title=seo_title(race, ra, as_of), description=answer or race.description, answer=answer,
                faq=faq, ld_faq=faq_ld(faq) if faq else None, related=related_averages(race, averages),
                crumb=race.short_title, trail=race_trail(race), og_image=og_image, lastmod=race_lastmod[race.id],

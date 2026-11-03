@@ -136,3 +136,26 @@ def test_calendar_leads_with_the_dnc_date_and_marks_gop_tentative(site):
     gop = [r for r in config.PRIMARY_CALENDAR_2028 if "Republican" in r[1]]
     assert gop and all(r[4] == "tentative" for r in gop)
     assert all(r[3] for r in config.PRIMARY_CALENDAR_2028 if "Democratic primary" in r[1])  # every DNC date is sourced
+
+
+def test_pollster_pages_carry_webpage_dataset_and_faq(site):
+    import json, re
+    html = (site / "pollsters" / "yougov" / "index.html").read_text()
+    types = [json.loads(b).get("@type") for b in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)]
+    assert {"WebPage", "Dataset", "FAQPage"} <= set(types)
+    assert "Is YouGov accurate?" in html and "Does YouGov lean Democratic or Republican?" in html
+
+
+def test_long_tables_cap_at_50_with_faq_first(site):
+    html = (site / "2026" / "generic-ballot" / "index.html").read_text()
+    table = html[html.index('<table class="table polls">'):]
+    assert table.count("<tr") - 1 == build.MAX_TABLE_ROWS  # header row excluded
+    assert "Latest 50 polls" in html and "/data/polls.csv" in html
+    assert html.index('id="faq"') < html.index('id="all-polls"')
+
+
+def test_thin_matchup_is_flagged_and_noindexed(site):
+    html = (site / "2028" / "president" / "vance-vs-buttigieg" / "index.html").read_text()
+    assert '<meta name="robots" content="noindex, follow">' in html and "Limited data." in html
+    assert "max-image-preview" not in html
+    assert "/2028/president/vance-vs-buttigieg/</loc>" not in (site / "sitemap.xml").read_text()

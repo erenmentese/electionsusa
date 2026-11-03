@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import ad %}
+{% block head %}{% for b in ld_page %}<script type="application/ld+json">{{ b | tojson }}</script>{% endfor %}{% endblock %}
 {% block content %}
 {% set r = p.rated %}
 <article>
@@ -90,6 +91,13 @@
   {% endif %}
   <p>{% if p.polls %}Polls are listed under the firm that conducted them, even when the source names a media partner first (for example "The Economist/YouGov" or "CNN/SSRS"). {% endif %}Full method on the <a href="/pollsters/">scorecard</a> and <a href="/methodology/">methodology</a> pages. Something wrong? Report it through the <a href="/corrections/">corrections page</a>.</p>
 </section>
+
+{% if faq %}
+<section class="section prose faq">
+  <h2>Questions about {{ p.name }}</h2>
+  {% for q, a in faq %}<h3>{{ q }}</h3><p>{{ a }}</p>{% endfor %}
+</section>
+{% endif %}
 
 <nav class="pager" aria-label="Other pollsters">
   {% if prev %}<a href="{{ prev.path }}">← {{ prev.rank | ordinal }}: {{ prev.name }}</a>{% else %}<span></span>{% endif %}
