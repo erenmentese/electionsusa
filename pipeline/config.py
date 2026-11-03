@@ -254,4 +254,12 @@ BOT = {
     "election_milestones": [700, 600, 500, 400, 365, 300, 250, 200, 150, 100, 75, 60, 50, 45,
                             30, 21, 14, 10, 7, 6, 5, 4, 3, 2, 1, 0],
     "midterm_milestones": [30, 14, 7, 3, 1, 0],
+    # One-off posts that link a page, each sent once inside its UTC window. They carry a link on
+    # purpose, so each costs more than a normal post (see include_links).
+    "campaigns": [
+        {"key": "campaign:2026-midterm-day", "race": "generic-ballot-2026", "moment": "day",
+         "start": "2026-11-03T12:00:00+00:00", "end": "2026-11-04T00:00:00+00:00"},
+        {"key": "campaign:2026-midterm-after", "race": "generic-ballot-2026", "moment": "after",
+         "start": "2026-11-04T12:00:00+00:00", "end": "2026-11-05T12:00:00+00:00"},
+    ],
 }

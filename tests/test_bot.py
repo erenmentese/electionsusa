@@ -120,3 +120,22 @@ def test_client_falls_back_to_text_when_upload_fails(creds):
     assert XClient(session=s).post_with_card("hi", b"png") == "999"
     post = [c for c in s.calls if c[0].endswith("/2/tweets")][0]
     assert post[1]["json"] == {"text": "hi"}
+
+
+def test_campaign_posts_go_out_once_inside_their_window():
+    polls = seed_polls_frame()
+    polls, _ = add_poll(polls, "generic-ballot-2026", "2026-11-01", {"Democrats": 49.0, "Republicans": 42.0})
+    state = sc.empty_state()
+    sc.bootstrap(polls, state, NOW)
+    day = datetime(2026, 11, 3, 18, 17, tzinfo=timezone.utc)
+    posts = sc.plan(polls, None, state, day.date(), day)
+    camp = [p for p in posts if p.kind == "campaign"]
+    assert [p.key for p in camp] == ["campaign:2026-midterm-day"]
+    assert "electionsusa.org/2026/generic-ballot/" in camp[0].text and weighted_length(camp[0].text) <= 280
+    state["posted"][camp[0].key] = day.isoformat()
+    assert not any(p.kind == "campaign" for p in sc.plan(polls, None, state, day.date(), day))
+    polls = sc.validate_polls(polls)
+    assert sc.campaign_posts(polls, None, datetime(2026, 11, 3, 11, tzinfo=timezone.utc)) == []  # before the window
+    after = sc.campaign_posts(polls, None, datetime(2026, 11, 4, 12, 17, tzinfo=timezone.utc))
+    assert [p.key for p in after] == ["campaign:2026-midterm-after"]
+    Image.open(io.BytesIO(render(after[0].card)))

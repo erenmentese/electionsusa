@@ -247,6 +247,37 @@ def milestone_posts(today: date) -> list[Post]:
     return out
 
 
+def campaign_posts(polls: pd.DataFrame, ratings, now: datetime) -> list[Post]:
+    """The configured one-off posts whose window contains `now` (see config.BOT["campaigns"])."""
+    out = []
+    for c in config.BOT.get("campaigns", []):
+        if not datetime.fromisoformat(c["start"]) <= now < datetime.fromisoformat(c["end"]):
+            continue
+        race = config.RACE_BY_ID[c["race"]]
+        ra = average.compute_race(polls, race, ratings, as_of=now.date())
+        if not ra.values:
+            continue
+        d, r = (ra.values[x] for x in race.candidates[:2])
+        lead = f"{'Democrats' if d >= r else 'Republicans'} +{abs(d - r):.1f}"
+        url = f"{config.SITE['url'].replace('https://', '')}/{race.slug}/"
+        if c["moment"] == "day":
+            lines = ["Polls close tonight in the 2026 midterms.",
+                     f"Our final generic ballot average: Democrats {fmt_pct(d)}, Republicans {fmt_pct(r)} ({lead}), from {ra.n_polls} national polls.",
+                     f"Every poll and the trend: {url}"]
+        else:
+            lines = ["How close did the polls get?",
+                     f"Going into Election Day, our generic ballot average was {lead} ({fmt_pct(d)} to {fmt_pct(r)}). "
+                     "We'll score every pollster against the result.",
+                     f"The average and every poll: {url}"]
+        colors = {x: config.PARTY_COLORS[race.parties[x]] for x in race.candidates[:2]}
+        card = CardSpec(kind="figures", kicker="2026 midterms", title="Final generic ballot average",
+                        figures=[Figure(x, fmt_pct(ra.values[x]), colors[x]) for x in race.candidates[:2]],
+                        note=f"{ra.n_polls} national polls · as of {now.strftime('%b %-d, %Y')}", footer_left=url)
+        out.append(Post(kind="campaign", key=c["key"], text="\n\n".join(lines), card=card, priority=0,
+                        alt=f"Final ElectionsUSA generic ballot average: Democrats {fmt_pct(d)}, Republicans {fmt_pct(r)}."))
+    return out
+
+
 # ------------------------------------------------------------------ plan
 def plan(polls: pd.DataFrame, ratings, state: dict, today: date, now: datetime | None = None) -> list[Post]:
     """Return the posts to publish this run, highest priority first, within caps."""
@@ -256,6 +287,7 @@ def plan(polls: pd.DataFrame, ratings, state: dict, today: date, now: datetime |
     candidates: list[Post] = []
 
     candidates += [p for p in milestone_posts(today) if p.key not in posted]
+    candidates += [p for p in campaign_posts(polls, ratings, now) if p.key not in posted]
 
     if today.weekday() == config.BOT["roundup_weekday"] and f"roundup:{today.isoformat()}" not in posted:
         rp = roundup_post(polls, ratings, today)
