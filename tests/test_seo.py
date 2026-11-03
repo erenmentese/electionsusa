@@ -62,10 +62,16 @@ def test_build_seo_output(site):
     assert '"@type": "BreadcrumbList"' in race_html and '"@type": "Dataset"' in race_html
     assert "og/approval-trump-2.png" in race_html
     assert "in the ElectionsUSA average of" in race_html
+    # dated, number-first titles; an FAQ marked up as FAQPage; links to the other averages
+    assert re.search(r"<title>Trump Approval Rating Today: \d+\.\d% \(Oct 31, 2026\) \| ElectionsUSA</title>", race_html)
+    assert '"@type": "FAQPage"' in race_html and "What is Trump&#39;s approval rating today?" in race_html
+    assert 'class="related"' in race_html and 'href="/2026/generic-ballot/"' in race_html
 
-    # long poll tables fold behind "See all" but keep every row in the HTML; short ones don't fold
-    rows = re.findall(r"<tr( class=\"fold\")?>", race_html.split('id="all-polls"')[1].split("</table>")[0])
-    assert len(rows) > 15 and [bool(r) for r in rows].count(False) == 13  # header + 12 newest polls
+    # long poll tables render the 25 newest polls and hold the rest in a <template> until "See all"; short ones don't fold
+    table = race_html.split('id="all-polls"')[1].split("</table>")[0]
+    shown, held = table.split("<template data-fold-rows>")
+    assert shown.count("<tr") == 26 and held.count('<tr class="fold">') > 0  # header + 25 newest polls
+    assert "</template>" in held
     assert "data-fold-toggle" in race_html
     assert "data-fold-toggle" not in (dist / "2028" / "president" / "vance-vs-buttigieg" / "index.html").read_text()
 

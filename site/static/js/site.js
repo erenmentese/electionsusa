@@ -61,6 +61,8 @@
     var fold = document.getElementById(btn.getAttribute("aria-controls"));
     var more = btn.textContent;
     btn.addEventListener("click", function () {
+      // rows past the preview wait in a <template> until first opened
+      fold.querySelectorAll("template[data-fold-rows]").forEach(function (t) { t.replaceWith(t.content); });
       var open = !fold.classList.toggle("is-folded");
       btn.setAttribute("aria-expanded", open);
       btn.textContent = open ? btn.getAttribute("data-less") : more;

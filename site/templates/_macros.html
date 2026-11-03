@@ -34,6 +34,18 @@
 </a>
 {% endmacro %}
 
+{# The 2026 midterm block: the generic-ballot average with links to its page and the 2026 pollster scorecard #}
+{% macro midterm_block(m) %}
+{% set r = m.ra %}
+<section class="midterm" aria-labelledby="midterm-h">
+  <p class="kicker">2026 midterms · {% if m.days > 1 %}in {{ m.days }} days{% elif m.days == 1 %}tomorrow{% elif m.days == 0 %}Election Day is today{% else %}{{ -m.days }} day{{ "s" if m.days < -1 }} ago{% endif %}</p>
+  <h2 id="midterm-h"><a href="{{ m.path }}">{{ "Final generic ballot average" if m.days <= 0 else "Generic ballot" }}: {{ r.margin | signed("Democrats", "Republicans") }}</a></h2>
+  <div class="midterm-figs">{% for c in m.race.candidates if c in r.values %}<span style="--c: {{ m.colors[c] }}">{{ c }} <b>{{ "%.1f" % r.values[c] }}%</b></span>{% endfor %}</div>
+  <p>{% if m.days > 0 %}The ElectionsUSA average of {{ r.n_polls }} national polls for the House vote on November 3.{% elif m.days == 0 %}Our average of {{ r.n_polls }} national polls going into today's House vote. Once results are in, every final-weeks poll is scored against them.{% else %}How close did the polls get? Every final-weeks poll is scored against the result on the 2026 pollster scorecard.{% endif %}</p>
+  <p class="midterm-links"><a class="cta" href="{{ m.path }}">Generic ballot polls →</a><a href="/pollsters/#2026">2026 pollster scorecard</a><a href="/pollsters/">Most accurate pollsters</a></p>
+</section>
+{% endmacro %}
+
 {% macro ev_bar(b) %}
 <div class="ev-bar" role="img" aria-label="Electoral votes: {{ b.dem }} {{ b.ev_dem }}, {{ b.rep }} {{ b.ev_rep }}. 270 needed to win.">
   <div class="ev-labels"><span class="d">{{ b.dem }} <b>{{ b.ev_dem }}</b></span><span class="mid">270 to win</span><span class="r"><b>{{ b.ev_rep }}</b> {{ b.rep }}</span></div>
