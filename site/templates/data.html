@@ -24,7 +24,16 @@
 </tbody></table>
 <h2>JSON API</h2>
 <p>Each average is also published as a JSON document with the current values, the full trend series and every underlying poll:</p>
-<ul>{% for r in races %}<li><code><a href="/api/{{ r.id }}.json">/api/{{ r.id }}.json</a></code> — {{ r.title }}</li>{% endfor %}</ul>
+<div class="table-scroll">
+<table class="table compact">
+<thead><tr><th>Endpoint</th><th>What</th><th>Fields</th></tr></thead>
+<tbody>
+{% for r in races %}<tr><td><code><a href="/api/{{ r.id }}.json">/api/{{ r.id }}.json</a></code></td><td>{{ r.title }}</td><td class="muted small"><code>average</code>, <code>margin</code>, <code>n_polls_weighted</code>, <code>trend</code>, <code>polls</code>, <code>as_of</code></td></tr>{% endfor %}
+<tr><td><code><a href="/api/search-index.json">/api/search-index.json</a></code></td><td>Every page with a one-line summary</td><td class="muted small"><code>t</code> title, <code>u</code> URL, <code>s</code> summary</td></tr>
+<tr><td><code><a href="/feed.xml">/feed.xml</a></code></td><td>Atom feed of updated averages and analysis</td><td class="muted small">Atom 1.0</td></tr>
+<tr><td><code><a href="/llms.txt">/llms.txt</a></code></td><td>Plain-text summary of current numbers, data files and how to cite</td><td class="muted small">Markdown</td></tr>
+</tbody></table>
+</div>
 <p>Files are static and cached at the CDN edge; there are no rate limits and no keys. Please set a descriptive User-Agent if you poll them automatically.</p>
 <h2>Embed</h2>
 <p>You may embed our SVG charts or reproduce tables with attribution and a link. A copy-paste embed widget is planned.</p>

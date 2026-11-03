@@ -665,6 +665,52 @@ def build_2028_hubs(render, summaries: list[dict], race_lastmod: dict[str, date 
                  q="2028 election hub overview primaries president all averages")]
 
 
+def build_machine_files(dist: Path, summaries: list[dict], race_lastmod: dict[str, date | None],
+                        answers: dict[str, str], entries: list[dict], as_of: date) -> None:
+    """llms.txt (what the site is, today's numbers, where the data is, how to cite it) and an Atom feed."""
+    base, name = config.SITE["url"], config.SITE["name"]
+    lines = [f"# {name} ({config.SITE['alternate_name']})", "",
+             f"> {config.SITE['description']}", "",
+             f"Independent, non-partisan U.S. poll averages with an open method. Built {as_of.isoformat()}; data refreshes every six hours.", "",
+             "## Current averages"]
+    for s in summaries:
+        r = s["race"]
+        when = race_lastmod.get(r.id)
+        lines.append(f"- [{r.title}]({base}/{r.slug}/): {answers.get(r.id) or 'no polls yet'}"
+                     + (f" (latest poll {when.isoformat()})" if when else ""))
+    lines += ["", "## Key pages",
+              f"- [2026 midterms: final polls, poll closing times, official results]({base}/2026/)",
+              f"- [2028 election hub]({base}/2028/)",
+              f"- [Pollster scorecard: accuracy and bias of 60+ pollsters]({base}/pollsters/)",
+              f"- [Methodology]({base}/methodology/)",
+              f"- [Corrections log]({base}/corrections/)", "",
+              "## Data and API (static files, no key, no rate limit)",
+              f"- [Every poll, one row per candidate, with a source link per row (CSV)]({base}/data/polls.csv)",
+              f"- [Pollster scorecard (CSV)]({base}/data/pollster-scorecard.csv)",
+              f"- [Presidential results by state, 1976 onward (CSV)]({base}/data/president-by-state.csv)",
+              f"- [Polymarket snapshots (CSV)]({base}/data/markets.csv)"]
+    lines += [f"- [{s['race'].title} average, trend and polls (JSON)]({base}/api/{s['race'].id}.json)" for s in summaries]
+    lines += ["", "## License and attribution",
+              "- Our compilation, averages, scorecard and charts: CC BY 4.0. Fields compiled from Wikipedia: CC BY-SA 4.0. "
+              "Prediction-market prices: subject to the platform's terms.",
+              f"- Cite as: \"{name} polling average, {base}/<page>/ (accessed <date>)\". Please link the page you used.",
+              "- We do not forecast or call races; poll numbers are the pollsters' own and are credited on every row.", ""]
+    (dist / "llms.txt").write_text("\n".join(lines), encoding="utf-8")
+
+    from xml.sax.saxutils import escape
+    updated = max((e["updated"] for e in entries), default=as_of)
+    feed = ['<?xml version="1.0" encoding="utf-8"?>', '<feed xmlns="http://www.w3.org/2005/Atom">',
+            f"  <title>{escape(name)}: poll averages and analysis</title>", f'  <link href="{base}/"/>',
+            f'  <link rel="self" href="{base}/feed.xml"/>', f"  <id>{base}/</id>", f"  <updated>{updated.isoformat()}T00:00:00Z</updated>",
+            f"  <author><name>{escape(config.SITE['editor'].get('name') or config.SITE['author'])}</name></author>"]
+    for e in sorted(entries, key=lambda e: e["updated"], reverse=True):
+        feed += ["  <entry>", f"    <title>{escape(e['title'])}</title>", f'    <link href="{base}{e["path"]}"/>',
+                 f"    <id>{base}{e['path']}</id>", f"    <updated>{e['updated'].isoformat()}T00:00:00Z</updated>",
+                 f"    <summary>{escape(e['summary'])}</summary>", "  </entry>"]
+    feed.append("</feed>")
+    (dist / "feed.xml").write_text("\n".join(feed) + "\n", encoding="utf-8")
+
+
 def year_path(yr: int, latest: int) -> str:
     return "/states/" if yr == latest else f"/states/{yr}/"
 
@@ -751,6 +797,7 @@ def build(as_of: date | None = None) -> Path:
     averages = {race.id: average.compute_race(polls, race, ratings, as_of=race_as_of(race, as_of)) for race in config.RACES}
     env.globals["midterm"] = midterm_context(averages, as_of)
     summaries = []
+    answers: dict[str, str] = {}
     race_lastmod: dict[str, date | None] = {}
     for race in config.RACES:
         ra = averages[race.id]
@@ -767,6 +814,7 @@ def build(as_of: date | None = None) -> Path:
         # a page changes meaningfully when a new poll lands, not every time the build runs
         race_lastmod[race.id] = min(pd.Timestamp(ra.latest_end_date).date(), as_of) if ra.latest_end_date is not None else None
         answer = answer_sentence(race, ra, ra.as_of)
+        answers[race.id] = answer
         faq = faq_items(race, ra, answer)
         render("race.html", f"/{race.slug}/", race=race, avg=ra, table=table, charts=ch, colors=race_colors(race),
                shown=shown, title=seo_title(race, ra, as_of), description=answer or race.description, answer=answer,
@@ -887,7 +935,13 @@ def build(as_of: date | None = None) -> Path:
     sm.append("</urlset>")
     (dist / "sitemap.xml").write_text("\n".join(sm))
     (dist / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n")
+    feed_entries = [dict(title=s["race"].title, path=s["path"], updated=race_lastmod[s["race"].id], summary=answers[s["race"].id])
+                    for s in summaries if race_lastmod.get(s["race"].id) and answers.get(s["race"].id)]
+    feed_entries.append(dict(title="Corrections log", path="/corrections/", updated=min(datetime.strptime(corrections["date"].max(), "%Y-%m-%d").date(), as_of),
+                             summary="Every material correction to ElectionsUSA's numbers and claims."))
+    build_machine_files(dist, summaries, race_lastmod, answers, feed_entries, as_of)
     (dist / "CNAME").write_text(config.SITE["domain"] + "\n")
+    (dist / f"{config.INDEXNOW_KEY}.txt").write_text(config.INDEXNOW_KEY)
     if config.SITE["adsense_client"]:  # ads.txt only for a site that actually sells ads
         pub = config.SITE["adsense_client"].removeprefix("ca-")
         (dist / "ads.txt").write_text(f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n")

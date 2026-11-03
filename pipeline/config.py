@@ -61,6 +61,9 @@ SITE = {
     "language": "en",
 }
 
+# IndexNow (Bing, Yandex, Seznam, Naver): a public key, served as /<key>.txt to prove we own the host
+INDEXNOW_KEY = "36bf3447839bd9e4905fcd0232434aa0"
+
 # Key dates --------------------------------------------------------------
 ELECTION_DAY_2028 = date(2028, 11, 7)
 MIDTERM_DAY_2026 = date(2026, 11, 3)
