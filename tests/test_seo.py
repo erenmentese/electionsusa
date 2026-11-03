@@ -63,7 +63,7 @@ def test_build_seo_output(site):
     assert "og/approval-trump-2.png" in race_html
     assert "in the ElectionsUSA average of" in race_html
     # dated, number-first titles; an FAQ marked up as FAQPage; links to the other averages
-    assert re.search(r"<title>Trump Approval Rating Today: \d+\.\d% \(Oct 31, 2026\) \| ElectionsUSA</title>", race_html)
+    assert re.search(r"<title>Trump Approval Rating Today: \d+\.\d% \(Oct \d+, 2026\) \| ElectionsUSA</title>", race_html)
     assert '"@type": "FAQPage"' in race_html and "What is Trump&#39;s approval rating today?" in race_html
     assert 'class="related"' in race_html and 'href="/2026/generic-ballot/"' in race_html
 
@@ -81,3 +81,32 @@ def test_build_seo_output(site):
     assert urls["/methodology/"] == "" and urls["/about/"] == ""
     assert urls["/privacy/"] == "2026-10-29"
     assert all(d <= AS_OF.isoformat() for d in urls.values() if d)
+
+
+def test_short_name_keeps_generational_suffix():
+    assert build.short_name("Donald Trump Jr.") == "Trump Jr."
+    assert build.short_name("Robert F. Kennedy Jr.") == "Kennedy Jr."
+    assert build.short_name("JD Vance") == "Vance"
+
+
+def test_titles_say_today_only_for_fresh_polls():
+    from datetime import date
+    from pipeline import average, config
+    race = config.RACE_BY_ID["pres-2028-vance-newsom"]
+    ra = average.RaceAverage(race_id=race.id, as_of=date(2026, 11, 3), values={"JD Vance": 40.2, "Gavin Newsom": 43.6},
+                             margin=-3.4, latest_end_date=date(2026, 10, 14))
+    assert build.seo_title(race, ra, date(2026, 11, 3)) == "Vance vs. Newsom 2028 Polls: Newsom +3.4 (Oct 14, 2026)"
+    assert build.seo_title(race, ra, date(2026, 10, 18)) == "Vance vs. Newsom 2028 Polls Today: Newsom +3.4 (Oct 14, 2026)"
+    gen = config.RACE_BY_ID["generic-ballot-2026"]
+    ga = average.RaceAverage(race_id=gen.id, as_of=date(2026, 11, 3), values={"Democrats": 50.8, "Republicans": 42.8},
+                             margin=8.0, latest_end_date=date(2026, 11, 2))
+    assert build.seo_title(gen, ga, date(2026, 11, 2)) == "2026 Generic Ballot Polls Today: Democrats +8.0 (Nov 2, 2026)"
+    assert build.seo_title(gen, ga, date(2026, 11, 4)) == "Final 2026 Generic Ballot Average: Democrats +8.0 vs. the Result"
+
+
+def test_home_title_follows_the_midterm_calendar():
+    from datetime import date
+    assert build.home_head(date(2026, 11, 3), False)["title"] == "2026 Midterm Polls vs. Results, 2028 Odds"
+    assert build.home_head(date(2026, 11, 6), True)["title"] == "Did the Polls Get the 2026 Midterms Right?"
+    assert build.home_head(date(2027, 3, 1), False)["h1"] == "How is 2028 looking?"
+    assert all(len(build.home_head(d, r)["title"] + " | ElectionsUSA") <= 60 for d in (date(2026, 11, 3), date(2027, 1, 1)) for r in (True, False))

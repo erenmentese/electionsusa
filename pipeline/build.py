@@ -66,8 +66,17 @@ def signed(x: float | None, plus_label: str = "", minus_label: str = "") -> str:
     return f"{lab} +{abs(x):.1f}".strip()
 
 
+SUFFIXES = {"Jr.", "Jr", "Sr.", "Sr", "II", "III", "IV"}
+
+
 def short_name(c: str) -> str:
-    return c.split()[-1] if c not in ("Other/Undecided", "Approve", "Disapprove", "Democrats", "Republicans") else c
+    """Surname for tables and legends; a generational suffix stays with it ("Trump Jr.", not "Jr.")."""
+    if c in ("Other/Undecided", "Approve", "Disapprove", "Democrats", "Republicans"):
+        return c
+    words = c.replace(",", "").split()
+    if len(words) > 1 and words[-1] in SUFFIXES:
+        return f"{words[-2]} {words[-1]}"
+    return words[-1]
 
 
 def load_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -155,21 +164,30 @@ def answer_sentence(race: config.Race, ra: average.RaceAverage, as_of: date) -> 
     return f"{lead} {verb} {trail} {v[lead]:.1f}% to {v[trail]:.1f}% {what}, according to {src}, {when}."
 
 
+FRESH_DAYS = 7  # "Today" in a title only while a poll has ended this recently
+
+
 def seo_title(race: config.Race, ra: average.RaceAverage, as_of: date) -> str:
-    """The <title>: the query people type plus today's number and date, e.g. "Trump Approval Rating Today: 37.4% (Nov 3, 2026)"."""
-    v, when = ra.values, as_of.strftime("%b %-d, %Y")
-    if not v:
+    """The <title>: the query people type plus the number, dated by the latest poll, e.g.
+    "Trump Approval Rating Today: 37.4% (Nov 2, 2026)". "Today" only when that poll is under a week old."""
+    v = ra.values
+    if not v or ra.latest_end_date is None:
         return race.title
+    latest = pd.Timestamp(ra.latest_end_date).date()
+    when = latest.strftime("%b %-d, %Y")
+    today = " Today" if (as_of - latest).days <= FRESH_DAYS else ""
     if race.kind == "approval":
-        return f"{race.short_title.removesuffix(' approval')} Approval Rating Today: {v['Approve']:.1f}% ({when})"
+        return f"{race.short_title.removesuffix(' approval')} Approval Rating{today}: {v['Approve']:.1f}% ({when})"
     if race.kind == "primary":
         lead = og_cards.ranked(ra)[0]
-        return f"{race.title.removesuffix(' Polls')} Polls Today: {short_name(lead)} {v[lead]:.1f}% ({when})"
+        return f"{race.title.removesuffix(' Polls')} Polls{today}: {short_name(lead)} {v[lead]:.1f}% ({when})"
     a, b = race.candidates[:2]
     lead = signed(ra.margin, short_name(a), short_name(b)) if ra.margin is not None else "Tie"
     if race.kind == "generic":
-        return f"Generic Ballot Polls Today: {lead} ({when})"
-    return f"{short_name(a)} vs. {short_name(b)} 2028 Polls Today: {lead} ({when})"
+        if as_of >= config.MIDTERM_DAY_2026:
+            return f"Final 2026 Generic Ballot Average: {lead} vs. the Result"
+        return f"2026 Generic Ballot Polls{today}: {lead} ({when})"
+    return f"{short_name(a)} vs. {short_name(b)} 2028 Polls{today}: {lead} ({when})"
 
 
 def faq_items(race: config.Race, ra: average.RaceAverage, answer: str) -> list[tuple[str, str]]:
@@ -233,6 +251,12 @@ def related_averages(race: config.Race, averages: dict[str, average.RaceAverage]
 MIDTERM_RACE = "generic-ballot-2026"
 
 
+def race_as_of(race: config.Race, as_of: date) -> date:
+    """The date an average is computed for: the midterm generic ballot stops at Election Day, so its final
+    average stays the one voters went in with instead of drifting as the last polls age."""
+    return min(as_of, config.MIDTERM_DAY_2026) if race.id == MIDTERM_RACE else as_of
+
+
 def midterm_context(averages: dict[str, average.RaceAverage], as_of: date) -> dict | None:
     """The generic-ballot block shown on the home and approval pages from a week before the midterms to a month after."""
     days = (config.MIDTERM_DAY_2026 - as_of).days
@@ -241,6 +265,25 @@ def midterm_context(averages: dict[str, average.RaceAverage], as_of: date) -> di
         return None
     race = config.RACE_BY_ID[MIDTERM_RACE]
     return dict(days=days, ra=ra, race=race, path=f"/{race.slug}/", colors=race_colors(race))
+
+
+def home_head(as_of: date, has_results: bool) -> dict:
+    """Title, H1, lead and description of the home page: the midterms in election week, the
+    polls-vs-results question once results are in, 2028 otherwise."""
+    days = (config.MIDTERM_DAY_2026 - as_of).days
+    if -30 <= days <= 7 and has_results:
+        return dict(title="Did the Polls Get the 2026 Midterms Right?", h1="Did the polls get the 2026 midterms right?",
+                    sub="Every final-weeks 2026 poll scored against the House result, the 2028 averages and the pollster scorecard.",
+                    description="How close the 2026 midterm polls came to the result, pollster by pollster, plus open poll "
+                                "averages and odds for the 2028 presidential election.")
+    if -30 <= days <= 7:
+        return dict(title="2026 Midterm Polls vs. Results, 2028 Odds", h1="2026 midterms: the final polls, then the results",
+                    sub="The final generic ballot average, where to follow official results, and the 2028 averages. Ask a question or pick one below.",
+                    description="The final 2026 midterm generic ballot average, poll closing times and official results "
+                                "sources by state, and open poll averages and odds for 2028.")
+    return dict(title="2028 Election Polls, Pollster Ratings, Odds", h1="How is 2028 looking?",
+                sub="Polling averages, pollster accuracy and prediction-market odds for the next presidential election. Ask a question or pick one below.",
+                description=config.SITE["description"])
 
 
 def race_charts(ra: average.RaceAverage, race: config.Race) -> dict[str, str]:
@@ -553,7 +596,7 @@ def build(as_of: date | None = None) -> Path:
         q["pollster_path"] = pollster_path(q["pollster"], q["sponsor"])
 
     # every average first, so any page can point at another (the midterm block, related averages)
-    averages = {race.id: average.compute_race(polls, race, ratings, as_of=as_of) for race in config.RACES}
+    averages = {race.id: average.compute_race(polls, race, ratings, as_of=race_as_of(race, as_of)) for race in config.RACES}
     env.globals["midterm"] = midterm_context(averages, as_of)
     summaries = []
     race_lastmod: dict[str, date | None] = {}
@@ -571,7 +614,7 @@ def build(as_of: date | None = None) -> Path:
             og_image = f"/og/{race.id}.png"
         # a page changes meaningfully when a new poll lands, not every time the build runs
         race_lastmod[race.id] = min(pd.Timestamp(ra.latest_end_date).date(), as_of) if ra.latest_end_date is not None else None
-        answer = answer_sentence(race, ra, as_of)
+        answer = answer_sentence(race, ra, ra.as_of)
         faq = faq_items(race, ra, answer)
         render("race.html", f"/{race.slug}/", race=race, avg=ra, table=table, charts=ch, colors=race_colors(race),
                shown=shown, title=seo_title(race, ra, as_of), description=answer or race.description, answer=answer,
@@ -629,9 +672,10 @@ def build(as_of: date | None = None) -> Path:
     data_lastmod = max((d for d in [*race_lastmod.values(), markets_lastmod] if d), default=None)
 
     map_year = max(nation)
+    head = home_head(as_of, bool(cycle_rows))
     rated_paths = {p.rated.pollster: p.path for p in pollster_pages.values() if p.rated}
     render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1],
-           scorecard=sc_rows[:8], pollster_paths=rated_paths, title=None, description=config.SITE["description"], lastmod=data_lastmod,
+           scorecard=sc_rows[:8], pollster_paths=rated_paths, head=head, title=head["title"], description=head["description"], lastmod=data_lastmod,
            usmap=usmap.map_context(states, map_year), evbar=usmap.ev_bar(nation[map_year]),
            states=[dict(name=st.name, path=st.path, cls=usmap.shade(st.latest.margin)) for st in states.values()])
     render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows, pollster_paths=rated_paths,

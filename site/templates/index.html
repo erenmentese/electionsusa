@@ -3,8 +3,8 @@
 {% block content %}
 <section class="greet">
   <p class="kicker">Updated {{ build_date }} · {{ days_to_election }} days to Election Day</p>
-  <h1>How is 2028 looking?</h1>
-  <p class="sub">Polling averages, pollster accuracy and prediction-market odds for the next presidential election. Ask a question or pick one below.</p>
+  <h1>{{ head.h1 }}</h1>
+  <p class="sub">{{ head.sub }}</p>
   <div class="finder" data-finder>
     <form role="search" action="/" onsubmit="return false">
       <input type="search" placeholder="Who leads the Dem primary?" aria-label="Ask about the 2028 election" autocomplete="off" data-finder-input autofocus>

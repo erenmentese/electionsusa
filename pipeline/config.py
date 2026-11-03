@@ -22,7 +22,7 @@ SITE = {
     "name": "ElectionsUSA",
     "domain": "electionsusa.org",
     "url": "https://electionsusa.org",
-    "tagline": "Open poll averages, pollster scorecards and market odds for the 2028 U.S. election",
+    "tagline": "Open poll averages, pollster ratings and odds for U.S. elections",
     "description": (
         "Transparent, free polling averages for the 2028 presidential election, "
         "the Democratic and Republican primaries, presidential approval, "
