@@ -26,7 +26,7 @@ pipeline/
   build.py           render everything into dist/
 site/templates/      Jinja2 pages        site/static/   CSS, JS, favicon
 data/polls.csv       long format: one row per poll per candidate (see /data/ page)
-data/markets.csv     market snapshots    data/results/2026.csv  (add after Nov 3, 2026)
+data/markets.csv     market snapshots    data/results/2026-house-national.json  (2026 House popular vote count)
 data/seed/fivethirtyeight/   538 raw-polls + pollster-ratings (CC BY 4.0)
 data/seed/medsl/     state presidential returns 1976-2024 (CC0)   data/seed/census/  House apportionment
 data/seed/us-atlas/  state outlines, Albers USA (ISC)             each folder has a SOURCE.md
@@ -64,7 +64,7 @@ Alternative: Cloudflare Pages with build command `pip install -r requirements.tx
 - [ ] After AdSense approval: set `SITE["adsense_client"]`, replace `dist/ads.txt` content (edit in `build.py`), and add a consent management platform for EEA/UK visitors.
 - [ ] Generate `site/static/img/og.png` (1200×630) for social sharing.
 - [ ] Review `/privacy/` for your jurisdiction.
-- [ ] After Nov 3, 2026: add `data/results/2026.csv` (`race_id,candidate,pct,election_date`) and the 2026 pollster scorecard appears automatically.
+- [ ] After Nov 3, 2026: add `data/results/2026-house-national.json` (format in `pipeline/accuracy.py`) from a cited national count; every 2026 accuracy table fills in from it. Add each new count to `history`, and set `status` to `certified` once states certify.
 
 ## Data licence
 

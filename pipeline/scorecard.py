@@ -16,7 +16,6 @@ how the 2026 midterm scorecard gets built after November 3, 2026.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, timedelta
 
 import pandas as pd
 
@@ -87,38 +86,3 @@ def historical_scorecard(min_year: int = 2016, min_polls: int = 10) -> list[Poll
     # rank: lower error is better; tie-break by more polls
     rows.sort(key=lambda r: (r.adj_error, -r.n_polls))
     return rows
-
-
-def cycle_scorecard(polls: pd.DataFrame, results: pd.DataFrame, window_days: int = 21) -> list[dict]:
-    """Score polls against actual results for one cycle.
-
-    polls: long-format polls (schema.POLL_COLUMNS) ; results: race_id, candidate, pct, election_date
-    Only polls finishing within `window_days` before election day count (538 convention).
-    """
-    out: list[dict] = []
-    if polls.empty or results.empty:
-        return out
-    results = results.copy()
-    results["election_date"] = pd.to_datetime(results["election_date"]).dt.date
-    for race_id, res in results.groupby("race_id"):
-        eday = res["election_date"].iat[0]
-        actual = dict(zip(res["candidate"], res["pct"]))
-        cands = list(actual)[:2]
-        if len(cands) < 2:
-            continue
-        p = polls[(polls["race_id"] == race_id) & (polls["end_date"] <= eday)
-                  & (polls["end_date"] >= eday - timedelta(days=window_days))]
-        if p.empty:
-            continue
-        wide = p.pivot_table(index=["poll_id", "pollster", "end_date"], columns="candidate", values="pct").reset_index()
-        if not all(c in wide.columns for c in cands):
-            continue
-        actual_margin = actual[cands[0]] - actual[cands[1]]
-        for _, row in wide.iterrows():
-            poll_margin = row[cands[0]] - row[cands[1]]
-            err = poll_margin - actual_margin
-            out.append(dict(race_id=race_id, poll_id=row["poll_id"], pollster=row["pollster"], end_date=row["end_date"],
-                            poll_margin=round(poll_margin, 1), actual_margin=round(actual_margin, 1),
-                            error=round(abs(err), 1), bias=round(err, 1),
-                            right_call=(poll_margin > 0) == (actual_margin > 0)))
-    return out
