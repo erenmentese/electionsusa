@@ -42,7 +42,7 @@ SITE = {
     "alternate_name": "ElectionsUSA.org",
     "issues_url": "https://github.com/erenmentese/electionsusa/issues/new",
     "terms_updated": "November 3, 2026",
-    "contact_email": "hello@electionsusa.org",
+    "contact_email": "ernmentesee@gmail.com",  # hello@electionsusa.org once forwarding is set up
     "twitter": "@ElectionsUSAorg",  # e.g. "@electionsusa"
     "github_repo": "erenmentese/electionsusa",  # e.g. "yourname/electionsusa" (enables data-download links)
     "adsense_client": "",  # e.g. "ca-pub-1234567890123456"; empty = no ad slots, no ads.txt
