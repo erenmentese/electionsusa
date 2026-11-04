@@ -93,11 +93,11 @@ if (location.hostname === {{ site.domain | tojson }}) {
       <p class="muted small">Poll numbers are facts reported by each pollster and are credited to their source on every row. Historical accuracy data derived from FiveThirtyEight's open dataset (CC BY 4.0). Independent; not affiliated with any campaign, party, pollster or government body.</p>
     </div>
     <div>
-      <h4>Averages</h4>
+      <h2 class="footer-h">Averages</h2>
       {% for r in races %}<a href="/{{ r.slug }}/">{{ r.short_title }}</a>{% endfor %}
     </div>
     <div>
-      <h4>Site</h4>
+      <h2 class="footer-h">Site</h2>
       <a href="/2026/">2026 midterms</a><a href="/methodology/">Methodology</a><a href="/states/">Results by state</a><a href="/pollsters/">Pollster scorecard</a><a href="/markets/">Prediction markets</a><a href="/countdown/">Countdown</a><a href="/2028/calendar/">2028 calendar</a><a href="/data/">Open data &amp; API</a><a href="/about/">About</a><a href="/corrections/">Corrections</a><a href="/terms/">Terms</a><a href="/privacy/">Privacy</a>
     </div>
   </div>

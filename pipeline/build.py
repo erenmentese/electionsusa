@@ -205,7 +205,7 @@ THIN_POLLS = 5  # fewer weighted polls than this: a "limited data" note and noin
 MAX_TABLE_ROWS = 50  # polls listed in a page's HTML; the rest are in the JSON and CSV
 
 
-def seo_title(race: config.Race, ra: average.RaceAverage, as_of: date) -> str:
+def seo_title(race: config.Race, ra: average.RaceAverage, as_of: date, certified: bool = False) -> str:
     """The <title>: the query people type plus the number, dated by the latest poll, e.g.
     "Trump Approval Rating Today: 37.4% (Nov 2, 2026)". "Today" only when that poll is under a week old."""
     v = ra.values
@@ -222,8 +222,8 @@ def seo_title(race: config.Race, ra: average.RaceAverage, as_of: date) -> str:
     a, b = race.candidates[:2]
     lead = signed(ra.margin, short_name(a), short_name(b)) if ra.margin is not None else "Tie"
     if race.kind == "generic":
-        if as_of >= config.MIDTERM_DAY_2026:
-            return f"Final 2026 Generic Ballot Average: {lead} vs. the Result"
+        if as_of >= config.MIDTERM_DAY_2026:  # "vs. the Result" only once there is a certified result to compare with
+            return f"Final 2026 Generic Ballot Average: {lead} " + ("vs. the Result" if certified else "(Nov 3, 2026)")
         return f"2026 Generic Ballot Polls{today}: {lead} ({when})"
     return f"{short_name(a)} vs. {short_name(b)} 2028 Polls{today}: {lead} ({when})"
 
@@ -305,7 +305,7 @@ def midterm_context(averages: dict[str, average.RaceAverage], as_of: date, resul
     return dict(days=days, ra=ra, race=race, path=f"/{race.slug}/", colors=race_colors(race), result=result)
 
 
-def home_head(as_of: date, has_results: bool, certified: bool = False) -> dict:
+def home_head(as_of: date, has_results: bool, certified: bool = False, final: str = "") -> dict:
     """Title, H1, lead and description of the home page: the midterms in election week, the
     polls-vs-results question once a count is in, 2028 otherwise."""
     days = (config.MIDTERM_DAY_2026 - as_of).days
@@ -321,7 +321,8 @@ def home_head(as_of: date, has_results: bool, certified: bool = False) -> dict:
                                 "pollster, plus open poll averages and odds for the 2028 presidential election.")
     if -30 <= days <= 7:
         return dict(title="2026 Midterm Polls vs. Results, 2028 Odds", h1="2026 midterms: the final polls, then the results",
-                    sub="The final generic ballot average, where to follow official results, and the 2028 averages. Ask a question or pick one below.",
+                    sub=(f"The final generic ballot average had {final}. Official results by state and the 2028 averages are below, or ask a question."
+                         if final else "The final generic ballot average, where to follow official results, and the 2028 averages. Ask a question or pick one below."),
                     description="The final 2026 midterm generic ballot average, poll closing times and official results "
                                 "sources by state, and open poll averages and odds for 2028.")
     return dict(title="2028 Election Polls, Pollster Ratings, Odds", h1="How is 2028 looking?",
@@ -720,7 +721,7 @@ def build_machine_files(dist: Path, summaries: list[dict], race_lastmod: dict[st
     base, name = config.SITE["url"], config.SITE["name"]
     lines = [f"# {name} ({config.SITE['alternate_name']})", "",
              f"> {config.SITE['description']}", "",
-             f"Independent, non-partisan U.S. poll averages with an open method. Built {as_of.isoformat()}; data refreshes every six hours.", "",
+             f"Independent, non-partisan U.S. poll averages with an open method. Launched October 2026; this file was last built {as_of.isoformat()} and data refreshes every six hours.", "",
              "## Current averages"]
     for s in summaries:
         r = s["race"]
@@ -731,9 +732,15 @@ def build_machine_files(dist: Path, summaries: list[dict], race_lastmod: dict[st
     lines += ["", "## Key pages",
               f"- [2026 midterms: final polls, poll closing times, official results]({base}/2026/)",
               f"- [2028 election hub]({base}/2028/)",
+              f"- [2026 pollster accuracy: final generic-ballot polls vs. the House popular vote]({base}/2026/pollster-accuracy/)",
               f"- [Pollster scorecard: accuracy and bias of 60+ pollsters]({base}/pollsters/)",
+              f"- [Prediction markets vs. the polls]({base}/markets/)",
+              f"- [Presidential results by state since 1976]({base}/states/)",
+              f"- [Analysis]({base}/analysis/)",
               f"- [Methodology]({base}/methodology/)",
-              f"- [Corrections log]({base}/corrections/)", "",
+              f"- [About: who runs the site, named editor, funding]({base}/about/)",
+              f"- [Corrections log]({base}/corrections/)",
+              f"- [Sitemap]({base}/sitemap.xml) · [Atom feed]({base}/feed.xml)", "",
               "## Data and API (static files, no key, no rate limit)",
               f"- [Every poll, one row per candidate, with a source link per row (CSV)]({base}/data/polls.csv)",
               f"- [Pollster scorecard (CSV)]({base}/data/pollster-scorecard.csv)",
@@ -744,7 +751,8 @@ def build_machine_files(dist: Path, summaries: list[dict], race_lastmod: dict[st
               "- Our compilation, averages, scorecard and charts: CC BY 4.0. Fields compiled from Wikipedia: CC BY-SA 4.0. "
               "Prediction-market prices: subject to the platform's terms.",
               f"- Cite as: \"{name} polling average, {base}/<page>/ (accessed <date>)\". Please link the page you used.",
-              "- We do not forecast or call races; poll numbers are the pollsters' own and are credited on every row.", ""]
+              "- We do not forecast or call races; poll numbers are the pollsters' own and are credited on every row.",
+              f"- If a number here conflicts with a pollster's own release, the release is right: please tell us via {base}/corrections/.", ""]
     (dist / "llms.txt").write_text("\n".join(lines), encoding="utf-8")
 
     from xml.sax.saxutils import escape
@@ -1082,7 +1090,7 @@ def build(as_of: date | None = None) -> Path:
             race_lastmod[race.id] = max(latest_poll or result.as_of, result.as_of)
         render("race.html", f"/{race.slug}/", race=race, avg=ra, table=table, charts=ch, colors=race_colors(race),
                thin=thin, noindex=thin, max_rows=MAX_TABLE_ROWS, vs=vs, latest_poll=latest_poll,
-               shown=shown, title=seo_title(race, ra, as_of), description=answer or race.description, answer=answer,
+               shown=shown, title=seo_title(race, ra, as_of, bool(vs and result and not result.preliminary)), description=answer or race.description, answer=answer,
                faq=faq, ld_faq=faq_ld(faq) if faq else None, related=related_averages(race, averages),
                crumb=race.short_title, trail=race_trail(race), og_image=og_image, lastmod=race_lastmod[race.id],
                ld_dataset=dataset_ld(race, f"/{race.slug}/", race_lastmod[race.id] or as_of,
@@ -1139,13 +1147,25 @@ def build(as_of: date | None = None) -> Path:
     data_lastmod = max((d for d in [*race_lastmod.values(), markets_lastmod] if d), default=None)
 
     map_year = max(nation)
-    head = home_head(as_of, result is not None, bool(result and not result.preliminary))
+    final = averages[MIDTERM_RACE]
+    head = home_head(as_of, result is not None, bool(result and not result.preliminary),
+                     f"{signed(final.margin, 'Democrats', 'Republicans')} ({final.n_polls} polls)" if final.margin is not None and as_of >= config.MIDTERM_DAY_2026 else "")
     rated_paths = {p.rated.pollster: p.path for p in pollster_pages.values() if p.rated}
     render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1],
            scorecard=sc_rows[:8], pollster_paths=rated_paths, head=head, title=head["title"], description=head["description"], lastmod=data_lastmod,
            usmap=usmap.map_context(states, map_year), evbar=usmap.ev_bar(nation[map_year]),
            states=[dict(name=st.name, path=st.path, cls=usmap.shade(st.latest.margin)) for st in states.values()])
-    render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows, cycle_result=result,
+    base = config.SITE["url"]
+    sc_ld = {"@context": "https://schema.org", "@type": "Dataset", "name": "U.S. pollster accuracy scorecard",
+             "description": "Mean error, adjusted error, partisan bias and right-call rate for every pollster with at least ten "
+                            "final-three-weeks polls since 2016, recomputed from FiveThirtyEight's open archive of polls matched to results.",
+             "url": f"{base}/pollsters/", "dateModified": min(config.PAGE_REVISED["scorecard"], as_of).isoformat(),
+             "license": "https://creativecommons.org/licenses/by/4.0/", "isAccessibleForFree": True, "temporalCoverage": "2016/2022",
+             "spatialCoverage": {"@type": "Country", "name": "United States"},
+             "creator": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
+             "isBasedOn": "https://github.com/fivethirtyeight/data/tree/master/pollster-ratings",
+             "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": f"{base}/data/pollster-scorecard.csv"}]}
+    render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows, cycle_result=result, ld_dataset=sc_ld,
            cycle_counted=accuracy.counted_text(result) if result else "", pollster_paths=rated_paths,
            active=sorted((p for p in pollster_pages.values() if not p.rated), key=lambda p: -len(p.polls)),
            lastmod=max(min(config.PAGE_REVISED["scorecard"], as_of), result.as_of if result else date.min), title="Pollster Scorecard: Accuracy and Bias Ratings", description="How accurate has each U.S. pollster been? Mean error, partisan bias and call accuracy for 60+ pollsters, recomputed from 11,000 polls matched to results, plus FiveThirtyEight's final grades.")

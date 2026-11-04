@@ -48,7 +48,7 @@
 <section class="section prose" id="vs-result">
   <h2>Final average vs. House popular vote <span class="muted">({{ "pending" if not res else "preliminary" if res.preliminary else "certified" }})</span></h2>
   <table class="table compact">
-    <thead><tr><th></th><th class="num">Democrats</th><th class="num">Republicans</th><th class="num">Margin</th></tr></thead>
+    <thead><tr><th><span class="vh">Measure</span></th><th class="num">Democrats</th><th class="num">Republicans</th><th class="num">Margin</th></tr></thead>
     <tbody>
       <tr><td>Final ElectionsUSA average, Nov 3</td>{% for c in race.candidates %}<td class="num">{{ "%.1f%%" % avg.values[c] if c in avg.values else "—" }}</td>{% endfor %}<td class="num">{{ avg.margin | signed("D", "R") }}</td></tr>
       {% if res %}

@@ -106,7 +106,8 @@ def test_titles_say_today_only_for_fresh_polls():
     ga = average.RaceAverage(race_id=gen.id, as_of=date(2026, 11, 3), values={"Democrats": 50.8, "Republicans": 42.8},
                              margin=8.0, latest_end_date=date(2026, 11, 2))
     assert build.seo_title(gen, ga, date(2026, 11, 2)) == "2026 Generic Ballot Polls Today: Democrats +8.0 (Nov 2, 2026)"
-    assert build.seo_title(gen, ga, date(2026, 11, 4)) == "Final 2026 Generic Ballot Average: Democrats +8.0 vs. the Result"
+    assert build.seo_title(gen, ga, date(2026, 11, 4)) == "Final 2026 Generic Ballot Average: Democrats +8.0 (Nov 3, 2026)"
+    assert build.seo_title(gen, ga, date(2026, 12, 20), certified=True) == "Final 2026 Generic Ballot Average: Democrats +8.0 vs. the Result"
 
 
 def test_home_title_follows_the_midterm_calendar():
@@ -181,3 +182,23 @@ def test_title_and_description_lengths(site):
 def test_pollster_pages_have_their_own_share_card(site):
     html = (site / "pollsters" / "yougov" / "index.html").read_text()
     assert "/og/pollsters/yougov.png" in html and (site / "og" / "pollsters" / "yougov.png").exists()
+
+
+def test_geo_leads_and_machine_files(election_day_site):
+    import json, re
+    sc = (election_day_site / "pollsters" / "index.html").read_text()
+    assert "the top-rated U.S. pollster is" in sc and "adjusted error of" in sc
+    types = [json.loads(b).get("@type") for b in re.findall(r'<script type="application/ld\+json">(.*?)</script>', sc, re.S)]
+    assert "Dataset" in types
+    llms = (election_day_site / "llms.txt").read_text()
+    for path in ("/about/", "/2026/pollster-accuracy/", "/markets/", "/sitemap.xml", "/feed.xml"):
+        assert f"https://electionsusa.org{path}" in llms, path
+    gb = (election_day_site / "2026" / "generic-ballot" / "index.html").read_text()
+    assert "vs. the Result" not in re.search(r"<title>([^<]*)", gb).group(1)
+    assert "<h4" not in gb
+
+
+def test_home_lead_has_the_final_number():
+    from datetime import date
+    head = build.home_head(date(2026, 11, 4), False, final="Democrats +8.0 (119 polls)")
+    assert head["sub"].startswith("The final generic ballot average had Democrats +8.0 (119 polls).")
