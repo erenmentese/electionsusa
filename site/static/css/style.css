@@ -272,7 +272,7 @@ main{padding:0 20px 72px}
 .site-footer{border-top:1px solid var(--ink);margin-top:72px;padding:40px 0 28px}
 .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:32px}
 @media(max-width:720px){.footer-grid{grid-template-columns:1fr}}
-.footer-grid h4{margin:0 0 10px;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mute)}
+.footer-grid .footer-h{margin:0 0 10px;font-family:inherit;font-weight:600;line-height:1.4;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mute)}
 .footer-grid a{display:block;color:var(--ink2);font-size:.9rem;padding:3px 0;text-decoration:none}
 .footer-grid a:hover{text-decoration:underline}
 .brand-foot{font-family:var(--serif);font-size:1.6rem;letter-spacing:-.02em;margin:0 0 8px}
@@ -286,3 +286,4 @@ main{padding:0 20px 72px}
 @media(max-width:640px){.chips a:nth-child(n+4){display:none}}
 .th-sort{all:inherit;cursor:pointer;display:inline}
 .th-sort:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

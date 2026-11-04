@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% from "_macros.html" import ad %}
+{% block head %}<script type="application/ld+json">{{ ld_dataset | tojson }}</script>{% endblock %}
 {% block content %}
 <article>
 <header class="page-head">
   <p class="kicker">Pollster scorecard</p>
   <h1>How accurate is each pollster?</h1>
-  <p class="sub">We recompute simple, explainable accuracy statistics for every pollster with at least ten polls in the final three weeks of a race since 2016, using FiveThirtyEight's open archive of 11,000+ polls matched to results. The archive ends with the 2022 cycle, so 2024 polls are not yet scored. FiveThirtyEight's final letter grade (2023) is shown alongside for reference; it is no longer updated since the site closed in 2025.</p>
+  {% set top = rows[0] %}
+  <p class="sub">On polls taken in the final three weeks of races from 2016 to 2022, the top-rated U.S. pollster is <a href="{{ pollster_paths[top.pollster] }}">{{ top.pollster }}</a>, with an adjusted error of {{ "%.1f" % top.adj_error }} points across {{ top.n_polls }} polls; the typical poll missed by {{ "%.1f" % field_error }} points. We recompute simple, explainable accuracy statistics for every pollster with at least ten polls in the final three weeks of a race since 2016, using FiveThirtyEight's open archive of 11,000+ polls matched to results. The archive ends with the 2022 cycle, so 2024 polls are not yet scored. FiveThirtyEight's final letter grade (2023) is shown alongside for reference; it is no longer updated since the site closed in 2025.</p>
 </header>
 
 <section class="section prose">
