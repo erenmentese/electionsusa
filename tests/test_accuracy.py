@@ -93,7 +93,8 @@ def test_result_file_is_validated_and_timestamped(tmp_path, monkeypatch):
                          (dict(COUNT, status="final"), "status"),
                          (dict(COUNT, source_url="example.org"), "https://"),
                          (dict(COUNT, as_of="Nov 5"), "as_of"),
-                         (dict(COUNT, history=[dict(COUNT["history"][0], as_of="2026-11-06T10:00Z")]), "older than the current count")]:
+                         (dict(COUNT, history=[dict(COUNT["history"][0], as_of="2026-11-06T10:00Z")]), "older than the current count"),
+                         (dict(COUNT, history=[dict(COUNT["history"][0], as_of="2026-11-04T18:00Z"), COUNT["history"][0]]), "oldest first")]:
         res.write_text(json.dumps(bad))
         with pytest.raises(ValueError, match=message):
             accuracy.load_result(res)
@@ -120,7 +121,42 @@ def test_every_2026_page_shows_the_same_labelled_count(tmp_path, monkeypatch):
         title = re.search(r"<title>([^<]*)", page.read_text()).group(1)
         assert "5.2" not in title and "Most Accurate 2026 Pollsters" not in title, (page, title)
     sitemap = (dist / "sitemap.xml").read_text()
-    assert "<loc>https://electionsusa.org/2026/generic-ballot/</loc><lastmod>2026-11-05</lastmod>" in sitemap
+    for path in ("/2026/generic-ballot/", "/2026/", "/pollsters/"):
+        assert f"<loc>https://electionsusa.org{path}</loc><lastmod>2026-11-05</lastmod>" in sitemap, path
+    # a partial count is never the "actual" result, and nobody "called" the popular vote on it
+    assert "Count so far" in sc and "pending" in sc and "✓" not in sc and "✗" not in sc
+    pollster = next(p.read_text() for p in (dist / "pollsters").glob("*/index.html") if 'id="2026"' in p.read_text())
+    assert "Count so far" in pollster and "unofficial count so far" in pollster and "✓" not in pollster.split('id="2026"')[1].split("</section>")[0]
+    # descriptions keep the ET time whole, the article dek says how much is counted, the CSV says which count it used
+    desc = re.search(r'<meta name="description" content="([^"]*)', acc).group(1)
+    assert "10 a.m. ET)" in desc
+    art = (dist / "analysis" / "polls-vs-results-2026-house-popular-vote" / "index.html").read_text()
+    assert "The preliminary House popular vote is D+5.2, with about 86% of the expected vote counted" in art
+    assert '"datePublished": "2026-11-04"' in art and "The count so far" in art
+    csv = pd.read_csv(dist / "data" / "2026-generic-ballot-accuracy.csv")
+    assert set(csv["result_as_of"]) == {"2026-11-05T15:00Z"} and set(csv["result_counted_pct"]) == {86}
+    home = (dist / "index.html").read_text()
+    assert "unofficial House count so far" in home and "certified House result" not in home
+    assert "votes are being counted" in hub
+    llms = (dist / "llms.txt").read_text()
+    assert "generic-ballot/): " in llms and "(latest poll 2026-11-02)" in llms.split("generic-ballot/): ")[1].split("\n")[0]
+
+
+def test_early_count_names_and_ranks_no_pollster(tmp_path, monkeypatch):
+    write_result(tmp_path, monkeypatch, **dict(COUNT, counted_pct=60, history=[]))
+    monkeypatch.setattr(config, "DIST_DIR", tmp_path / "dist")
+    dist = build.build(date(2026, 11, 5))
+    acc = (dist / "2026" / "pollster-accuracy" / "index.html").read_text()
+    assert "Pollsters are ranked once most of the vote is counted" in acc
+    counts = [int(n) for n in re.findall(r'<td class="muted"></td><td>.*?</td><td class="num">(\d+)</td>', acc)]
+    assert counts and counts == sorted(counts, reverse=True)  # by number of polls, not by error
+    art = (dist / "analysis" / "polls-vs-results-2026-house-popular-vote" / "index.html").read_text()
+    assert "Closest pollsters" not in art and "those with the most polls" in art
+
+
+def test_pending_titles_claim_no_result(election_day_site):
+    acc = (election_day_site / "2026" / "pollster-accuracy" / "index.html").read_text()
+    assert "<title>2026 Pollster Accuracy: House Vote Count Pending" in acc
 
 
 def test_election_day_race_page_says_pending(election_day_site):

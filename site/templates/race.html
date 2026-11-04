@@ -27,7 +27,7 @@
   </div>
   {% endif %}
   {% if thin %}<p class="thin-note"><b>Limited data.</b> Only {{ avg.n_polls }} poll{{ "s" if avg.n_polls != 1 }} carry weight in this average, so one new poll can move it a lot. Read it as a rough indication, not a measurement.</p>{% endif %}
-  <p class="avg-note">Weighted average of {{ avg.n_polls }} poll{{ "s" if avg.n_polls != 1 }} (of {{ avg.n_polls_total }} on record), as of {{ build_date }}. Half-life {{ race.half_life_days }} days. <a href="/methodology/">Method</a> · <a href="/api/{{ race.id }}.json">JSON</a></p>
+  <p class="avg-note">Weighted average of {{ avg.n_polls }} poll{{ "s" if avg.n_polls != 1 }} (of {{ avg.n_polls_total }} on record), as of {{ avg.as_of.strftime("%B %-d, %Y") }}. Half-life {{ race.half_life_days }} days. <a href="/methodology/">Method</a> · <a href="/api/{{ race.id }}.json">JSON</a></p>
 </section>
 
 <section class="section">

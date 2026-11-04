@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import sys
 from dataclasses import asdict
@@ -66,7 +67,7 @@ def clip(text: str, limit: int = DESCRIPTION_MAX) -> str:
     if len(text) <= limit:
         return text
     cut = text[:limit]
-    end = max(cut.rfind(". "), cut.rfind("? "))
+    end = max((m.start() for m in re.finditer(r"(?<![ap]\.m)[.?] ", cut)), default=-1)  # "10 a.m. ET" is not a sentence end
     if end >= limit // 2:
         return cut[:end + 1]
     return cut[:cut.rfind(" ")].rstrip(",;:") + "…"
@@ -294,25 +295,30 @@ def race_as_of(race: config.Race, as_of: date) -> date:
     return min(as_of, config.MIDTERM_DAY_2026) if race.id == MIDTERM_RACE else as_of
 
 
-def midterm_context(averages: dict[str, average.RaceAverage], as_of: date) -> dict | None:
+def midterm_context(averages: dict[str, average.RaceAverage], as_of: date, result: accuracy.Result | None = None) -> dict | None:
     """The generic-ballot block shown on the home and approval pages from a week before the midterms to a month after."""
     days = (config.MIDTERM_DAY_2026 - as_of).days
     ra = averages.get(MIDTERM_RACE)
     if not ra or not ra.values or not -30 <= days <= 7:
         return None
     race = config.RACE_BY_ID[MIDTERM_RACE]
-    return dict(days=days, ra=ra, race=race, path=f"/{race.slug}/", colors=race_colors(race))
+    return dict(days=days, ra=ra, race=race, path=f"/{race.slug}/", colors=race_colors(race), result=result)
 
 
-def home_head(as_of: date, has_results: bool) -> dict:
+def home_head(as_of: date, has_results: bool, certified: bool = False) -> dict:
     """Title, H1, lead and description of the home page: the midterms in election week, the
-    polls-vs-results question once results are in, 2028 otherwise."""
+    polls-vs-results question once a count is in, 2028 otherwise."""
     days = (config.MIDTERM_DAY_2026 - as_of).days
-    if -30 <= days <= 7 and has_results:
+    if -30 <= days <= 7 and has_results and certified:
         return dict(title="Did the Polls Get the 2026 Midterms Right?", h1="Did the polls get the 2026 midterms right?",
-                    sub="Every final-weeks 2026 poll scored against the House result, the 2028 averages and the pollster scorecard.",
+                    sub="Every final-weeks 2026 poll scored against the certified House result, the 2028 averages and the pollster scorecard.",
                     description="How close the 2026 midterm polls came to the result, pollster by pollster, plus open poll "
                                 "averages and odds for the 2028 presidential election.")
+    if -30 <= days <= 7 and has_results:
+        return dict(title="Did the Polls Get the 2026 Midterms Right?", h1="Did the polls get the 2026 midterms right?",
+                    sub="Every final-weeks 2026 poll checked against the unofficial House count so far, the 2028 averages and the pollster scorecard.",
+                    description="How close the 2026 midterm polls are to the unofficial House count so far, pollster by "
+                                "pollster, plus open poll averages and odds for the 2028 presidential election.")
     if -30 <= days <= 7:
         return dict(title="2026 Midterm Polls vs. Results, 2028 Odds", h1="2026 midterms: the final polls, then the results",
                     sub="The final generic ballot average, where to follow official results, and the 2028 averages. Ask a question or pick one below.",
@@ -592,7 +598,7 @@ def clock(hhmm: str) -> str:
     return f"{(h - 1) % 12 + 1}{f':{m:02d}' if m else ''} {'a.m.' if h < 12 else 'p.m.'}"
 
 
-def midterm_status(as_of: date) -> str:
+def midterm_status(as_of: date, result: accuracy.Result | None = None) -> str:
     days = (config.MIDTERM_DAY_2026 - as_of).days
     if days > 1:
         return f"in {days} days"
@@ -600,7 +606,8 @@ def midterm_status(as_of: date) -> str:
         return "tomorrow"
     if days == 0:
         return "Election Day is today"
-    return "votes are being counted; results are unofficial until certified" if days >= -35 else "results certified"
+    # only a certified count says so, never the calendar
+    return "results certified" if result and not result.preliminary else "votes are being counted; results are unofficial until certified"
 
 
 def build_midterm_hub(render, averages: dict[str, average.RaceAverage], states: dict[str, history.StateHistory],
@@ -637,12 +644,12 @@ def build_midterm_hub(render, averages: dict[str, average.RaceAverage], states: 
         ("What did the final polls say?",
          f"The final generic ballot average had {margin}: {', '.join(f'{c} {ra.values[c]:.1f}%' for c in race.candidates if c in ra.values)}, "
          f"from {ra.n_polls} national polls. The generic ballot measures the national House vote, not seats."),
-        ("How will you check the polls against the results?",
+        ("How do you check the polls against the results?",
          "We compare the final average with the national House popular vote and score every poll from the last three weeks "
          "of the campaign on the 2026 pollster scorecard: first with the unofficial count, labelled preliminary, then with "
          "certified results."),
     ]
-    hub = dict(ra=ra, race=race, path=f"/{race.slug}/", colors=race_colors(race), states=rows, status=midterm_status(as_of),
+    hub = dict(ra=ra, race=race, path=f"/{race.slug}/", colors=race_colors(race), states=rows, status=midterm_status(as_of, result),
                sources=src["closing_sources"], checked="November 3, 2026", result=result,
                counted=accuracy.counted_text(result) if result else "", fmt=accuracy.fmt_margin)
     render("midterm_hub.html", "/2026/", hub=hub, answer=answer, faq=faq, ld_faq=faq_ld(faq),
@@ -717,7 +724,8 @@ def build_machine_files(dist: Path, summaries: list[dict], race_lastmod: dict[st
              "## Current averages"]
     for s in summaries:
         r = s["race"]
-        when = race_lastmod.get(r.id)
+        a = s["avg"]
+        when = min(pd.Timestamp(a.latest_end_date).date(), as_of) if a.latest_end_date is not None else None
         lines.append(f"- [{r.title}]({base}/{r.slug}/): {answers.get(r.id) or 'no polls yet'}"
                      + (f" (latest poll {when.isoformat()})" if when else ""))
     lines += ["", "## Key pages",
@@ -779,7 +787,10 @@ def build_accuracy_and_analysis(render, dist: Path, polls: pd.DataFrame, average
                              result_margin=result.margin if result else None,
                              error=round(abs(p["margin"] - result.margin), 1) if result else None,
                              bias=round(p["margin"] - result.margin, 1) if result else None,
-                             result_status=result.status if result else "pending", source_url=p["source_url"]) for p in polls_final])
+                             result_status=result.status if result else "pending",
+                             result_counted_pct=result.counted_pct if result else None, result_as_of=result.iso if result else None,
+                             result_source=result.source if result else None, result_source_url=result.source_url if result else None,
+                             source_url=p["source_url"]) for p in polls_final])
     csv.to_csv(dist / "data" / "2026-generic-ballot-accuracy.csv", index=False)
     base = config.SITE["url"]
     acc_lastmod = min(result.as_of if result else config.MIDTERM_DAY_2026, as_of)
@@ -793,8 +804,9 @@ def build_accuracy_and_analysis(render, dist: Path, polls: pd.DataFrame, average
     render("pollster_accuracy.html", "/2026/pollster-accuracy/", result=result, rows=rows, answer=answer, final=final,
            fmt=accuracy.fmt_margin, bias=accuracy.bias_label, window_start=window_start, ld_dataset=ld,
            counted=accuracy.counted_text(result) if result else "",
-           title="2026 Pollster Accuracy vs. the Preliminary House Vote" if result and result.preliminary
-           else "Most Accurate 2026 Pollsters: Generic Ballot vs. Result",
+           title="Most Accurate 2026 Pollsters: Generic Ballot vs. Result" if result and not result.preliminary
+           else "2026 Pollster Accuracy vs. the Preliminary House Vote" if result
+           else "2026 Pollster Accuracy: House Vote Count Pending",
            description=answer, crumb="2026 pollster accuracy", trail=[("2026 midterms", "/2026/")],
            og_image=f"/og/{MIDTERM_RACE}.png", lastmod=acc_lastmod)
 
@@ -851,16 +863,18 @@ def build_accuracy_and_analysis(render, dist: Path, polls: pd.DataFrame, average
         articles.append(a)
     if result and rows:
         slug = "polls-vs-results-2026-house-popular-vote"
-        published = min(config.ANALYSIS_PUBLISHED.get(slug, result.as_of), as_of)
+        first_count = min([h.as_of for h in result.history] + [result.as_of])  # the article went up with the first count
+        published = min(config.ANALYSIS_PUBLISHED.get(slug, first_count), as_of)
         label = "preliminary " if result.preliminary else ""
         errs = [p["margin"] - result.margin for p in polls_final]
         avg_bias = sum(errs) / len(errs)
         a = dict(path=f"/analysis/{slug}/", published=published, modified=min(result.as_of, as_of),
                  headline=f"Polls vs. results: the {label}2026 House popular vote",
-                 dek=(f"The {label}House popular vote is {fmt(result.margin)}; the final ElectionsUSA average was {fmt(final.margin)}, "
-                      f"a miss of {abs(final.margin - result.margin):.1f} points."))
+                 dek=(f"The {'preliminary' if result.preliminary else 'certified'} House popular vote is {fmt(result.margin)}, "
+                      f"{accuracy.counted_text(result)}. The final ElectionsUSA average was {fmt(final.margin)}, a miss of "
+                      f"{abs(final.margin - result.margin):.1f} points{' on the count so far' if result.preliminary else ''}."))
         a["body"] = [
-            dict(h="The result so far", p=(
+            dict(h="The count so far" if result.preliminary else "The certified result", p=(
                 f"Democrats {result.dem_pct:.1f}%, Republicans {result.rep_pct:.1f}% ({fmt(result.margin)})"
                 + (f", with about {result.counted_pct:.0f}% of the expected vote counted" if result.counted_pct is not None and result.preliminary else "")
                 + f", as of {result.stamp}, according to <a href=\"{result.source_url}\" rel=\"nofollow noopener\">{result.source}</a>."
@@ -869,8 +883,9 @@ def build_accuracy_and_analysis(render, dist: Path, polls: pd.DataFrame, average
                 f"The final average missed {'the count so far' if result.preliminary else 'the result'} by "
                 f"{abs(final.margin - result.margin):.1f} points. Across all {len(polls_final)} polls from the "
                 f"final three weeks the average signed miss was {accuracy.bias_label(round(avg_bias, 1))} "
-                "(D+ means the polls were more favourable to Democrats than the result). Closest pollsters first"
-                + (", a ranking that can change until states certify:" if result.preliminary else ":")),
+                "(D+ means the polls were more favourable to Democrats than the result)."
+                + ((" Closest pollsters first" + (", a ranking that can change until states certify:" if result.preliminary else ":"))
+                   if result.nameable else " Pollsters are ranked once most of the vote is counted; until then, those with the most polls:")),
                 table=dict(head=["Pollster", "Polls", "Average margin", "Error", "Bias"],
                            rows=[[r["pollster"], r["n"], fmt(r["margin"]), f"{r['error']:.1f}", accuracy.bias_label(r["bias"])] for r in rows[:12]])),
             dict(h="Full table", p='Every pollster and every poll, with the CSV, is on <a href="/2026/pollster-accuracy/">the 2026 pollster accuracy page</a>.'),
@@ -944,7 +959,7 @@ def pollster_faq(p: pollsters.Pollster, n_rated: int, field: float) -> list[tupl
 
 
 def build_pollsters(render, dist: Path, pages: dict[str, pollsters.Pollster], rated: list[scorecard.PollsterRow],
-                    cycle_rows: list[dict], as_of: date, field: float) -> list[dict]:
+                    cycle_rows: list[dict], as_of: date, field: float, result: accuracy.Result | None = None) -> list[dict]:
     """Render one page per pollster (see pollsters.registry) with its share card; return finder entries."""
     (dist / "og" / "pollsters").mkdir(parents=True, exist_ok=True)
     raw, _ = scorecard.load_538()
@@ -953,14 +968,16 @@ def build_pollsters(render, dist: Path, pages: dict[str, pollsters.Pollster], ra
     for p in pages.values():
         r = p.rated
         answer = pollsters.answer_sentence(p, len(rated))
-        lastmod = max(min(p.polls[0]["end_date"], as_of) if p.polls else date.min, min(config.PAGE_REVISED["scorecard"], as_of))
+        cycle = [c for c in cycle_rows if c["pollster_path"] == p.path]
+        lastmod = max(min(p.polls[0]["end_date"], as_of) if p.polls else date.min, min(config.PAGE_REVISED["scorecard"], as_of),
+                      result.as_of if cycle and result else date.min)
         faq = pollster_faq(p, len(rated), field)
         og = f"/og/pollsters/{p.slug}.png"
         (dist / og.lstrip("/")).write_bytes(og_cards.pollster_image(p))
         render("pollster.html", p.path, p=p, answer=answer, description=answer, n_rated=len(rated), field_error=field,
                faq=faq, ld_page=pollster_ld(p, answer, lastmod, faq), og_image=og,
                record=pollsters.track_record(raw, r.rating_id) if r else None,
-               cycle=[c for c in cycle_rows if c["pollster_path"] == p.path],
+               cycle=cycle,
                prev=by_rank.get(p.rank - 1) if p.rank else None, next=by_rank.get(p.rank + 1) if p.rank else None,
                title=pollster_title(p),
                crumb=p.name, trail=[("Pollster scorecard", "/pollsters/")],
@@ -1037,7 +1054,7 @@ def build(as_of: date | None = None) -> Path:
 
     # every average first, so any page can point at another (the midterm block, related averages)
     averages = {race.id: average.compute_race(polls, race, ratings, as_of=race_as_of(race, as_of)) for race in config.RACES}
-    env.globals["midterm"] = midterm_context(averages, as_of)
+    env.globals["midterm"] = midterm_context(averages, as_of, result)
     summaries = []
     answers: dict[str, str] = {}
     race_lastmod: dict[str, date | None] = {}
@@ -1105,7 +1122,7 @@ def build(as_of: date | None = None) -> Path:
     # one figure for "a typical poll's error" everywhere it is quoted
     field_error = pollsters.field_error(scorecard.load_538()[0])
     env.globals["field_error"] = field_error
-    index += build_pollsters(render, dist, pollster_pages, sc_rows, cycle_rows, as_of, field_error)
+    index += build_pollsters(render, dist, pollster_pages, sc_rows, cycle_rows, as_of, field_error, result)
     states, nation = history.load()
     index += build_states(render, dist, states, nation, as_of)
     index += build_map_builder(render, dist, states, nation, as_of)
@@ -1122,7 +1139,7 @@ def build(as_of: date | None = None) -> Path:
     data_lastmod = max((d for d in [*race_lastmod.values(), markets_lastmod] if d), default=None)
 
     map_year = max(nation)
-    head = home_head(as_of, result is not None)
+    head = home_head(as_of, result is not None, bool(result and not result.preliminary))
     rated_paths = {p.rated.pollster: p.path for p in pollster_pages.values() if p.rated}
     render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1],
            scorecard=sc_rows[:8], pollster_paths=rated_paths, head=head, title=head["title"], description=head["description"], lastmod=data_lastmod,
@@ -1131,7 +1148,7 @@ def build(as_of: date | None = None) -> Path:
     render("scorecard.html", "/pollsters/", rows=sc_rows, cycle_rows=cycle_rows, cycle_result=result,
            cycle_counted=accuracy.counted_text(result) if result else "", pollster_paths=rated_paths,
            active=sorted((p for p in pollster_pages.values() if not p.rated), key=lambda p: -len(p.polls)),
-           lastmod=min(config.PAGE_REVISED["scorecard"], as_of), title="Pollster Scorecard: Accuracy and Bias Ratings", description="How accurate has each U.S. pollster been? Mean error, partisan bias and call accuracy for 60+ pollsters, recomputed from 11,000 polls matched to results, plus FiveThirtyEight's final grades.")
+           lastmod=max(min(config.PAGE_REVISED["scorecard"], as_of), result.as_of if result else date.min), title="Pollster Scorecard: Accuracy and Bias Ratings", description="How accurate has each U.S. pollster been? Mean error, partisan bias and call accuracy for 60+ pollsters, recomputed from 11,000 polls matched to results, plus FiveThirtyEight's final grades.")
     render("markets.html", "/markets/", markets=mk_ctx, stale_snapshots=check_data.STALE_PRICE_SNAPSHOTS, kalshi_url=config.KALSHI_URL, title="2028 Election Odds: Prediction Markets vs. Polls",
            description="Polymarket odds for the 2028 presidential election and party nominations, compared with the polling average.",
            lastmod=markets_lastmod)

@@ -60,14 +60,22 @@ class Count:
     def iso(self) -> str:
         return self.as_of_at.strftime("%Y-%m-%dT%H:%MZ") if self.as_of_at else self.as_of.isoformat()
 
+    def _at(self, day: str) -> str:
+        if not self.as_of_at:
+            return self.as_of.strftime(day)
+        t = self.as_of_at.astimezone(ET)
+        clock = f"{t.hour % 12 or 12}{f':{t.minute:02d}' if t.minute else ''} {'a.m.' if t.hour < 12 else 'p.m.'}"
+        return f"{t.strftime(day)}, {clock} ET"
+
     @property
     def stamp(self) -> str:
         """'November 5, 2026, 10 a.m. ET', or the date alone when no time was given."""
-        if not self.as_of_at:
-            return self.as_of.strftime("%B %-d, %Y")
-        t = self.as_of_at.astimezone(ET)
-        clock = f"{t.hour % 12 or 12}{f':{t.minute:02d}' if t.minute else ''} {'a.m.' if t.hour < 12 else 'p.m.'}"
-        return f"{t.strftime('%B %-d, %Y')}, {clock} ET"
+        return self._at("%B %-d, %Y")
+
+    @property
+    def short(self) -> str:
+        """'Nov 5, 10 a.m. ET', for tables."""
+        return self._at("%b %-d")
 
 
 @dataclass
@@ -124,8 +132,9 @@ def load_result(path=RESULT_PATH) -> Result | None:
         raise ValueError(f"{path.name}: status {status!r} must be one of {', '.join(STATUSES)}")
     history = [Count(**_count(h, f"{path.name} history[{i}]")) for i, h in enumerate(d.get("history") or [])]
     result = Result(**_count(d, path.name), status=status, history=history)
-    if any(h.iso > result.iso for h in history):
-        raise ValueError(f"{path.name}: history entries must be older than the current count ({result.iso})")
+    stamps = [h.iso for h in history] + [result.iso]
+    if any(a >= b for a, b in zip(stamps, stamps[1:])):
+        raise ValueError(f"{path.name}: history must run oldest first and every entry must be older than the current count ({result.iso})")
     return result
 
 
@@ -159,7 +168,7 @@ def final_polls(polls: pd.DataFrame) -> list[dict]:
 
 def score(polls: list[dict], result: Result | None) -> list[dict]:
     """One row per pollster: its final-three-weeks polls and, with a result, their mean error and bias.
-    Sorted by error when there is a result, otherwise by the number of polls."""
+    Sorted by error once enough of the vote is counted to rank pollsters, otherwise by the number of polls."""
     by: dict[str, list[dict]] = {}
     for p in polls:
         by.setdefault(p["pollster"], []).append(p)
@@ -172,7 +181,7 @@ def score(polls: list[dict], result: Result | None) -> list[dict]:
             row["bias"] = round(sum(errs) / len(errs), 1)
             row["error"] = round(sum(abs(e) for e in errs) / len(errs), 1)
         rows.append(row)
-    if result:
+    if result and result.nameable:
         return sorted(rows, key=lambda r: (r["error"], -r["n"], r["pollster"]))
     return sorted(rows, key=lambda r: (-r["n"], r["pollster"]))
 
@@ -193,10 +202,12 @@ def poll_rows(polls: list[dict], result: Result | None, pollster_path=lambda nam
     """Every final-three-weeks poll against the result, for the scorecard's 2026 table and each pollster's page."""
     if not result:
         return []
-    return [dict(race_id=RACE, poll_id=p["poll_id"], pollster=p["pollster"], pollster_path=pollster_path(p["pollster"]),
+    return [dict(race_id=RACE, race="Generic ballot", poll_id=p["poll_id"], pollster=p["pollster"], pollster_path=pollster_path(p["pollster"]),
                  end_date=p["end_date"], poll_margin=p["margin"], actual_margin=result.margin,
                  error=round(abs(p["margin"] - result.margin), 1), bias=round(p["margin"] - result.margin, 1),
-                 right_call=(p["margin"] > 0) == (result.margin > 0)) for p in polls]
+                 # who won the popular vote is only settled by a certified, untied result
+                 right_call=None if result.preliminary or result.margin == 0 else (p["margin"] > 0) == (result.margin > 0),
+                 preliminary=result.preliminary) for p in polls]
 
 
 def counted_text(result: Result) -> str:
@@ -216,12 +227,12 @@ def answer(rows: list[dict], result: Result | None, final_margin: float | None, 
     if not result.nameable:
         return (f"On the early, unofficial count the House popular vote is {fmt_margin(result.margin)} "
                 f"({counted_text(result)}).{avg} Pollsters are ranked once most of the vote is counted.")
-    eligible = [r for r in rows if r["n"] >= min_polls] or rows
-    best = eligible[0]
+    best = ([r for r in rows if r["n"] >= min_polls] or rows)[0]
+    among = f" among pollsters with at least {min_polls} final-three-weeks polls" if best is not rows[0] else ""
     polls_n = f"{best['n']} final-three-weeks poll{'s' if best['n'] != 1 else ''}"
     if result.preliminary:
         return (f"On the preliminary House popular vote ({counted_text(result)}), {best['pollster']} is the closest "
-                f"generic-ballot pollster of 2026 so far, missing the margin by {best['error']:.1f} points on average across "
-                f"{polls_n}.{avg} The ranking can change until states certify.")
-    return (f"{best['pollster']} was the most accurate generic-ballot pollster of 2026 on the certified House popular vote, "
-            f"missing the margin by {best['error']:.1f} points on average across {polls_n}.{avg}")
+                f"generic-ballot pollster of 2026 so far{among}, missing the margin by {best['error']:.1f} points on average "
+                f"across {polls_n}.{avg} The ranking can change until states certify.")
+    return (f"{best['pollster']} was the most accurate generic-ballot pollster of 2026{among} on the certified House popular "
+            f"vote, missing the margin by {best['error']:.1f} points on average across {polls_n}.{avg}")

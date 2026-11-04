@@ -21,7 +21,7 @@
 </section>
 
 <section class="section prose" id="compare">
-  <h2>Polls vs. results: what happens next</h2>
+  <h2>{{ "Polls vs. the count so far" if hub.result and hub.result.preliminary else "Polls vs. results" if hub.result else "Polls vs. results: what happens next" }}</h2>
   {% if hub.result %}{% set res = hub.result %}
   <p>National House popular vote, {{ "unofficial count" if res.preliminary else "certified" }}: <b>Democrats {{ "%.1f" % res.dem_pct }}%, Republicans {{ "%.1f" % res.rep_pct }}% ({{ hub.fmt(res.margin) }})</b>, {{ hub.counted }}, from <a href="{{ res.source_url }}" rel="nofollow noopener">{{ res.source }}</a>. The final average was {{ hub.fmt(r.margin) }}, so the polls missed {{ "the count so far" if res.preliminary else "the result" }} by {{ "%.1f" % ((r.margin - res.margin) | abs) }} points.{% if res.preliminary %} We don't call races; the count will move until states certify, and we update it with each new published count.{% endif %}</p>
   <p><a class="cta" href="/2026/pollster-accuracy/">Every final-weeks poll, scored →</a></p>
