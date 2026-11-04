@@ -8,7 +8,7 @@
 {% block content %}
 <article>
 <header class="page-head">
-  <p class="kicker">{{ "Final polling average" if race.kind == "generic" and midterm and midterm.days <= 0 else "Polling average" }}{% if updated %} · latest poll <time datetime="{{ updated.isoformat() }}">{{ updated.strftime("%B %-d, %Y") }}</time>{% endif %}</p>
+  <p class="kicker">{{ "Final polling average" if vs else "Polling average" }}{% if latest_poll %} · latest poll <time datetime="{{ latest_poll.isoformat() }}">{{ latest_poll.strftime("%B %-d, %Y") }}</time>{% endif %}</p>
   <h1>{{ race.title }}</h1>
   {# the dated one-sentence answer is what search snippets and AI answers quote #}
   <p class="sub">{{ answer or race.description }}</p>
@@ -43,17 +43,26 @@
 
 {% if midterm and race.kind == "approval" %}{{ midterm_block(midterm) }}{% endif %}
 
-{% if race.kind == "generic" and midterm and midterm.days <= 0 %}
+{% if vs %}
+{% set res = vs.result %}
 <section class="section prose" id="vs-result">
-  <h2>Final average vs. House popular vote <span class="muted">(pending)</span></h2>
+  <h2>Final average vs. House popular vote <span class="muted">({{ "pending" if not res else "preliminary" if res.preliminary else "certified" }})</span></h2>
   <table class="table compact">
     <thead><tr><th></th><th class="num">Democrats</th><th class="num">Republicans</th><th class="num">Margin</th></tr></thead>
     <tbody>
       <tr><td>Final ElectionsUSA average, Nov 3</td>{% for c in race.candidates %}<td class="num">{{ "%.1f%%" % avg.values[c] if c in avg.values else "—" }}</td>{% endfor %}<td class="num">{{ avg.margin | signed("D", "R") }}</td></tr>
+      {% if res %}
+      <tr><td>National House popular vote, {{ "count so far" if res.preliminary else "certified" }}</td><td class="num">{{ "%.1f%%" % res.dem_pct }}</td><td class="num">{{ "%.1f%%" % res.rep_pct }}</td><td class="num">{{ res.margin | signed("D", "R") }}</td></tr>
+      {% else %}
       <tr><td>National House popular vote</td><td class="num muted">pending</td><td class="num muted">pending</td><td class="num muted">pending</td></tr>
+      {% endif %}
     </tbody>
   </table>
+  {% if res %}
+  <p>{% if res.preliminary %}Unofficial count{% if res.counted_pct is not none %} with about {{ "%.0f" % res.counted_pct }}% of the expected vote counted{% endif %}, as of <time datetime="{{ res.iso }}">{{ res.stamp }}</time>, from <a href="{{ res.source_url }}" rel="nofollow noopener">{{ res.source }}</a>. It will move as late ballots are counted and states certify, so the comparison is updated with each new count.{% else %}Certified result from <a href="{{ res.source_url }}" rel="nofollow noopener">{{ res.source }}</a>, as of <time datetime="{{ res.iso }}">{{ res.stamp }}</time>.{% endif %} The final average missed {{ "the count so far" if res.preliminary else "the result" }} by {{ "%.1f" % ((avg.margin - res.margin) | abs) }} points. Every poll from the final three weeks is scored on the <a href="/2026/pollster-accuracy/">2026 pollster accuracy page</a>.</p>
+  {% else %}
   <p>The House popular vote is still being counted. When a national count is available we add it here, labelled preliminary until states certify, and score every poll from the final three weeks on the <a href="/2026/pollster-accuracy/">2026 pollster scorecard</a>. Poll closing times and each state's official results are on the <a href="/2026/">2026 midterms page</a>.</p>
+  {% endif %}
 </section>
 {% endif %}
 

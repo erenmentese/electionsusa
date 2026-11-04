@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import re
 from datetime import date
@@ -31,8 +32,13 @@ def test_scoring_ranks_by_error_and_labels_bias():
     assert [r["pollster"] for r in rows] == ["Ipsos", "YouGov"]
     assert rows[0]["error"] == 1.0 and accuracy.bias_label(rows[1]["bias"]) == "D+5.0"
     text = accuracy.answer(rows, result, 8.0, min_polls=1)
-    assert text.startswith("Ipsos was the most accurate generic-ballot pollster of 2026 on the preliminary House popular vote")
-    assert "90% of the expected vote counted" in text and "D+8.0 against a result of D+5.0" in text
+    assert "Ipsos is the closest generic-ballot pollster of 2026 so far" in text and "most accurate" not in text
+    assert "90% of the expected vote counted" in text and "D+8.0 against a count so far of D+5.0" in text
+    # an early count names nobody; only a certified result has a "most accurate" pollster
+    early = accuracy.answer(rows, dataclasses.replace(result, counted_pct=60), 8.0, min_polls=1)
+    assert "Ipsos" not in early and "ranked once most of the vote is counted" in early
+    final = accuracy.answer(rows, dataclasses.replace(result, status="certified"), 8.0, min_polls=1)
+    assert final.startswith("Ipsos was the most accurate generic-ballot pollster of 2026 on the certified House popular vote")
 
 
 def test_pending_accuracy_page_and_first_article(election_day_site):
@@ -57,7 +63,66 @@ def test_result_file_turns_on_scores_and_second_article(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "DIST_DIR", tmp_path / "dist")
     dist = build.build(date(2026, 11, 5))
     page = (dist / "2026" / "pollster-accuracy" / "index.html").read_text()
-    assert "preliminary" in page and "most accurate generic-ballot pollster of 2026" in page and "Test count" in page
+    assert "preliminary" in page and "closest generic-ballot pollster of 2026 so far" in page and "Test count" in page
     assert (dist / "analysis" / "polls-vs-results-2026-house-popular-vote" / "index.html").exists()
     csv = pd.read_csv(dist / "data" / "2026-generic-ballot-accuracy.csv")
     assert csv["error"].notna().all() and set(csv["result_status"]) == {"preliminary"}
+
+
+def write_result(tmp_path, monkeypatch, **fields):
+    res = tmp_path / "2026-house-national.json"
+    res.write_text(json.dumps(fields))
+    monkeypatch.setattr(accuracy, "RESULT_PATH", res)
+    monkeypatch.setattr(accuracy.load_result, "__defaults__", (res,))
+    return res
+
+
+COUNT = dict(dem_pct=51.4, rep_pct=46.2, status="preliminary", counted_pct=86, as_of="2026-11-05T15:00Z",
+             source="Test count", source_url="https://example.org/count",
+             history=[dict(dem_pct=52.0, rep_pct=45.9, counted_pct=78, as_of="2026-11-04T16:00Z",
+                           source="Earlier count", source_url="https://example.org/early")])
+
+
+def test_result_file_is_validated_and_timestamped(tmp_path, monkeypatch):
+    res = write_result(tmp_path, monkeypatch, **COUNT)
+    r = accuracy.load_result(res)
+    assert r.margin == 5.2 and r.iso == "2026-11-05T15:00Z" and r.stamp == "November 5, 2026, 10 a.m. ET"
+    assert [h.source for h in r.history] == ["Earlier count"] and r.nameable
+    assert accuracy.known_on(r, date(2026, 11, 4)) is None and accuracy.known_on(r, date(2026, 11, 5)) is r
+    for bad, message in [(dict(COUNT, dem_pct=60, rep_pct=45), "shares of all House votes"),
+                         (dict(COUNT, status="final"), "status"),
+                         (dict(COUNT, source_url="example.org"), "https://"),
+                         (dict(COUNT, as_of="Nov 5"), "as_of"),
+                         (dict(COUNT, history=[dict(COUNT["history"][0], as_of="2026-11-06T10:00Z")]), "older than the current count")]:
+        res.write_text(json.dumps(bad))
+        with pytest.raises(ValueError, match=message):
+            accuracy.load_result(res)
+
+
+def test_every_2026_page_shows_the_same_labelled_count(tmp_path, monkeypatch):
+    write_result(tmp_path, monkeypatch, **COUNT)
+    monkeypatch.setattr(config, "DIST_DIR", tmp_path / "dist")
+    dist = build.build(date(2026, 11, 5))
+    race = (dist / "2026" / "generic-ballot" / "index.html").read_text()
+    block = race.split('id="vs-result"')[1].split("</section>")[0]
+    assert "(preliminary)" in block and "pending" not in block and "51.4%" in block and "46.2%" in block and "D +5.2" in block
+    assert "Unofficial count with about 86% of the expected vote counted" in block and 'datetime="2026-11-05T15:00Z"' in block
+    hub = (dist / "2026" / "index.html").read_text()
+    assert "Democrats 51.4%, Republicans 46.2% (D+5.2)" in hub and "We don't call races" in hub
+    acc = (dist / "2026" / "pollster-accuracy" / "index.html").read_text()
+    assert "<title>2026 Pollster Accuracy vs. the Preliminary House Vote" in acc
+    assert "How the count moved" in acc and "Earlier count" in acc and "78%" in acc
+    sc = (dist / "pollsters" / "index.html").read_text().split('id="2026"')[1].split("</section>")[0]
+    assert "preliminary national House popular vote, with about 86% of the expected vote counted" in sc
+    assert sc.count("<tr>") > 5 and "+5.2" in sc
+    # a preliminary count never shows up as a headline number or a "most accurate" claim in titles
+    for page in dist.rglob("index.html"):
+        title = re.search(r"<title>([^<]*)", page.read_text()).group(1)
+        assert "5.2" not in title and "Most Accurate 2026 Pollsters" not in title, (page, title)
+    sitemap = (dist / "sitemap.xml").read_text()
+    assert "<loc>https://electionsusa.org/2026/generic-ballot/</loc><lastmod>2026-11-05</lastmod>" in sitemap
+
+
+def test_election_day_race_page_says_pending(election_day_site):
+    block = (election_day_site / "2026" / "generic-ballot" / "index.html").read_text().split('id="vs-result"')[1].split("</section>")[0]
+    assert "(pending)" in block and "still being counted" in block

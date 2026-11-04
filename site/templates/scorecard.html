@@ -45,11 +45,11 @@
 <section class="section prose" id="2026">
   <h2>2026 midterm scorecard</h2>
   {% if cycle_rows %}
-  <p>Final-three-weeks polls of the November 3, 2026 elections compared with certified results.</p>
+  <p>Final-three-weeks polls of the November 3, 2026 generic congressional ballot compared with the {% if cycle_result.preliminary %}preliminary national House popular vote, {{ cycle_counted }}. The table is updated with each new count and again when states certify their results.{% else %}certified national House popular vote.{% endif %} Pollster by pollster: <a href="/2026/pollster-accuracy/">2026 pollster accuracy</a>.</p>
   <table class="table"><thead><tr><th>Race</th><th>Pollster</th><th>Poll end</th><th class="num">Poll margin</th><th class="num">Actual</th><th class="num">Error</th><th>Right call</th></tr></thead>
   <tbody>{% for r in cycle_rows %}<tr><td>{{ r.race_id }}</td><td>{% if r.pollster_path %}<a href="{{ r.pollster_path }}">{{ r.pollster }}</a>{% else %}{{ r.pollster }}{% endif %}</td><td>{{ r.end_date }}</td><td class="num">{{ "%+.1f" % r.poll_margin }}</td><td class="num">{{ "%+.1f" % r.actual_margin }}</td><td class="num">{{ r.error }}</td><td>{{ "✓" if r.right_call else "✗" }}</td></tr>{% endfor %}</tbody></table>
   {% else %}
-  <p>The 2026 midterms are on November 3, 2026. Once results are counted we score every final-three-weeks poll against them with the same method, from open data and open code, first with the unofficial count (labelled preliminary) and again after certification. Results are added as a small CSV in the open dataset; the table appears here automatically.</p>
+  <p>The 2026 midterms were held on November 3, 2026. Once a national House popular vote count is published we score every final-three-weeks generic-ballot poll against it with the same method, from open data and open code, first with the unofficial count (labelled preliminary) and again after certification. The table appears here automatically.</p>
   {% endif %}
 </section>
 
