@@ -33,11 +33,11 @@ def test_ad_consent_follows_adsense():
 def test_adsense_script_alone_until_ad_units_exist():
     html = render("privacy.html", adsense_client="ca-pub-1")
     assert html.count("adsbygoogle.js?client=ca-pub-1") == 1  # what AdSense looks for when it verifies the site
-    env = Environment(loader=FileSystemLoader(str(config.TEMPLATE_DIR)), trim_blocks=True, lstrip_blocks=True)
-    env.filters.update(signed=str, short=str, ordinal=str)  # used by other macros in _macros.html
 
-    def slot(**site):  # imported macros see globals, not render() variables (as in the build)
-        env.globals["site"] = {**config.SITE, **site}
+    def slot(**site):  # a fresh environment each time: Jinja caches imported macros with the globals they first saw
+        env = Environment(loader=FileSystemLoader(str(config.TEMPLATE_DIR)), trim_blocks=True, lstrip_blocks=True)
+        env.filters.update(signed=str, short=str, ordinal=str)  # used by other macros in _macros.html
+        env.globals["site"] = {**config.SITE, **site}  # imported macros see globals, as in the build
         return env.from_string('{% from "_macros.html" import ad %}{{ ad("home-top") }}').render()
     assert slot(adsense_client="ca-pub-1").strip() == ""  # no unit yet, no empty box
     assert slot(ad_slots={"home-top": "123"}).strip() == ""  # no AdSense, no ad
