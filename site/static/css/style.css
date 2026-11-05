@@ -98,6 +98,12 @@ main{padding:0 20px 72px}
 .promise{padding:56px 0 20px;border-top:1px solid var(--rule);margin-top:40px}
 .promise p{font-family:var(--serif);font-size:clamp(1.7rem,4vw,3rem);letter-spacing:-.02em;line-height:1.15;margin:0;max-width:22ch}
 .promise p span{color:var(--mute)}
+.promise.with-photo{display:grid;grid-template-columns:1fr 1fr;gap:28px 48px;align-items:center}
+.about-home{display:grid;grid-template-columns:1fr 1.2fr;gap:28px 48px;align-items:center}
+@media(max-width:720px){.promise.with-photo,.about-home{grid-template-columns:1fr}}
+.photo{margin:0}
+.photo img{display:block;width:100%;height:auto;border-radius:4px;background:var(--wash)}
+.photo figcaption{margin-top:6px}
 .promise .meta{font-family:var(--sans);font-size:.95rem;color:var(--mute);margin-top:16px;letter-spacing:0;line-height:1.5;max-width:60ch}
 
 .figures{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0 36px;margin:48px 0 0;border-top:1px solid var(--ink)}
@@ -270,6 +276,16 @@ main{padding:0 20px 72px}
 
 /* footer */
 .site-footer{border-top:1px solid var(--ink);margin-top:72px;padding:40px 0 28px}
+.newsletter{display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;align-items:center;padding-bottom:32px;margin-bottom:32px;border-bottom:1px solid var(--rule)}
+@media(max-width:720px){.newsletter{grid-template-columns:1fr}}
+.newsletter-h{font-size:1.6rem;margin:0 0 .25em}
+.newsletter p{margin:0}
+.newsletter-form{display:flex;flex-wrap:wrap;gap:8px}
+.newsletter-form input{flex:1 1 220px;min-width:0;height:44px;border:1px solid var(--rule2);border-radius:999px;background:var(--paper);color:var(--ink);padding:0 16px;font:inherit;font-size:16px}
+.newsletter-form button{height:44px;border:0;border-radius:999px;background:var(--ink);color:var(--paper);padding:0 20px;font:inherit;font-weight:600;cursor:pointer}
+.newsletter-form button:hover{background:var(--blue)}
+.newsletter-form p{flex-basis:100%}
+.newsletter-form a{color:inherit}
 .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:32px}
 @media(max-width:720px){.footer-grid{grid-template-columns:1fr}}
 .footer-grid .footer-h{margin:0 0 10px;font-family:inherit;font-weight:600;line-height:1.4;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mute)}
