@@ -270,6 +270,16 @@ main{padding:0 20px 72px}
 
 /* footer */
 .site-footer{border-top:1px solid var(--ink);margin-top:72px;padding:40px 0 28px}
+.newsletter{display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;align-items:center;padding-bottom:32px;margin-bottom:32px;border-bottom:1px solid var(--rule)}
+@media(max-width:720px){.newsletter{grid-template-columns:1fr}}
+.newsletter-h{font-size:1.6rem;margin:0 0 .25em}
+.newsletter p{margin:0}
+.newsletter-form{display:flex;flex-wrap:wrap;gap:8px}
+.newsletter-form input{flex:1 1 220px;min-width:0;height:44px;border:1px solid var(--rule2);border-radius:999px;background:var(--paper);color:var(--ink);padding:0 16px;font:inherit;font-size:16px}
+.newsletter-form button{height:44px;border:0;border-radius:999px;background:var(--ink);color:var(--paper);padding:0 20px;font:inherit;font-weight:600;cursor:pointer}
+.newsletter-form button:hover{background:var(--blue)}
+.newsletter-form p{flex-basis:100%}
+.newsletter-form a{color:inherit}
 .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:32px}
 @media(max-width:720px){.footer-grid{grid-template-columns:1fr}}
 .footer-grid .footer-h{margin:0 0 10px;font-family:inherit;font-weight:600;line-height:1.4;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mute)}

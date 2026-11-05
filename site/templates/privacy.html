@@ -3,7 +3,7 @@
 <article class="prose">
 <header class="page-head"><p class="kicker">Legal</p><h1>Privacy policy</h1><p class="sub">Last updated {{ site.privacy_updated or build_date }}</p></header>
 {% if site.ga4_id %}
-<p>ElectionsUSA ({{ site.domain }}) is a static website. We do not require accounts or ask for your name or email address. When you browse the site, Google Analytics receives your IP address (used to estimate your approximate location), device and browser details, and the pages you view; outside the EEA, the UK and Switzerland it also stores an identifier in a cookie (<code>_ga</code>). See Analytics below.</p>
+<p>ElectionsUSA ({{ site.domain }}) is a static website. We do not require accounts or ask for your name, and we only ask for your email address if you choose to subscribe to the newsletter. When you browse the site, Google Analytics receives your IP address (used to estimate your approximate location), device and browser details, and the pages you view; outside the EEA, the UK and Switzerland it also stores an identifier in a cookie (<code>_ga</code>). See Analytics below.</p>
 {% else %}
 <p>ElectionsUSA ({{ site.domain }}) is a static website. We do not require accounts and do not collect names, email addresses or other personal information unless you email us.</p>
 {% endif %}
@@ -20,6 +20,10 @@
 <p>For visitors in the European Economic Area, the United Kingdom and Switzerland, analytics and advertising cookies are off by default (Google Consent Mode). Google Analytics still loads for these visitors and sends cookieless pings, containing the page address, referring page, browser type and time but no visitor identifier, which Google uses to estimate overall traffic. Blocking cookies stops Google Analytics from recognising you between visits, but page views are still sent; to stop Google Analytics entirely, use the <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Google Analytics opt-out browser add-on</a> or a content blocker.</p>
 {% else %}
 <p>{% if site.analytics_snippet %}We use a privacy-focused analytics service that records aggregate page views without cookies or personal identifiers.{% else %}We do not currently run analytics.{% endif %}</p>
+{% endif %}
+{% if site.newsletter_form_id %}
+<h2 id="newsletter">Newsletter</h2>
+<p>If you sign up for the newsletter, your email address goes to Kit (ConvertKit), the service that stores our subscriber list and sends the emails. We use it only to send the newsletter, never sell or share it, and you can unsubscribe at any time with the link in every email; unsubscribing or emailing us removes you from the list. Kit records whether emails are opened or links clicked; see <a href="https://kit.com/privacy" rel="noopener">Kit's privacy policy</a>.</p>
 {% endif %}
 <h2>Third-party links</h2>
 <p>Poll rows link to pollsters' and publishers' websites, which have their own privacy policies.</p>

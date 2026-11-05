@@ -86,6 +86,20 @@ if (location.hostname === {{ site.domain | tojson }}) {
 </main>
 
 <footer class="site-footer">
+  {% if site.newsletter_form_id %}
+  <div class="wrap newsletter">
+    <div>
+      <h2 class="newsletter-h">The ElectionsUSA briefing</h2>
+      <p class="muted small">New polls, averages and pollster accuracy, in one short email when something changes. No spam; unsubscribe in one click.</p>
+    </div>
+    <form action="https://app.kit.com/forms/{{ site.newsletter_form_id }}/subscriptions" method="post" class="newsletter-form">
+      <label for="nl-email" class="vh">Email address</label>
+      <input id="nl-email" type="email" name="email_address" placeholder="you@example.com" autocomplete="email" required>
+      <button type="submit">Subscribe</button>
+      <p class="muted small">By subscribing you agree to our <a href="/privacy/#newsletter">privacy policy</a>.</p>
+    </form>
+  </div>
+  {% endif %}
   <div class="wrap footer-grid">
     <div>
       <p class="brand-foot">Elections<em class="muted">USA</em></p>

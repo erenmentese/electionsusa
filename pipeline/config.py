@@ -43,6 +43,8 @@ SITE = {
     "issues_url": "https://github.com/erenmentese/electionsusa/issues/new",
     "terms_updated": "November 3, 2026",
     "contact_email": "ernmentesee@gmail.com",  # hello@electionsusa.org once forwarding is set up
+    # Kit (kit.com, free up to 10,000 subscribers) form ID for the footer signup; empty = no signup form
+    "newsletter_form_id": "",
     "twitter": "@ElectionsUSAorg",  # e.g. "@electionsusa"
     "github_repo": "erenmentese/electionsusa",  # e.g. "yourname/electionsusa" (enables data-download links)
     "adsense_client": "",  # e.g. "ca-pub-1234567890123456"; empty = no ad slots, no ads.txt
@@ -58,7 +60,7 @@ SITE = {
         "IS", "LI", "NO",  # rest of the EEA
         "GB", "CH",
     ],
-    "privacy_updated": "November 3, 2026",  # bump whenever privacy.html text changes
+    "privacy_updated": "November 5, 2026",  # bump whenever privacy.html text changes
     "language": "en",
 }
 
