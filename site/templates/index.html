@@ -42,9 +42,15 @@
   {% for s in summaries if s.race.featured %}{{ figure(s) }}{% endfor %}
 </section>
 
-<section class="promise">
-  <p>Free. Open data. <span>Every number linked to the pollster that published it.</span></p>
-  <p class="meta">No paywall, no login, no forecasts dressed up as facts. <a href="/methodology/">How the average works</a> · <a href="/data/">Download everything</a></p>
+<section class="promise with-photo">
+  <div>
+    <p>Free. Open data. <span>Every number linked to the pollster that published it.</span></p>
+    <p class="meta">No paywall, no login, no forecasts dressed up as facts. <a href="/methodology/">How the average works</a> · <a href="/data/">Download everything</a></p>
+  </div>
+  <figure class="photo">
+    <img src="/static/img/reading-polls.jpg" width="1200" height="904" alt="A man in a navy sweater reads his phone at a kitchen table, next to a coffee mug and a folded newspaper." loading="lazy" decoding="async">
+    <figcaption class="muted small">AI-generated image, not a photograph of real people.</figcaption>
+  </figure>
 </section>
 
 {{ ad("home-top") }}
@@ -85,9 +91,15 @@
 
 {{ ad("home-bottom") }}
 
-<section class="section prose">
+<section class="section about-home">
+  <figure class="photo">
+    <img src="/static/img/talking-politics.jpg" width="1200" height="904" alt="Two men, one older and one younger, sit on the front steps of a brick row house in autumn, looking at a phone together." loading="lazy" decoding="async">
+    <figcaption class="muted small">AI-generated image, not a photograph of real people.</figcaption>
+  </figure>
+  <div class="prose">
   <h2>What this is</h2>
   <p>ElectionsUSA tracks public opinion ahead of the November 7, 2028 United States presidential election. It averages polls with a published, reproducible method; it keeps score of how close each pollster's final polls came to actual results; and it puts prediction-market prices next to the polls so readers can see when traders and survey respondents disagree.</p>
   <p>The site is independent, carries no campaign, party or government affiliation, and {{ "is funded by advertising" if site.adsense_client else "runs without advertising or sponsorship" }}. The complete dataset is <a href="/data/">downloadable</a> and every figure links back to the pollster that published it.</p>
+</div>
 </section>
 {% endblock %}

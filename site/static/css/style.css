@@ -98,6 +98,12 @@ main{padding:0 20px 72px}
 .promise{padding:56px 0 20px;border-top:1px solid var(--rule);margin-top:40px}
 .promise p{font-family:var(--serif);font-size:clamp(1.7rem,4vw,3rem);letter-spacing:-.02em;line-height:1.15;margin:0;max-width:22ch}
 .promise p span{color:var(--mute)}
+.promise.with-photo{display:grid;grid-template-columns:1fr 1fr;gap:28px 48px;align-items:center}
+.about-home{display:grid;grid-template-columns:1fr 1.2fr;gap:28px 48px;align-items:center}
+@media(max-width:720px){.promise.with-photo,.about-home{grid-template-columns:1fr}}
+.photo{margin:0}
+.photo img{display:block;width:100%;height:auto;border-radius:4px;background:var(--wash)}
+.photo figcaption{margin-top:6px}
 .promise .meta{font-family:var(--sans);font-size:.95rem;color:var(--mute);margin-top:16px;letter-spacing:0;line-height:1.5;max-width:60ch}
 
 .figures{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0 36px;margin:48px 0 0;border-top:1px solid var(--ink)}

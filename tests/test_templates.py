@@ -35,3 +35,13 @@ def test_no_ga4_tag_when_unset():
     assert "googletagmanager" not in html
     assert "gtag(" not in html
     assert "Google Analytics" not in html
+
+
+def test_homepage_photos_are_labelled_lazy_and_sized(site):
+    html = (site / "index.html").read_text()
+    for img in ("reading-polls.jpg", "talking-politics.jpg"):
+        tag = html[html.index(f'src="/static/img/{img}"'):]
+        tag = tag[:tag.index(">")]
+        assert 'width="1200" height="904"' in tag and 'loading="lazy"' in tag and 'alt="' in tag
+        assert (site / "static" / "img" / img).stat().st_size < 300_000
+    assert html.count("AI-generated image, not a photograph of real people.") == 2
