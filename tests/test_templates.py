@@ -35,10 +35,13 @@ def test_adsense_script_alone_until_ad_units_exist():
     assert html.count("adsbygoogle.js?client=ca-pub-1") == 1  # what AdSense looks for when it verifies the site
     env = Environment(loader=FileSystemLoader(str(config.TEMPLATE_DIR)), trim_blocks=True, lstrip_blocks=True)
     env.filters.update(signed=str, short=str, ordinal=str)  # used by other macros in _macros.html
-    slot = env.from_string('{% from "_macros.html" import ad %}{{ ad("home-top") }}')
-    assert slot.render(site={**config.SITE, "adsense_client": "ca-pub-1"}).strip() == ""  # no unit yet, no empty box
-    assert slot.render(site={**config.SITE, "ad_slots": {"home-top": "123"}}).strip() == ""  # no AdSense, no ad
-    html = slot.render(site={**config.SITE, "adsense_client": "ca-pub-1", "ad_slots": {"home-top": "123"}})
+
+    def slot(**site):  # imported macros see globals, not render() variables (as in the build)
+        env.globals["site"] = {**config.SITE, **site}
+        return env.from_string('{% from "_macros.html" import ad %}{{ ad("home-top") }}').render()
+    assert slot(adsense_client="ca-pub-1").strip() == ""  # no unit yet, no empty box
+    assert slot(ad_slots={"home-top": "123"}).strip() == ""  # no AdSense, no ad
+    html = slot(adsense_client="ca-pub-1", ad_slots={"home-top": "123"})
     assert 'data-ad-client="ca-pub-1" data-ad-slot="123"' in html and 'aria-label="Advertisement"' in html
 
 
