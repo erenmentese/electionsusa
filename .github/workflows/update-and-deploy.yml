@@ -21,6 +21,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Deploys to Cloudflare Pages only once both Cloudflare secrets exist (until then Vercel deploys main).
+      CF_DEPLOY: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,7 +39,7 @@ jobs:
         continue-on-error: true   # a source outage must never block a deploy; the health check reports it
 
       # Tests run on the freshly fetched data before anything is committed, so a parser
-      # regression or broken data never reaches the site (Vercel deploys every push to main).
+      # regression or broken data never reaches the site.
       - name: Run tests
         id: tests
         run: python -m pytest -q tests
@@ -49,6 +52,23 @@ jobs:
           git add data/polls.csv data/markets.csv
           git diff --cached --quiet || git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ)"
           git push || true
+
+      # Only a build that passed the tests goes live. Pull requests from this repository get a preview
+      # at <branch>.electionsusa.pages.dev; main is production (electionsusa.org once DNS points there).
+      - name: Build site
+        id: site
+        if: env.CF_DEPLOY == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        run: PYTHON=python sh build.sh
+
+      - name: Deploy to Cloudflare Pages
+        if: steps.site.outcome == 'success'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          npx --yes wrangler@3.114.0 pages project create electionsusa --production-branch=main 2>/dev/null || true   # first run only
+          npx --yes wrangler@3.114.0 pages deploy dist --project-name=electionsusa --branch="$BRANCH" --commit-dirty=true
 
       # Bing and the other IndexNow engines hear about changed pages right away (Google reads the sitemap).
       # Waits for Vercel to deploy the push above, then submits URLs whose lastmod changed.

@@ -30,6 +30,22 @@ def test_vercel_redirects_and_404_noindex(site):
     assert '<meta name="robots" content="max-image-preview:large">' in (site / "index.html").read_text()
 
 
+def test_cloudflare_pages_headers_and_redirects_match_vercel(site):
+    v = json.loads((config.ROOT / "vercel.json").read_text())
+    headers = (site / "_headers").read_text()
+    sitewide = headers.split("\n\n")[0].splitlines()
+    assert sitewide[0] == "/*"
+    assert {tuple(line.strip().split(": ", 1)) for line in sitewide[1:]} == {
+        (h["key"], h["value"]) for h in v["headers"][0]["headers"]}
+    assert "/404.html\n  X-Robots-Tag: noindex" in headers
+    assert "https://:project.pages.dev/*\n  X-Robots-Tag: noindex" in headers  # no duplicate of the site in search
+    rules = {tuple(line.split()) for line in (site / "_redirects").read_text().splitlines()}
+    assert {(r["source"], r["destination"], str(r["statusCode"])) for r in v["redirects"] if "statusCode" in r} == rules
+    workflow = (config.ROOT / ".github" / "workflows" / "update-and-deploy.yml").read_text()
+    assert "sh build.sh" in workflow and "pages deploy dist --project-name=electionsusa" in workflow
+    assert workflow.index("Run tests") < workflow.index("Deploy to Cloudflare Pages")  # only tested builds go live
+
+
 def test_one_nav_on_every_page_with_more_menu_and_mobile_search(site):
     def links(html):
         head = re.search(r'<header class="site-header">(.*?)</header>', html, re.S).group(1)

@@ -1217,6 +1217,12 @@ def build(as_of: date | None = None) -> Path:
     sm.append("</urlset>")
     (dist / "sitemap.xml").write_text("\n".join(sm))
     (dist / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n")
+    # Cloudflare Pages reads headers and redirects from these two files (vercel.json does the same on Vercel).
+    # Pages already adds trailing slashes; the project's own pages.dev address stays out of search results.
+    (dist / "_headers").write_text("/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n"
+                                   "  Content-Security-Policy: frame-ancestors 'self'\n\n/404.html\n  X-Robots-Tag: noindex\n\n"
+                                   "https://:project.pages.dev/*\n  X-Robots-Tag: noindex\n")
+    (dist / "_redirects").write_text("/index.html / 301\n/approval/ /approval/trump/ 301\n/approval /approval/trump/ 301\n")
     feed_entries = [dict(title=s["race"].title, path=s["path"], updated=race_lastmod[s["race"].id], summary=answers[s["race"].id])
                     for s in summaries if race_lastmod.get(s["race"].id) and answers.get(s["race"].id)]
     feed_entries += analysis_feed
