@@ -34,6 +34,7 @@ def test_adsense_script_alone_until_ad_units_exist():
     html = render("privacy.html", adsense_client="ca-pub-1")
     assert html.count("adsbygoogle.js?client=ca-pub-1") == 1  # what AdSense looks for when it verifies the site
     env = Environment(loader=FileSystemLoader(str(config.TEMPLATE_DIR)), trim_blocks=True, lstrip_blocks=True)
+    env.filters.update(signed=str, short=str, ordinal=str)  # used by other macros in _macros.html
     slot = env.from_string('{% from "_macros.html" import ad %}{{ ad("home-top") }}')
     assert slot.render(site={**config.SITE, "adsense_client": "ca-pub-1"}).strip() == ""  # no unit yet, no empty box
     assert slot.render(site={**config.SITE, "ad_slots": {"home-top": "123"}}).strip() == ""  # no AdSense, no ad
