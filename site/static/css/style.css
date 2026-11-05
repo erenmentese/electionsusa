@@ -297,7 +297,3 @@ main{padding:0 20px 72px}
 .th-sort{all:inherit;cursor:pointer;display:inline}
 .th-sort:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.lead-art{margin:0 0 32px}
-.lead-art img{display:block;width:100%;height:auto;border-radius:4px;background:var(--wash)}
-.lead-art figcaption{margin-top:6px}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .lead-art img{filter:brightness(.88)}}

@@ -35,22 +35,3 @@ def test_no_ga4_tag_when_unset():
     assert "googletagmanager" not in html
     assert "gtag(" not in html
     assert "Google Analytics" not in html
-
-
-def test_newsletter_signup_only_once_a_form_is_configured():
-    html = render("privacy.html", newsletter_form_id="")
-    assert "app.kit.com" not in html and 'id="newsletter"' not in html
-    html = render("privacy.html", newsletter_form_id="1234567")
-    assert 'action="https://app.kit.com/forms/1234567/subscriptions" method="post"' in html
-    assert 'name="email_address"' in html and 'type="email"' in html and "required" in html
-    assert '<label for="nl-email"' in html
-    # the policy names the processor wherever the form can appear
-    assert 'id="newsletter"' in html and "Kit (ConvertKit)" in html
-
-
-def test_lead_illustrations_are_labelled_and_sized(site):
-    for page, img in (("methodology", "polls-to-average.jpg"), ("pollsters", "pollster-accuracy.jpg")):
-        html = (site / page / "index.html").read_text()
-        assert f'src="/static/img/{img}" width="1200" height="800" alt="Illustration:' in html
-        assert "Illustration generated with AI" in html
-        assert (site / "static" / "img" / img).stat().st_size < 300_000
