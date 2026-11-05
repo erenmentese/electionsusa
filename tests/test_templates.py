@@ -30,6 +30,17 @@ def test_ad_consent_follows_adsense():
     assert "do not use Google Analytics data for advertising" not in html
 
 
+def test_adsense_script_alone_until_ad_units_exist():
+    html = render("privacy.html", adsense_client="ca-pub-1")
+    assert html.count("adsbygoogle.js?client=ca-pub-1") == 1  # what AdSense looks for when it verifies the site
+    env = Environment(loader=FileSystemLoader(str(config.TEMPLATE_DIR)), trim_blocks=True, lstrip_blocks=True)
+    slot = env.from_string('{% from "_macros.html" import ad %}{{ ad("home-top") }}')
+    assert slot.render(site={**config.SITE, "adsense_client": "ca-pub-1"}).strip() == ""  # no unit yet, no empty box
+    assert slot.render(site={**config.SITE, "ad_slots": {"home-top": "123"}}).strip() == ""  # no AdSense, no ad
+    html = slot.render(site={**config.SITE, "adsense_client": "ca-pub-1", "ad_slots": {"home-top": "123"}})
+    assert 'data-ad-client="ca-pub-1" data-ad-slot="123"' in html and 'aria-label="Advertisement"' in html
+
+
 def test_no_ga4_tag_when_unset():
     html = render("privacy.html", ga4_id="")
     assert "googletagmanager" not in html

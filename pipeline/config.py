@@ -47,7 +47,10 @@ SITE = {
     "newsletter_form_id": "",
     "twitter": "@ElectionsUSAorg",  # e.g. "@electionsusa"
     "github_repo": "erenmentese/electionsusa",  # e.g. "yourname/electionsusa" (enables data-download links)
-    "adsense_client": "",  # e.g. "ca-pub-1234567890123456"; empty = no ad slots, no ads.txt
+    "adsense_client": "",  # e.g. "ca-pub-1234567890123456"; empty = no AdSense script, no ads.txt
+    # AdSense ad-unit IDs (numeric, from AdSense > Ads > By ad unit) by placement, e.g. {"home-top": "1234567890"}.
+    # A placement without an ID renders nothing, so the site can go through AdSense review with only the script.
+    "ad_slots": {},
     "analytics_snippet": "",  # paste a privacy-friendly analytics tag (Plausible, GoatCounter...)
     "ga4_id": "G-MN0XEQY44B",  # Google Analytics 4 measurement ID; empty = no GA4 tag
     # Google Consent Mode: analytics/ad cookies start "denied" here (EEA + UK + Switzerland)
