@@ -8,13 +8,17 @@ def ld_blocks(html):
     return [json.loads(m) for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)]
 
 
-def test_no_empty_ad_boxes_or_placeholder_ads_txt(site):
+def test_adsense_live_without_empty_ad_boxes(site):
+    pub = config.SITE["adsense_client"]
+    assert re.fullmatch(r"ca-pub-\d{16}", pub)
+    assert (site / "ads.txt").read_text().strip() == f"google.com, {pub.removeprefix('ca-')}, DIRECT, f08c47fec0942fa0"
     pages = list(site.rglob("index.html"))
-    assert pages and not [p for p in pages if "ad-placeholder" in p.read_text() or 'class="ad"' in p.read_text()]
-    assert not (site / "ads.txt").exists()
+    assert pages and all(f"adsbygoogle.js?client={pub}" in p.read_text() for p in pages)  # AdSense verifies any page
+    if not config.SITE["ad_slots"]:  # no ad units yet: script only, no empty boxes
+        assert not [p for p in pages if "ad-placeholder" in p.read_text() or 'class="ad"' in p.read_text()]
     privacy = (site / "privacy" / "index.html").read_text()
-    assert "We use Google AdSense" not in privacy and "no advertising" in privacy
-    assert "funded by display advertising" not in (site / "about" / "index.html").read_text()
+    assert "We use Google AdSense" in privacy and "shows no advertising" not in privacy
+    assert "funded by display advertising" in (site / "about" / "index.html").read_text()
 
 
 def test_corrections_and_terms_pages(site):
