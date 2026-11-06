@@ -303,3 +303,13 @@ main{padding:0 20px 72px}
 .th-sort{all:inherit;cursor:pointer;display:inline}
 .th-sort:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* candidate profiles */
+.profile-head{display:flex;flex-wrap:wrap;gap:20px 28px;align-items:flex-start}
+.profile-head>div{flex:1 1 320px;min-width:0}
+.portrait{margin:0;flex:0 0 150px;max-width:150px}
+.portrait img{display:block;width:150px;height:auto;border-radius:12px}
+.portrait figcaption{margin-top:6px;line-height:1.35}
+a.cand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+a.cand img{border-radius:6px;flex:0 0 auto}
+a.cand:hover b{text-decoration:underline}

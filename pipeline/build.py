@@ -20,7 +20,7 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import accuracy, average, charts, check_data, config, dedupe, fetch_markets, history, og_cards, pollsters, scorecard, usmap
+from . import accuracy, average, charts, check_data, config, dedupe, fetch_markets, history, og_cards, photos, pollsters, scorecard, usmap
 from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 
 # One nav on every page: the main sections, then a "More" menu
@@ -739,10 +739,17 @@ def build_2028_hubs(render, summaries: list[dict], race_lastmod: dict[str, date 
 STATUS_LABELS = {"declared": "Declared", "exploratory": "Exploratory committee", "ruled out": "Ruled out", "not declared": "Not declared"}
 
 
-def build_candidates(render, summaries: list[dict], race_lastmod: dict[str, date | None], as_of: date) -> list[dict]:
-    """Render /2028/candidates/: everyone in the 2028 primary averages, their poll standing and campaign status.
+def candidate_path(name: str) -> str:
+    return f"/2028/candidates/{pollsters.slugify(name)}/"
+
+
+def build_candidates(render, summaries: list[dict], race_lastmod: dict[str, date | None], as_of: date,
+                     markets: list[dict] | None = None, photos: dict[str, dict] | None = None) -> list[dict]:
+    """Render /2028/candidates/ (everyone in the 2028 primary averages, their poll standing and campaign status)
+    and a profile page for each of them.
 
     Status comes only from config.CANDIDATE_STATUS_2028 (each entry sourced); anyone else is "not declared"."""
+    photos = photos or {}
     checked = datetime.strptime(config.CANDIDATES_CHECKED, "%B %d, %Y").date()
     groups, leads, declared = [], [], []
     for race_id, party in (("dem-primary-2028", "Democratic"), ("gop-primary-2028", "Republican")):
@@ -755,7 +762,8 @@ def build_candidates(render, summaries: list[dict], race_lastmod: dict[str, date
             if status == "declared":
                 declared.append(name)
             rows.append(dict(name=name, avg=ra.values.get(name), rank=rank if name in ra.values else None,
-                             status=STATUS_LABELS[status], declared=status == "declared", note=note, src=src))
+                             status=STATUS_LABELS[status], declared=status == "declared", note=note, src=src,
+                             path=candidate_path(name), photo=photos.get(name)))
         if names and names[0] in ra.values:
             leads.append(f"{names[0]} leads the {party} primary average at {ra.values[names[0]]:.1f}%")
         groups.append(dict(party=party, path=sm["path"], rows=rows, n_polls=ra.n_polls))
@@ -778,8 +786,67 @@ def build_candidates(render, summaries: list[dict], race_lastmod: dict[str, date
     render("candidates.html", "/2028/candidates/", groups=groups, answer=answer, checked=config.CANDIDATES_CHECKED, faq=faq, ld_faq=faq_ld(faq),
            title="Who Is Running for President in 2028? Candidates and Polls", description=answer,
            crumb="2028 candidates", trail=[HUB_2028], lastmod=lastmod)
-    return [dict(t="2028 presidential candidates", u="/2028/candidates/", k="Candidates", s="Who is running, and who leads the primary polls",
-                 q="2028 candidates running for president who is running announced declared campaign field democrats republicans")]
+    index = [dict(t="2028 presidential candidates", u="/2028/candidates/", k="Candidates", s="Who is running, and who leads the primary polls",
+                  q="2028 candidates running for president who is running announced declared campaign field democrats republicans")]
+    for g in groups:
+        sm = next(s for s in summaries if s["path"] == g["path"])
+        for row in g["rows"]:
+            index.append(build_candidate_profile(render, row, g, sm, summaries, race_lastmod, as_of, checked, markets or []))
+    return index
+
+
+def build_candidate_profile(render, row: dict, group: dict, primary: dict, summaries: list[dict],
+                            race_lastmod: dict[str, date | None], as_of: date, checked: date, markets: list[dict]) -> dict:
+    """/2028/candidates/<name>/: status, primary standing and trend, head-to-head matchups and market odds."""
+    name, party, race, ra = row["name"], group["party"], primary["race"], primary["avg"]
+    short = short_name(name)
+    trend = ra.trend.get(name, [])
+    month_ago = [v for d, v in trend if d <= as_of - timedelta(days=30)]
+    change = row["avg"] - month_ago[-1] if row["avg"] is not None and month_ago else None
+    wide = ra.polls if ra.polls is not None else pd.DataFrame()
+    points = [(r["end_date"], float(r[name])) for _, r in wide.iterrows() if name in wide and pd.notna(r[name])] if not wide.empty else []
+    chart = charts.line_chart({name: trend}, {name: points}, {name: config.PARTY_COLORS[race.parties[name]]},
+                              title=f"{name} in the 2028 {party} primary: polling average over time", chart_id="trend",
+                              short={name: short}) if trend else ""
+    matchups = []
+    for sm in summaries:
+        r, a = sm["race"], sm["avg"]
+        if r.kind == "general" and name in r.candidates and a.margin is not None:
+            other = next(c for c in r.candidates[:2] if c != name)
+            mine = a.margin if r.candidates[0] == name else -a.margin
+            matchups.append(dict(title=f"{short} vs. {short_name(other)}", path=sm["path"], other=other, margin=mine,
+                                 value=signed(a.margin, short_name(r.candidates[0]), short_name(r.candidates[1])), n_polls=a.n_polls))
+    odds = [dict(title=m["market"]["title"], pct=r["polymarket"], latest=m["latest"])
+            for m in markets for r in m["rows"] if r["outcome"] == name]
+    standing = (f"In national polls of the {party} primary, {name} is {pollsters.ordinal(row['rank'])} of {len(group['rows'])} "
+                f"at {row['avg']:.1f}% in the ElectionsUSA average") if row["avg"] is not None else f"{name} has no {party} primary polling average yet"
+    if row["declared"]:
+        status_line = f"{name} has formally declared a 2028 presidential campaign."
+    else:
+        status_line = f"As of {config.CANDIDATES_CHECKED}, {name} has not formally declared a 2028 presidential campaign."
+    answer = f"{status_line} {standing}."
+    faq = [(f"Is {name} running for president in 2028?",
+            status_line + (f" {row['note']}" if row["note"] else "") + " This page is updated when candidates announce."),
+           (f"How is {name} polling in the 2028 {party} primary?",
+            standing + (f", {'up' if change > 0 else 'down'} {abs(change):.1f} points from a month earlier" if change is not None and round(change, 1) != 0 else "")
+            + f". The average weights {group['n_polls']} national polls by recency, sample size and pollster record.")]
+    for m in matchups:
+        lead = f"{short} leads by {m['margin']:.1f} points" if m["margin"] > 0 else (f"{short_name(m['other'])} leads by {-m['margin']:.1f} points" if m["margin"] < 0 else "the two are tied")
+        faq.append((f"How does {name} do against {m['other']} in 2028 polls?", f"In the ElectionsUSA average of national head-to-head polls, {lead}."))
+    for o in odds:
+        faq.append((f"What are {name}'s odds in the {o['title'].lower()} market?",
+                    f"Polymarket traders priced {name} at {o['pct']:.1f}% on {o['latest']:%B %-d, %Y}. Market prices are bets, not polls."))
+    path = row["path"]
+    lastmod = min(max([checked, *(race_lastmod.get(s["race"].id) or date.min for s in [primary] + [x for x in summaries if x["path"] in {m["path"] for m in matchups}])]), as_of)
+    base = config.SITE["url"]
+    person = {"@context": "https://schema.org", "@type": "ProfilePage", "url": f"{base}{path}",
+              "mainEntity": {"@type": "Person", "name": name, **({"image": base + row["photo"]["src"]} if row["photo"] else {})}}
+    render("candidate.html", path, row=row, party=party, primary=primary, change=change, chart=chart, matchups=matchups, odds=odds,
+           answer=answer, faq=faq, ld_faq=faq_ld(faq), ld_person=person, checked=config.CANDIDATES_CHECKED,
+           title=f"Is {name} Running for President in 2028? Polls and Odds", description=answer,
+           crumb=name, trail=[HUB_2028, ("2028 candidates", "/2028/candidates/")], lastmod=lastmod)
+    return dict(t=f"{name} 2028", u=path, k="Candidate", s=(f"{row['avg']:.1f}% in the {party} primary" if row["avg"] is not None else f"{party} primary"),
+                q=f"{name} {short} 2028 president running campaign polls odds {party.lower()} primary")
 
 
 def build_machine_files(dist: Path, summaries: list[dict], race_lastmod: dict[str, date | None],
@@ -1204,7 +1271,7 @@ def build(as_of: date | None = None) -> Path:
     index += build_map_builder(render, dist, states, nation, as_of)
     index += build_midterm_hub(render, averages, states, as_of, result)
     index += build_2028_hubs(render, summaries, race_lastmod, as_of)
-    index += build_candidates(render, summaries, race_lastmod, as_of)
+    index += build_candidates(render, summaries, race_lastmod, as_of, mk_ctx, photos.build(dist))
     acc_finder, analysis_feed = build_accuracy_and_analysis(render, dist, polls, averages, pollster_path, result, as_of)
     index += acc_finder
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
