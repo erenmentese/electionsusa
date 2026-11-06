@@ -11,14 +11,14 @@ def render(template, **site_overrides):
 
 
 def test_ga4_tag_with_consent_defaults():
-    html = render("privacy.html", ga4_id="G-TEST123")
+    html = render("privacy.html", ga4_id="G-TEST123", adsense_client="")
     assert html.count("googletagmanager.com/gtag/js") == 1
     assert 'gtag("config", "G-TEST123")' in html
     assert 'location.hostname === "electionsusa.org"' in html
     # region-restricted "denied" default must come before the tag loads
     head = html[:html.index("googletagmanager.com/gtag/js")]
     assert '"denied"' in head and '"DE"' in head and '"GB"' in head and '"RE"' in head
-    # no AdSense yet, so ad cookies are denied everywhere
+    # without AdSense, ad cookies are denied everywhere
     assert 'ad_storage: "granted"' not in head
     assert "Google Analytics 4" in html
     assert "do not collect names" not in html
@@ -40,7 +40,7 @@ def test_adsense_script_alone_until_ad_units_exist():
         env.globals["site"] = {**config.SITE, **site}  # imported macros see globals, as in the build
         return env.from_string('{% from "_macros.html" import ad %}{{ ad("home-top") }}').render()
     assert slot(adsense_client="ca-pub-1").strip() == ""  # no unit yet, no empty box
-    assert slot(ad_slots={"home-top": "123"}).strip() == ""  # no AdSense, no ad
+    assert slot(adsense_client="", ad_slots={"home-top": "123"}).strip() == ""  # no AdSense, no ad
     html = slot(adsense_client="ca-pub-1", ad_slots={"home-top": "123"})
     assert 'data-ad-client="ca-pub-1" data-ad-slot="123"' in html and 'aria-label="Advertisement"' in html
 
