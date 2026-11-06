@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import ad %}
+{% from "_macros.html" import ad, explore %}
 {% block content %}
 <article>
 <header class="page-head">
@@ -30,5 +30,6 @@
   <p>A nomination market price is not the same quantity as a primary poll share. A candidate polling at 20% in a crowded field can be a 50% favourite if traders expect the field to consolidate around them. Markets also price events that polls can't see: whether a candidate runs at all, health, scandals, endorsements. Treat large gaps as a prompt to ask why, not as proof that one side is wrong.</p>
   <p>Prices are mid-market or last-trade values at the time of our snapshot and can move within minutes. Nothing on this page is investment advice. Prices are read from Polymarket's public API; contracts that are closed, inactive or have traded less than $10,000 are skipped. <a href="{{ kalshi_url }}" rel="nofollow noopener">Kalshi</a> lists similar markets; we link to it rather than republish its prices. Historical Polymarket snapshots are in the <a href="/data/">open dataset</a>; the prices remain subject to Polymarket's terms.</p>
 </section>
+{{ explore(path) }}
 </article>
 {% endblock %}

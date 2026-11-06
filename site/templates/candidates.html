@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import explore %}
 {% block head %}{% if ld_faq %}<script type="application/ld+json">{{ ld_faq | tojson }}</script>{% endif %}{% endblock %}
 {% block content %}
 <article>
@@ -24,5 +25,6 @@
 </section>
 {% endif %}
 <section class="section prose"><p>See also the <a href="/2028/calendar/">2028 primary calendar</a>, the <a href="/2028/president/">general-election matchups</a> and <a href="/markets/">prediction-market odds</a>.</p></section>
+{{ explore(path) }}
 </article>
 {% endblock %}
