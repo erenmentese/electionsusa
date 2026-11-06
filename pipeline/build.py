@@ -305,6 +305,26 @@ def midterm_context(averages: dict[str, average.RaceAverage], as_of: date, resul
     return dict(days=days, ra=ra, race=race, path=f"/{race.slug}/", colors=race_colors(race), result=result)
 
 
+def explore_links(averages: dict[str, average.RaceAverage], as_of: date) -> list[dict]:
+    """The "Keep exploring" block on pages that otherwise lead nowhere (states, countdown, calendar, markets,
+    scorecard, candidates): the site's main destinations, each with its current figure."""
+    def figure(race_id: str, empty: str) -> str:
+        race, ra = config.RACE_BY_ID[race_id], averages.get(race_id)
+        if not ra or not ra.values:
+            return empty
+        value, note = og_cards.headline(race, ra)
+        return f"{value} {note}".strip()
+    return [
+        dict(title="Trump approval rating", path="/approval/trump/", value=figure("approval-trump-2", "Latest average")),
+        dict(title="2028 Democratic primary", path="/2028/democratic-primary/", value=figure("dem-primary-2028", "Polling average")),
+        dict(title="2028 Republican primary", path="/2028/republican-primary/", value=figure("gop-primary-2028", "Polling average")),
+        dict(title="Who is running in 2028?", path="/2028/candidates/", value="Candidates and their standing"),
+        dict(title="2028 electoral map", path="/2028/map/", value="Make your own forecast"),
+        dict(title="Pollster scorecard", path="/pollsters/", value="Which pollster is most accurate?"),
+        dict(title="Countdown to 2028", path="/countdown/", value=f"{(config.ELECTION_DAY_2028 - as_of).days} days to go"),
+    ]
+
+
 def home_head(as_of: date, has_results: bool, certified: bool = False, final: str = "") -> dict:
     """Title, H1, lead and description of the home page: the midterms in election week, the
     polls-vs-results question once a count is in, 2028 otherwise."""
@@ -1110,6 +1130,7 @@ def build(as_of: date | None = None) -> Path:
     # every average first, so any page can point at another (the midterm block, related averages)
     averages = {race.id: average.compute_race(polls, race, ratings, as_of=race_as_of(race, as_of)) for race in config.RACES}
     env.globals["midterm"] = midterm_context(averages, as_of, result)
+    env.globals["explore_links"] = explore_links(averages, as_of)
     summaries = []
     answers: dict[str, str] = {}
     race_lastmod: dict[str, date | None] = {}

@@ -69,3 +69,11 @@
   </figcaption>
 </figure>
 {% endmacro %}
+
+{# The site's main destinations, minus the page it sits on: keeps readers of dead-end pages on the site #}
+{% macro explore(here) %}
+<section class="section" aria-labelledby="explore-h">
+  <div class="section-head"><h2 id="explore-h">Keep exploring</h2></div>
+  <ul class="related">{% for l in explore_links if l.path != here %}<li><a href="{{ l.path }}"><span class="t">{{ l.title }}</span><span class="v">{{ l.value }}</span></a></li>{% endfor %}</ul>
+</section>
+{% endmacro %}

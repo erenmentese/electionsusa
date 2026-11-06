@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import ad %}
+{% from "_macros.html" import ad, explore %}
 {% block head %}
 <script type="application/ld+json">{{ ld_dataset | tojson }}</script>
 {% endblock %}
@@ -75,5 +75,6 @@
 </nav>
 
 {{ ad("state-bottom") }}
+{{ explore(path) }}
 </article>
 {% endblock %}

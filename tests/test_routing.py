@@ -114,3 +114,11 @@ def test_home_after_the_midterm_window_turns_to_2028_and_keeps_the_2026_scorecar
     home = (build.build(date(2026, 12, 10)) / "index.html").read_text()
     assert "How is 2028 looking?" in home and 'aria-labelledby="midterm-h"' not in home
     assert 'href="/2026/pollster-accuracy/"' in home and 'href="/2028/candidates/"' in home
+
+
+def test_dead_end_pages_link_back_into_the_site(site):
+    for page in ["states/ohio", "countdown", "2028/calendar", "markets", "pollsters", "2028/candidates"]:
+        html = (site / page / "index.html").read_text()
+        block = html[html.index('id="explore-h"'):]
+        assert 'href="/approval/trump/"' in block and 'href="/2028/map/"' in block
+        assert f'href="/{page}/"' not in block  # never a link to the page itself

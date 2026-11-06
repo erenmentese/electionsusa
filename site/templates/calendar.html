@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import explore %}
 {% block content %}
 <article>
 <header class="page-head"><p class="kicker">2028 cycle</p><h1>2028 election calendar</h1>
@@ -11,5 +12,6 @@
 <p class="muted small">The Democratic early window was approved by the full Democratic National Committee on August 15, 2026; dates marked tentative depend on state law or have not been set by the party. Republican dates are not set. Checked {{ checked }}; this page is updated as parties and states publish dates.</p>
 </section>
 <section class="section prose"><p>See also the <a href="/countdown/">countdown to Election Day</a> and the <a href="/2028/democratic-primary/">Democratic</a> and <a href="/2028/republican-primary/">Republican</a> primary polling averages.</p></section>
+{{ explore(path) }}
 </article>
 {% endblock %}

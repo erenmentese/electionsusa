@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import ad %}
+{% from "_macros.html" import ad, explore %}
 {% block head %}
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebPage","name":"How many days until the 2028 election?","url":"{{ site.url }}/countdown/","about":{"@type":"Thing","name":"2028 United States presidential election","description":"General election for President of the United States, held on Tuesday, November 7, 2028."}}
@@ -45,5 +45,6 @@
     <li>Voter registration deadlines vary by state, from Election Day itself to about 30 days before.</li>
   </ul>
 </section>
+{{ explore(path) }}
 </article>
 {% endblock %}
