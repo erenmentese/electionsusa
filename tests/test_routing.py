@@ -105,3 +105,12 @@ def test_2028_candidates_page_lists_every_polled_candidate_with_sourced_status(s
     assert '"@type":"FAQPage"' in page.replace(" ", "")
     assert 'href="/2028/candidates/"' in (site / "2028" / "index.html").read_text()
     assert "<loc>https://electionsusa.org/2028/candidates/</loc>" in (site / "sitemap.xml").read_text()
+
+
+def test_home_after_the_midterm_window_turns_to_2028_and_keeps_the_2026_scorecard(tmp_path, monkeypatch):
+    from datetime import date
+    from pipeline import build
+    monkeypatch.setattr(config, "DIST_DIR", tmp_path / "dist")
+    home = (build.build(date(2026, 12, 10)) / "index.html").read_text()
+    assert "How is 2028 looking?" in home and 'aria-labelledby="midterm-h"' not in home
+    assert 'href="/2026/pollster-accuracy/"' in home and 'href="/2028/candidates/"' in home

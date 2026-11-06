@@ -1199,7 +1199,7 @@ def build(as_of: date | None = None) -> Path:
     head = home_head(as_of, result is not None, bool(result and not result.preliminary),
                      f"{signed(final.margin, 'Democrats', 'Republicans')} ({final.n_polls} polls)" if final.margin is not None and as_of >= config.MIDTERM_DAY_2026 else "")
     rated_paths = {p.rated.pollster: p.path for p in pollster_pages.values() if p.rated}
-    render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1],
+    render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1], past_midterm=as_of > config.MIDTERM_DAY_2026,
            scorecard=sc_rows[:8], pollster_paths=rated_paths, head=head, title=head["title"], description=head["description"], lastmod=data_lastmod,
            usmap=usmap.map_context(states, map_year), evbar=usmap.ev_bar(nation[map_year]),
            states=[dict(name=st.name, path=st.path, cls=usmap.shade(st.latest.margin)) for st in states.values()])
