@@ -91,3 +91,17 @@ def test_icons_manifest_contrast_and_countdown_schema(site):
     assert (lum(paper) + 0.05) / (lum(mute) + 0.05) >= 4.5  # WCAG AA for small text
     countdown = (site / "countdown" / "index.html").read_text()
     assert '"@type":"Event"' not in countdown and '"@type":"WebPage"' in countdown
+
+
+def test_2028_candidates_page_lists_every_polled_candidate_with_sourced_status(site):
+    page = (site / "2028" / "candidates" / "index.html").read_text()
+    for race in config.RACES:
+        if race.id in ("dem-primary-2028", "gop-primary-2028"):
+            assert all(f"<b>{c}</b>" in page for c in race.candidates if c != "Other/Undecided")
+    declared = [n for n, (status, _, _) in config.CANDIDATE_STATUS_2028.items() if status == "declared"]
+    if not declared:
+        assert "has formally declared a campaign" in page and "Declared</b>" not in page
+    assert all(src.startswith("https://") for _, note, src in config.CANDIDATE_STATUS_2028.values() if note)
+    assert '"@type":"FAQPage"' in page.replace(" ", "")
+    assert 'href="/2028/candidates/"' in (site / "2028" / "index.html").read_text()
+    assert "<loc>https://electionsusa.org/2028/candidates/</loc>" in (site / "sitemap.xml").read_text()
