@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block head %}{% if ld_faq %}<script type="application/ld+json">{{ ld_faq | tojson }}</script>{% endif %}{% endblock %}
+{% block content %}
+<article>
+<header class="page-head"><p class="kicker">2028 cycle</p><h1>Who is running for president in 2028?</h1>
+<p class="sub">{{ answer }}</p></header>
+{% for g in groups %}
+<section class="section">
+<h2>{{ g.party }} candidates</h2>
+<div class="table-scroll">
+<table class="table"><thead><tr><th>Candidate</th><th class="num">Poll average</th><th>Status</th><th>Public statements</th></tr></thead>
+<tbody>{% for r in g.rows %}<tr><td><b>{{ r.name }}</b></td><td class="num">{% if r.avg is not none %}{{ "%.1f" | format(r.avg) }}%<br><span class="muted small">{{ r.rank | ordinal }}</span>{% else %}<span class="muted">—</span>{% endif %}</td><td>{% if r.declared %}<b>{{ r.status }}</b>{% else %}{{ r.status }}{% endif %}</td><td class="muted">{{ r.note }}{% if r.src %} <a href="{{ r.src }}" rel="nofollow noopener">Source</a>{% endif %}</td></tr>{% endfor %}</tbody></table>
+</div>
+<p class="muted small">Averages of national {{ g.party }} primary polls ({{ g.n_polls }} weighted). <a href="{{ g.path }}">Every poll and the trend →</a></p>
+</section>
+{% endfor %}
+<section class="section prose">
+<p class="muted small">A candidate is listed as declared only after a formal announcement or a filed exploratory committee, with a link to it. Statements are quoted from published reporting. Checked {{ checked }}; this page is updated as candidates announce. Who appears here follows who pollsters include in national primary polls, not who we think will run.</p>
+</section>
+{% if faq %}
+<section class="section prose faq" id="faq">
+<h2>Questions</h2>
+{% for q, a in faq %}<h3>{{ q }}</h3><p>{{ a }}</p>{% endfor %}
+</section>
+{% endif %}
+<section class="section prose"><p>See also the <a href="/2028/calendar/">2028 primary calendar</a>, the <a href="/2028/president/">general-election matchups</a> and <a href="/markets/">prediction-market odds</a>.</p></section>
+</article>
+{% endblock %}

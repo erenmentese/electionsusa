@@ -703,7 +703,8 @@ def build_2028_hubs(render, summaries: list[dict], race_lastmod: dict[str, date 
               + ". Every poll average, the primary calendar, the electoral map and market odds for 2028, in one place.")
     render("hub.html", "/2028/", kicker="2028 election", heading="2028 Election: Polls, Primaries and Map", answer=answer,
            cards=all_2028, links_heading="Plan the race",
-           links=[dict(title="2028 presidential matchups", path="/2028/president/", value=f"{len(matchups)} head-to-head averages"),
+           links=[dict(title="2028 candidates", path="/2028/candidates/", value="Who is running, and who leads the polls"),
+                  dict(title="2028 presidential matchups", path="/2028/president/", value=f"{len(matchups)} head-to-head averages"),
                   dict(title="2028 electoral map", path="/2028/map/", value="Make your own forecast"),
                   dict(title="2028 primary calendar", path="/2028/calendar/", value="South Carolina votes first, Jan 22"),
                   dict(title="Prediction markets", path="/markets/", value="Odds vs. the polls"),
@@ -713,6 +714,52 @@ def build_2028_hubs(render, summaries: list[dict], race_lastmod: dict[str, date 
                  q="2028 president presidential election general matchup head to head polls hub all"),
             dict(t="2028 election hub", u="/2028/", k="Hub", s="Every 2028 average, the primary calendar, map and odds",
                  q="2028 election hub overview primaries president all averages")]
+
+
+STATUS_LABELS = {"declared": "Declared", "exploratory": "Exploratory committee", "ruled out": "Ruled out", "not declared": "Not declared"}
+
+
+def build_candidates(render, summaries: list[dict], race_lastmod: dict[str, date | None], as_of: date) -> list[dict]:
+    """Render /2028/candidates/: everyone in the 2028 primary averages, their poll standing and campaign status.
+
+    Status comes only from config.CANDIDATE_STATUS_2028 (each entry sourced); anyone else is "not declared"."""
+    checked = datetime.strptime(config.CANDIDATES_CHECKED, "%B %d, %Y").date()
+    groups, leads, declared = [], [], []
+    for race_id, party in (("dem-primary-2028", "Democratic"), ("gop-primary-2028", "Republican")):
+        sm = next(s for s in summaries if s["race"].id == race_id)
+        race, ra = sm["race"], sm["avg"]
+        names = og_cards.ranked(ra) + [c for c in race.candidates if c != "Other/Undecided" and c not in ra.values]
+        rows = []
+        for rank, name in enumerate(names, 1):
+            status, note, src = config.CANDIDATE_STATUS_2028.get(name, ("not declared", "", ""))
+            if status == "declared":
+                declared.append(name)
+            rows.append(dict(name=name, avg=ra.values.get(name), rank=rank if name in ra.values else None,
+                             status=STATUS_LABELS[status], declared=status == "declared", note=note, src=src))
+        if names and names[0] in ra.values:
+            leads.append(f"{names[0]} leads the {party} primary average at {ra.values[names[0]]:.1f}%")
+        groups.append(dict(party=party, path=sm["path"], rows=rows, n_polls=ra.n_polls))
+    n = sum(len(g["rows"]) for g in groups)
+    if declared:
+        status_line = f"As of {config.CANDIDATES_CHECKED}, {len(declared)} of the {n} candidates in our 2028 primary averages {'has' if len(declared) == 1 else 'have'} formally declared: {', '.join(declared)}."
+    else:
+        status_line = f"As of {config.CANDIDATES_CHECKED}, none of the {n} candidates in our 2028 primary averages has formally declared a campaign."
+    answer = status_line + " " + "; ".join(leads) + "."
+    faq = [
+        ("Has anyone announced a 2028 presidential run?", status_line + " This page lists a candidate as declared only after a formal announcement, with a link to it."),
+        *[(f"Who leads the 2028 {g['party']} primary polls?", lead + f", in a weighted average of national polls. See every poll on the {g['party']} primary page.")
+          for g, lead in zip(groups, leads)],
+        ("When do presidential candidates usually announce?",
+         "Usually in the year before the election. For 2020, Elizabeth Warren formed an exploratory committee on December 31, 2018, "
+         "Kamala Harris announced on January 21, 2019 and Joe Biden on April 25, 2019. For 2024, Donald Trump announced on November 15, 2022 "
+         "and Ron DeSantis on May 24, 2023."),
+    ]
+    lastmod = min(max([checked, *(race_lastmod.get(i) or date.min for i in ("dem-primary-2028", "gop-primary-2028"))]), as_of)
+    render("candidates.html", "/2028/candidates/", groups=groups, answer=answer, checked=config.CANDIDATES_CHECKED, faq=faq, ld_faq=faq_ld(faq),
+           title="Who Is Running for President in 2028? Candidates and Polls", description=answer,
+           crumb="2028 candidates", trail=[HUB_2028], lastmod=lastmod)
+    return [dict(t="2028 presidential candidates", u="/2028/candidates/", k="Candidates", s="Who is running, and who leads the primary polls",
+                 q="2028 candidates running for president who is running announced declared campaign field democrats republicans")]
 
 
 def build_machine_files(dist: Path, summaries: list[dict], race_lastmod: dict[str, date | None],
@@ -1136,6 +1183,7 @@ def build(as_of: date | None = None) -> Path:
     index += build_map_builder(render, dist, states, nation, as_of)
     index += build_midterm_hub(render, averages, states, as_of, result)
     index += build_2028_hubs(render, summaries, race_lastmod, as_of)
+    index += build_candidates(render, summaries, race_lastmod, as_of)
     acc_finder, analysis_feed = build_accuracy_and_analysis(render, dist, polls, averages, pollster_path, result, as_of)
     index += acc_finder
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
@@ -1151,7 +1199,7 @@ def build(as_of: date | None = None) -> Path:
     head = home_head(as_of, result is not None, bool(result and not result.preliminary),
                      f"{signed(final.margin, 'Democrats', 'Republicans')} ({final.n_polls} polls)" if final.margin is not None and as_of >= config.MIDTERM_DAY_2026 else "")
     rated_paths = {p.rated.pollster: p.path for p in pollster_pages.values() if p.rated}
-    render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1],
+    render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1], past_midterm=as_of > config.MIDTERM_DAY_2026,
            scorecard=sc_rows[:8], pollster_paths=rated_paths, head=head, title=head["title"], description=head["description"], lastmod=data_lastmod,
            usmap=usmap.map_context(states, map_year), evbar=usmap.ev_bar(nation[map_year]),
            states=[dict(name=st.name, path=st.path, cls=usmap.shade(st.latest.margin)) for st in states.values()])

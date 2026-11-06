@@ -113,6 +113,17 @@ PRIMARY_CALENDAR_2028 = [
 ]
 CALENDAR_CHECKED = "November 3, 2026"
 
+# 2028 candidate status. Everyone in the primary averages is "not declared" unless listed here with a source.
+# Statuses: "declared" (formal launch), "exploratory" (exploratory committee), "ruled out" (said they will not run).
+CANDIDATES_CHECKED = "November 6, 2026"
+REUTERS_2028_FIELD = "https://www.yahoo.com/news/politics/articles/midterms-over-democrats-plunge-wide-111023616.html"
+CANDIDATE_STATUS_2028 = {
+    # name: (status, public statement, source url)
+    "JD Vance": ("not declared", 'Has said there is "a chance" he will not run, citing family considerations.', REUTERS_2028_FIELD),
+    "Marco Rubio": ("not declared", 'Has said he has "no plans at this time" to run for president.', REUTERS_2028_FIELD),
+    "Ron DeSantis": ("not declared", "Has declined to rule out another run.", REUTERS_2028_FIELD),
+}
+
 # Analysis pieces and the day each was first published (datePublished never moves)
 ANALYSIS_PUBLISHED = {
     "final-generic-ballot-2026": date(2026, 11, 3),
