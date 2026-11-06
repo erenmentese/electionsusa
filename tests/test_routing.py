@@ -119,6 +119,7 @@ def test_home_after_the_midterm_window_turns_to_2028_and_keeps_the_2026_scorecar
 def test_dead_end_pages_link_back_into_the_site(site):
     for page in ["states/ohio", "countdown", "2028/calendar", "markets", "pollsters", "2028/candidates"]:
         html = (site / page / "index.html").read_text()
-        block = html[html.index('id="explore-h"'):]
+        start = html.index('id="explore-h"')
+        block = html[start:html.index("</section>", start)]  # the block only, not the footer
         assert 'href="/approval/trump/"' in block and 'href="/2028/map/"' in block
         assert f'href="/{page}/"' not in block  # never a link to the page itself
