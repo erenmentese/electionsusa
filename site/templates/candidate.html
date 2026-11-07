@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad, explore %}
+{% block head %}<script type="application/ld+json">{{ ld_person | tojson }}</script>
+<script type="application/ld+json">{{ ld_faq | tojson }}</script>{% endblock %}
+{% block content %}
+<article>
+<header class="page-head profile-head">
+  {% if row.photo %}<figure class="portrait">
+    <img src="{{ row.photo.src }}" width="{{ row.photo.width }}" height="{{ row.photo.height }}" alt="Portrait of {{ row.name }}" decoding="async">
+    <figcaption class="muted small">{% if row.photo.license_url %}<a href="{{ row.photo.source }}" rel="nofollow noopener">{{ row.photo.credit }}</a> (<a href="{{ row.photo.license_url }}" rel="nofollow noopener">license</a>){% else %}<a href="{{ row.photo.source }}" rel="nofollow noopener">{{ row.photo.credit }}</a>{% endif %}. {{ row.photo.note }}</figcaption>
+  </figure>{% endif %}
+  <div>
+    <p class="kicker"><a href="/2028/candidates/">2028 candidates</a> · {{ party }}</p>
+    <h1>Is {{ row.name }} running for president in 2028?</h1>
+    <p class="sub">{{ answer }}</p>
+  </div>
+</header>
+
+<section class="section">
+  <dl class="facts">
+    <div><dt>Campaign status</dt><dd>{{ row.status }}</dd><dd class="muted small">checked {{ checked }}</dd></div>
+    <div><dt>{{ party }} primary</dt><dd>{% if row.avg is not none %}{{ "%.1f" % row.avg }}%{% else %}—{% endif %}</dd><dd class="muted small">{% if row.rank %}{{ row.rank | ordinal }} in the average{% else %}no average yet{% endif %}</dd></div>
+    <div><dt>Last 30 days</dt><dd>{% if change is not none %}{{ "%+.1f" % change }}{% else %}—{% endif %}</dd><dd class="muted small">points in the primary average</dd></div>
+    {% for o in odds[:1] %}<div><dt>Market odds</dt><dd>{{ "%.1f" % o.pct }}%</dd><dd class="muted small">{{ o.title }}, Polymarket</dd></div>{% endfor %}
+  </dl>
+  {% if row.note %}<p class="muted">{{ row.note }}{% if row.src %} <a href="{{ row.src }}" rel="nofollow noopener">Source</a>{% endif %}</p>{% endif %}
+</section>
+
+{% if chart %}
+<section class="section">
+  <div class="section-head"><h2>{{ party }} primary polling</h2><a href="{{ primary.path }}">Every poll →</a></div>
+  {{ chart | safe }}
+</section>
+{% endif %}
+
+{{ ad("candidate-mid") }}
+
+{% if matchups %}
+<section class="section">
+  <div class="section-head"><h2>General-election matchups</h2><a href="/2028/president/">All matchups →</a></div>
+  <ul class="related">{% for m in matchups %}<li><a href="{{ m.path }}"><span class="t">{{ m.title }}</span><span class="v">{{ m.value }} · {{ m.n_polls }} polls</span></a></li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+{% if odds %}
+<section class="section">
+  <div class="section-head"><h2>Prediction markets</h2><a href="/markets/">Polls vs. markets →</a></div>
+  <table class="table compact"><thead><tr><th>Market</th><th class="num">Price</th><th>As of</th></tr></thead>
+  <tbody>{% for o in odds %}<tr><td>{{ o.title }}</td><td class="num">{{ "%.1f%%" % o.pct }}</td><td class="muted">{{ o.latest.strftime("%b %-d, %Y") }}</td></tr>{% endfor %}</tbody></table>
+  <p class="muted small">Polymarket prices are what traders pay for a contract that pays out if {{ row.name }} wins; they are bets, not polls.</p>
+</section>
+{% endif %}
+
+<section class="section prose faq" id="faq">
+<h2>Questions</h2>
+{% for q, a in faq %}<h3>{{ q }}</h3><p>{{ a }}</p>{% endfor %}
+</section>
+
+<section class="section prose"><p class="muted small">A candidate is listed as declared only after a formal announcement or a filed exploratory committee, with a link to it. Poll figures come from the <a href="/methodology/">ElectionsUSA average</a>; see <a href="/2028/candidates/">every 2028 candidate</a>.</p></section>
+{{ explore(path) }}
+</article>
+{% endblock %}

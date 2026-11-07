@@ -123,3 +123,28 @@ def test_dead_end_pages_link_back_into_the_site(site):
         block = html[start:html.index("</section>", start)]  # the block only, not the footer
         assert 'href="/approval/trump/"' in block and 'href="/2028/map/"' in block
         assert f'href="/{page}/"' not in block  # never a link to the page itself
+
+
+def test_candidate_profiles_with_black_and_white_credited_photos(site):
+    from PIL import Image
+    from pipeline import photos, pollsters
+    credits = photos.load_credits()
+    assert credits and all(c["license"] == "Public domain" or c["license"].startswith("CC BY") for c in credits.values())
+    listing = (site / "2028" / "candidates" / "index.html").read_text()
+    for race in config.RACES:
+        if race.id not in ("dem-primary-2028", "gop-primary-2028"):
+            continue
+        for name in race.candidates:
+            if name == "Other/Undecided":
+                continue
+            slug = pollsters.slugify(name)
+            page = (site / "2028" / "candidates" / slug / "index.html").read_text()
+            assert f"Is {name} running for president in 2028?" in page and '"@type": "ProfilePage"' in page
+            assert f'href="/2028/candidates/{slug}/"' in listing
+            if name in credits:
+                c = credits[name]
+                with Image.open(site / "static" / "img" / "candidates" / f"{slug}.jpg") as im:
+                    assert im.mode == "L" and im.size == photos.SIZE
+                assert c["source"] in page and "Converted to black and white" in page
+                if c.get("license_url"):  # a CC licence needs its credit and link wherever the photo appears
+                    assert c["license_url"] in page and c["license_url"] in listing

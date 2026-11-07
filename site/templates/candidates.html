@@ -10,13 +10,15 @@
 <h2>{{ g.party }} candidates</h2>
 <div class="table-scroll">
 <table class="table"><thead><tr><th>Candidate</th><th class="num">Poll average</th><th>Status</th><th>Public statements</th></tr></thead>
-<tbody>{% for r in g.rows %}<tr><td><b>{{ r.name }}</b></td><td class="num">{% if r.avg is not none %}{{ "%.1f" | format(r.avg) }}%<br><span class="muted small">{{ r.rank | ordinal }}</span>{% else %}<span class="muted">—</span>{% endif %}</td><td>{% if r.declared %}<b>{{ r.status }}</b>{% else %}{{ r.status }}{% endif %}</td><td class="muted">{{ r.note }}{% if r.src %} <a href="{{ r.src }}" rel="nofollow noopener">Source</a>{% endif %}</td></tr>{% endfor %}</tbody></table>
+<tbody>{% for r in g.rows %}<tr><td><a class="cand" href="{{ r.path }}">{% if r.photo %}<img src="{{ r.photo.src }}" width="36" height="48" alt="" loading="lazy" decoding="async">{% endif %}<b>{{ r.name }}</b></a></td><td class="num">{% if r.avg is not none %}{{ "%.1f" | format(r.avg) }}%<br><span class="muted small">{{ r.rank | ordinal }}</span>{% else %}<span class="muted">—</span>{% endif %}</td><td>{% if r.declared %}<b>{{ r.status }}</b>{% else %}{{ r.status }}{% endif %}</td><td class="muted">{{ r.note }}{% if r.src %} <a href="{{ r.src }}" rel="nofollow noopener">Source</a>{% endif %}</td></tr>{% endfor %}</tbody></table>
 </div>
 <p class="muted small">Averages of national {{ g.party }} primary polls ({{ g.n_polls }} weighted). <a href="{{ g.path }}">Every poll and the trend →</a></p>
 </section>
 {% endfor %}
 <section class="section prose">
 <p class="muted small">A candidate is listed as declared only after a formal announcement or a filed exploratory committee, with a link to it. Statements are quoted from published reporting. Checked {{ checked }}; this page is updated as candidates announce. Who appears here follows who pollsters include in national primary polls, not who we think will run.</p>
+{% set credited = groups | map(attribute="rows") | sum(start=[]) | selectattr("photo") | list %}
+{% if credited %}<p class="muted small">Photos, converted to black and white and cropped: {% for r in credited %}{{ r.name }}: <a href="{{ r.photo.source }}" rel="nofollow noopener">{{ r.photo.credit | replace("Photo: ", "") }}</a>{% if r.photo.license_url %} (<a href="{{ r.photo.license_url }}" rel="nofollow noopener">license</a>){% endif %}{{ "; " if not loop.last else "." }}{% endfor %}</p>{% endif %}
 </section>
 {% if faq %}
 <section class="section prose faq" id="faq">
