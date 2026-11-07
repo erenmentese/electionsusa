@@ -30,6 +30,15 @@
   <p class="avg-note">Weighted average of {{ avg.n_polls }} poll{{ "s" if avg.n_polls != 1 }} (of {{ avg.n_polls_total }} on record), as of {{ avg.as_of.strftime("%B %-d, %Y") }}. Half-life {{ race.half_life_days }} days. <a href="/methodology/">Method</a> · <a href="/api/{{ race.id }}.json">JSON</a></p>
 </section>
 
+{% if people %}
+<section class="section">
+  <div class="section-head"><h2>Candidate profiles</h2><a href="/2028/candidates/">Every 2028 candidate →</a></div>
+  <ul class="people">{% for p in people %}<li><a class="cand" href="{{ p.path }}">{% if p.photo %}<img src="{{ p.photo.src }}" width="36" height="48" alt="" loading="lazy" decoding="async">{% endif %}<b>{{ p.name }}</b></a></li>{% endfor %}</ul>
+  {% set credited = people | selectattr("photo") | list %}
+  {% if credited %}<p class="muted small">Photos, converted to black and white and cropped: {% for p in credited %}{{ p.name }}: <a href="{{ p.photo.source }}" rel="nofollow noopener">{{ p.photo.credit | replace("Photo: ", "") }}</a>{% if p.photo.license_url %} (<a href="{{ p.photo.license_url }}" rel="nofollow noopener">license</a>){% endif %}{{ "; " if not loop.last else "." }}{% endfor %}</p>{% endif %}
+</section>
+{% endif %}
+
 <section class="section">
   <div class="section-head"><h2>Trend</h2><span class="muted small">Dots are polls; the line is the average as computed on each date</span></div>
   <div class="chart-wrap">{{ charts.line | safe }}</div>
@@ -38,15 +47,6 @@
 <section class="empty-state">
   <h2>No qualifying polls yet</h2>
   <p>We haven't recorded a public poll for this matchup. The page is live so it fills in automatically the moment a pollster tests it. In the meantime, see the <a href="/2028/president/vance-vs-newsom/">most-polled 2028 matchup</a> or the <a href="/2028/democratic-primary/">primary averages</a>.</p>
-</section>
-{% endif %}
-
-{% if people %}
-<section class="section">
-  <div class="section-head"><h2>Candidate profiles</h2><a href="/2028/candidates/">Every 2028 candidate →</a></div>
-  <ul class="people">{% for p in people %}<li><a class="cand" href="{{ p.path }}">{% if p.photo %}<img src="{{ p.photo.src }}" width="36" height="48" alt="" loading="lazy" decoding="async">{% endif %}<b>{{ p.name }}</b></a></li>{% endfor %}</ul>
-  {% set credited = people | selectattr("photo") | list %}
-  {% if credited %}<p class="muted small">Photos, converted to black and white and cropped: {% for p in credited %}{{ p.name }}: <a href="{{ p.photo.source }}" rel="nofollow noopener">{{ p.photo.credit | replace("Photo: ", "") }}</a>{% if p.photo.license_url %} (<a href="{{ p.photo.license_url }}" rel="nofollow noopener">license</a>){% endif %}{{ "; " if not loop.last else "." }}{% endfor %}</p>{% endif %}
 </section>
 {% endif %}
 
