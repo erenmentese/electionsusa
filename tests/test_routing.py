@@ -148,3 +148,24 @@ def test_candidate_profiles_with_black_and_white_credited_photos(site):
                 assert c["source"] in page and "Converted to black and white" in page
                 if c.get("license_url"):  # a CC licence needs its credit and link wherever the photo appears
                     assert c["license_url"] in page and c["license_url"] in listing
+
+
+def test_candidate_profiles_reachable_from_nav_race_pages_and_hubs(site):
+    from pipeline import photos, pollsters
+    credits = photos.load_credits()
+    head = re.search(r'<header class="site-header">(.*?)</header>', (site / "index.html").read_text(), re.S).group(1)
+    assert 'href="/2028/candidates/"' in head
+    assert 'href="/2028/candidates/"' in (site / "2028" / "president" / "index.html").read_text()
+    profiled = {c for r in config.RACES if r.id in ("dem-primary-2028", "gop-primary-2028") for c in r.candidates} - {"Other/Undecided"}
+    checked = 0
+    for race in config.RACES:
+        people = [c for c in race.candidates if c in profiled]
+        if not race.slug.startswith("2028/") or not people:
+            continue
+        page = (site / race.slug / "index.html").read_text()
+        for name in people:  # every candidate on a 2028 race page links to their profile
+            assert f'href="/2028/candidates/{pollsters.slugify(name)}/"' in page, (race.slug, name)
+            if credits.get(name, {}).get("license_url"):  # and a CC photo shown there carries its licence
+                assert credits[name]["license_url"] in page
+        checked += 1
+    assert checked >= 3
