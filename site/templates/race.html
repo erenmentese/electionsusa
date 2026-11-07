@@ -41,6 +41,15 @@
 </section>
 {% endif %}
 
+{% if people %}
+<section class="section">
+  <div class="section-head"><h2>Candidate profiles</h2><a href="/2028/candidates/">Every 2028 candidate →</a></div>
+  <ul class="people">{% for p in people %}<li><a class="cand" href="{{ p.path }}">{% if p.photo %}<img src="{{ p.photo.src }}" width="36" height="48" alt="" loading="lazy" decoding="async">{% endif %}<b>{{ p.name }}</b></a></li>{% endfor %}</ul>
+  {% set credited = people | selectattr("photo") | list %}
+  {% if credited %}<p class="muted small">Photos, converted to black and white and cropped: {% for p in credited %}{{ p.name }}: <a href="{{ p.photo.source }}" rel="nofollow noopener">{{ p.photo.credit | replace("Photo: ", "") }}</a>{% if p.photo.license_url %} (<a href="{{ p.photo.license_url }}" rel="nofollow noopener">license</a>){% endif %}{{ "; " if not loop.last else "." }}{% endfor %}</p>{% endif %}
+</section>
+{% endif %}
+
 {% if midterm and race.kind == "approval" %}{{ midterm_block(midterm) }}{% endif %}
 
 {% if vs %}

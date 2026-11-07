@@ -32,6 +32,7 @@ NAV = [
     ("Pollsters", "/pollsters/"),
 ]
 NAV_MORE = [
+    ("2028 Candidates", "/2028/candidates/"),
     ("Dem Primary", "/2028/democratic-primary/"),
     ("GOP Primary", "/2028/republican-primary/"),
     ("2028 Calendar", "/2028/calendar/"),
@@ -714,7 +715,8 @@ def build_2028_hubs(render, summaries: list[dict], race_lastmod: dict[str, date 
     answer = (f"ElectionsUSA tracks {len(matchups)} hypothetical 2028 general-election matchups. "
               + "; ".join(lead(s) for s in matchups) + ". Early matchup polls measure name recognition as much as preference.")
     render("hub.html", "/2028/president/", kicker="2028 presidential election", heading="2028 Presidential Election Polls",
-           answer=answer, cards=matchups, links=[dict(title="2028 electoral map", path="/2028/map/", value="Make your own forecast"),
+           answer=answer, cards=matchups, links=[dict(title="2028 candidates", path="/2028/candidates/", value="A profile for everyone in the polls"),
+                                                 dict(title="2028 electoral map", path="/2028/map/", value="Make your own forecast"),
                                                  dict(title="Prediction markets", path="/markets/", value="Odds vs. the polls")],
            links_heading="More on 2028", title="2028 Presidential Election Polls: Every Matchup", description=answer,
            crumb="2028 president", trail=[HUB_2028], lastmod=newest(matchups))
@@ -739,8 +741,18 @@ def build_2028_hubs(render, summaries: list[dict], race_lastmod: dict[str, date 
 STATUS_LABELS = {"declared": "Declared", "exploratory": "Exploratory committee", "ruled out": "Ruled out", "not declared": "Not declared"}
 
 
+PROFILE_RACES = ("dem-primary-2028", "gop-primary-2028")
+
+
 def candidate_path(name: str) -> str:
     return f"/2028/candidates/{pollsters.slugify(name)}/"
+
+
+def race_people(race: config.Race, ra: average.RaceAverage, portraits: dict[str, dict]) -> list[dict]:
+    """The candidates on a race page who have a 2028 profile, leader first in a primary, with their portrait."""
+    profiled = {c for r in config.RACES if r.id in PROFILE_RACES for c in r.candidates if c != "Other/Undecided"}
+    order = og_cards.ranked(ra) + [c for c in race.candidates if c not in ra.values] if race.kind == "primary" else race.candidates
+    return [dict(name=c, path=candidate_path(c), photo=portraits.get(c)) for c in order if c in profiled]
 
 
 def build_candidates(render, summaries: list[dict], race_lastmod: dict[str, date | None], as_of: date,
@@ -752,7 +764,7 @@ def build_candidates(render, summaries: list[dict], race_lastmod: dict[str, date
     photos = photos or {}
     checked = datetime.strptime(config.CANDIDATES_CHECKED, "%B %d, %Y").date()
     groups, leads, declared = [], [], []
-    for race_id, party in (("dem-primary-2028", "Democratic"), ("gop-primary-2028", "Republican")):
+    for race_id, party in zip(PROFILE_RACES, ("Democratic", "Republican")):
         sm = next(s for s in summaries if s["race"].id == race_id)
         race, ra = sm["race"], sm["avg"]
         names = og_cards.ranked(ra) + [c for c in race.candidates if c != "Other/Undecided" and c not in ra.values]
@@ -1153,6 +1165,7 @@ def build(as_of: date | None = None) -> Path:
     shutil.copytree(config.STATIC_DIR, dist / "static")
     shutil.copy(config.ROOT / "assets" / "social" / "x-avatar.png", dist / "static" / "img" / "logo.png")
     write_icons(dist)
+    portraits = photos.build(dist)  # after the static copy, which would otherwise replace them
     (dist / "api").mkdir()
     (dist / "data").mkdir()
     (dist / "og").mkdir()
@@ -1224,7 +1237,7 @@ def build(as_of: date | None = None) -> Path:
         if vs and result:  # a new count changes the page as much as a new poll would
             race_lastmod[race.id] = max(latest_poll or result.as_of, result.as_of)
         render("race.html", f"/{race.slug}/", race=race, avg=ra, table=table, charts=ch, colors=race_colors(race),
-               thin=thin, noindex=thin, max_rows=MAX_TABLE_ROWS, vs=vs, latest_poll=latest_poll,
+               thin=thin, noindex=thin, max_rows=MAX_TABLE_ROWS, people=race_people(race, ra, portraits), vs=vs, latest_poll=latest_poll,
                shown=shown, title=seo_title(race, ra, as_of, bool(vs and result and not result.preliminary)), description=answer or race.description, answer=answer,
                faq=faq, ld_faq=faq_ld(faq) if faq else None, related=related_averages(race, averages),
                crumb=race.short_title, trail=race_trail(race), og_image=og_image, lastmod=race_lastmod[race.id],
@@ -1271,7 +1284,7 @@ def build(as_of: date | None = None) -> Path:
     index += build_map_builder(render, dist, states, nation, as_of)
     index += build_midterm_hub(render, averages, states, as_of, result)
     index += build_2028_hubs(render, summaries, race_lastmod, as_of)
-    index += build_candidates(render, summaries, race_lastmod, as_of, mk_ctx, photos.build(dist))
+    index += build_candidates(render, summaries, race_lastmod, as_of, mk_ctx, portraits)
     acc_finder, analysis_feed = build_accuracy_and_analysis(render, dist, polls, averages, pollster_path, result, as_of)
     index += acc_finder
     (dist / "api" / "search-index.json").write_text(json.dumps(index, ensure_ascii=False))
