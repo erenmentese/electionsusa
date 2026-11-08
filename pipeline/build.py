@@ -20,7 +20,7 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import accuracy, average, charts, check_data, config, dedupe, fetch_markets, history, og_cards, photos, pollsters, scorecard, usmap
+from . import accuracy, articles as written, average, charts, check_data, config, dedupe, fetch_markets, history, og_cards, photos, pollsters, scorecard, usmap
 from .schema import MARKET_COLUMNS, POLL_COLUMNS, validate_polls
 
 # One nav on every page: the main sections, then a "More" menu
@@ -33,6 +33,7 @@ NAV = [
 ]
 NAV_MORE = [
     ("2028 Candidates", "/2028/candidates/"),
+    ("Analysis", "/analysis/"),
     ("Dem Primary", "/2028/democratic-primary/"),
     ("GOP Primary", "/2028/republican-primary/"),
     ("2028 Calendar", "/2028/calendar/"),
@@ -1045,10 +1046,12 @@ def build_accuracy_and_analysis(render, dist: Path, polls: pd.DataFrame, average
             dict(h="Full table", p='Every pollster and every poll, with the CSV, is on <a href="/2026/pollster-accuracy/">the 2026 pollster accuracy page</a>.'),
         ]
         articles.append(a)
+    articles += written.load(as_of)
     byline = (config.SITE["editor"].get("name") or config.SITE["author"])
     for a in articles:
-        render("article.html", a["path"], article=a, byline=byline, ld_article=article_ld(a, f"/og/{MIDTERM_RACE}.png"),
-               title=a["headline"], description=a["dek"], og_image=f"/og/{MIDTERM_RACE}.png", og_type="article",
+        og = f"/og/{a.get('og') or MIDTERM_RACE}.png"
+        render("article.html", a["path"], article=a, byline=byline, ld_article=article_ld(a, og),
+               title=a["headline"], description=a["dek"], og_image=og, og_type="article",
                crumb=a["headline"], trail=[("Analysis", "/analysis/")], lastmod=a["modified"])
     articles.sort(key=lambda a: a["published"], reverse=True)
     if articles:
@@ -1057,8 +1060,9 @@ def build_accuracy_and_analysis(render, dist: Path, polls: pd.DataFrame, average
                lastmod=max(a["modified"] for a in articles))
     finder = [dict(t="Which pollster was most accurate in 2026?", u="/2026/pollster-accuracy/", k="Scorecard", s=answer[:120],
                    q="2026 most accurate pollster pollsters accuracy midterm generic ballot error bias best worst preliminary result")]
-    finder += [dict(t=a["headline"], u=a["path"], k="Analysis", s=a["dek"][:120], q="analysis article generic ballot 2026 midterm polls result") for a in articles]
-    feed = [dict(title=a["headline"], path=a["path"], updated=a["modified"], summary=a["dek"]) for a in articles]
+    finder += [dict(t=a["headline"], u=a["path"], k="Analysis", s=a["dek"][:120],
+                    q=a.get("keywords") or "analysis article generic ballot 2026 midterm polls result") for a in articles]
+    feed = [dict(title=a["headline"], path=a["path"], updated=a["modified"], published=a["published"], summary=a["dek"]) for a in articles]
     return finder, feed
 
 
@@ -1300,7 +1304,7 @@ def build(as_of: date | None = None) -> Path:
     head = home_head(as_of, result is not None, bool(result and not result.preliminary),
                      f"{signed(final.margin, 'Democrats', 'Republicans')} ({final.n_polls} polls)" if final.margin is not None and as_of >= config.MIDTERM_DAY_2026 else "")
     rated_paths = {p.rated.pollster: p.path for p in pollster_pages.values() if p.rated}
-    render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1], past_midterm=as_of > config.MIDTERM_DAY_2026,
+    render("index.html", "/", summaries=summaries, latest=all_polls[:12], markets=mk_ctx[:1], analysis=analysis_feed[:3], past_midterm=as_of > config.MIDTERM_DAY_2026,
            scorecard=sc_rows[:8], pollster_paths=rated_paths, head=head, title=head["title"], description=head["description"], lastmod=data_lastmod,
            usmap=usmap.map_context(states, map_year), evbar=usmap.ev_bar(nation[map_year]),
            states=[dict(name=st.name, path=st.path, cls=usmap.shade(st.latest.margin)) for st in states.values()])

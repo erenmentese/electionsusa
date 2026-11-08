@@ -7,16 +7,17 @@
 {% block content %}
 <article class="prose">
 <header class="page-head">
-  <p class="kicker"><a href="/analysis/">Analysis</a> · <time datetime="{{ article.published.isoformat() }}">{{ article.published.strftime("%B %-d, %Y") }}</time>{% if article.modified != article.published %} · updated <time datetime="{{ article.modified.isoformat() }}">{{ article.modified.strftime("%B %-d, %Y") }}</time>{% endif %} · by {{ byline }}</p>
+  <p class="kicker"><a href="/analysis/">Analysis</a> · <time datetime="{{ article.published.isoformat() }}">{{ article.published.strftime("%B %-d, %Y") }}</time>{% if article.modified != article.published %} · updated <time datetime="{{ article.modified.isoformat() }}">{{ article.modified.strftime("%B %-d, %Y") }}</time>{% endif %} · by <a href="/about/#editor" rel="author">{{ byline }}</a></p>
   <h1>{{ article.headline }}</h1>
   <p class="sub">{{ article.dek }}</p>
 </header>
 {% for block in article.body %}
 {% if block.h %}<h2>{{ block.h }}</h2>{% endif %}
 {% if block.p %}<p>{{ block.p | safe }}</p>{% endif %}
+{% if block.bullets %}<ul>{% for item in block.bullets %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
 {% if block.table %}
-<div class="table-scroll"><table class="table compact"><thead><tr>{% for c in block.table.head %}<th{% if loop.index > 1 %} class="num"{% endif %}>{{ c }}</th>{% endfor %}</tr></thead>
-<tbody>{% for row in block.table.rows %}<tr>{% for c in row %}<td{% if loop.index > 1 %} class="num"{% endif %}>{{ c }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+<div class="table-scroll"><table class="table compact"><thead><tr>{% for c in block.table.head %}<th{% if loop.index > 1 and not block.table.text %} class="num"{% endif %}>{{ c }}</th>{% endfor %}</tr></thead>
+<tbody>{% for row in block.table.rows %}<tr>{% for c in row %}<td{% if loop.index > 1 and not block.table.text %} class="num"{% endif %}>{{ c }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
 {% endif %}
 {% endfor %}
 <p class="muted small">Numbers on this page are computed from the <a href="/data/">open dataset</a> each time the site is rebuilt. Method: <a href="/methodology/">methodology</a>. Corrections: <a href="/corrections/">corrections log</a>.</p>

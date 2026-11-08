@@ -62,6 +62,13 @@
 
 {{ ad("home-top") }}
 
+{% if analysis %}
+<section class="section">
+  <div class="section-head"><h2>Latest analysis</h2><a href="/analysis/">All analysis →</a></div>
+  <ul class="related">{% for a in analysis %}<li><a href="{{ a.path }}"><span class="t">{{ a.title }}</span><span class="v"><time datetime="{{ a.published.isoformat() }}">{{ a.published.strftime("%b %-d, %Y") }}</time></span></a></li>{% endfor %}</ul>
+</section>
+{% endif %}
+
 <section class="section two-col">
   <div>
     <div class="section-head"><h2>Latest polls</h2><a href="/data/">All data →</a></div>

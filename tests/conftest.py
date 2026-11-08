@@ -21,3 +21,11 @@ def election_day_site(tmp_path_factory):
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(config, "DIST_DIR", tmp_path_factory.mktemp("eday") / "dist")
         yield build.build(date(2026, 11, 3))
+
+
+@pytest.fixture(scope="session")
+def analysis_site(tmp_path_factory):
+    """The site a week after the midterms, once the first written analysis pieces are published."""
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(config, "DIST_DIR", tmp_path_factory.mktemp("analysis") / "dist")
+        yield build.build(date(2026, 11, 9))
