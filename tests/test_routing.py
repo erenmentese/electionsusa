@@ -169,3 +169,11 @@ def test_candidate_profiles_reachable_from_nav_race_pages_and_hubs(site):
                 assert credits[name]["license_url"] in page
         checked += 1
     assert checked >= 3
+
+
+def test_footer_links_the_x_account_on_every_page(site):
+    handle = config.SITE["twitter"].lstrip("@")
+    for page in ("index.html", "markets/index.html", "2028/candidates/index.html"):
+        foot = (site / page).read_text().split('<footer class="site-footer">')[1]
+        assert f'<a href="https://x.com/{handle}" rel="me noopener">' in foot
+        assert 'href="/analysis/"' in foot and 'href="/2028/candidates/"' in foot

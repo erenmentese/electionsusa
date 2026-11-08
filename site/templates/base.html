@@ -105,6 +105,7 @@ if (location.hostname === {{ site.domain | tojson }}) {
       <p class="brand-foot">Elections<em class="muted">USA</em></p>
       <p class="muted">{{ site.tagline }}.{% if updated %} This page last changed <time datetime="{{ updated.isoformat() }}">{{ updated.strftime("%B %-d, %Y") }}</time>.{% endif %} Site rebuilt {{ build_date }}.</p>
       <p class="muted small">Poll numbers are facts reported by each pollster and are credited to their source on every row. Historical accuracy data derived from FiveThirtyEight's open dataset (CC BY 4.0). Independent; not affiliated with any campaign, party, pollster or government body.</p>
+      {% if site.twitter %}<p class="footer-social"><a href="https://x.com/{{ site.twitter | replace("@", "") }}" rel="me noopener">Follow {{ site.twitter }} on X</a> for every new poll as it lands.</p>{% endif %}
     </div>
     <div>
       <h2 class="footer-h">Averages</h2>
@@ -112,7 +113,7 @@ if (location.hostname === {{ site.domain | tojson }}) {
     </div>
     <div>
       <h2 class="footer-h">Site</h2>
-      <a href="/2026/">2026 midterms</a><a href="/methodology/">Methodology</a><a href="/states/">Results by state</a><a href="/pollsters/">Pollster scorecard</a><a href="/markets/">Prediction markets</a><a href="/countdown/">Countdown</a><a href="/2028/calendar/">2028 calendar</a><a href="/data/">Open data &amp; API</a><a href="/about/">About</a><a href="/corrections/">Corrections</a><a href="/terms/">Terms</a><a href="/privacy/">Privacy</a>
+      <a href="/2026/">2026 midterms</a><a href="/2028/candidates/">2028 candidates</a><a href="/analysis/">Analysis</a><a href="/methodology/">Methodology</a><a href="/states/">Results by state</a><a href="/pollsters/">Pollster scorecard</a><a href="/markets/">Prediction markets</a><a href="/countdown/">Countdown</a><a href="/2028/calendar/">2028 calendar</a><a href="/data/">Open data &amp; API</a><a href="/about/">About</a><a href="/corrections/">Corrections</a><a href="/terms/">Terms</a><a href="/privacy/">Privacy</a>
     </div>
   </div>
   <div class="wrap copyright muted small">© {{ year }} {{ site.name }} · {{ site.domain }}</div>
