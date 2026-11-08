@@ -257,7 +257,7 @@ def faq_items(race: config.Race, ra: average.RaceAverage, answer: str) -> list[t
          f"Every public national poll we can source, {ra.n_polls_total} on record for this page and {ra.n_polls} carrying weight today. "
          "Each row in the table links to the pollster's own release; adult, registered-voter and likely-voter polls all count, but a poll released for several populations counts once (likely voters first)."),
         ("How often is it updated?",
-         "Automatically, every six hours: new polls are collected, checked and added, and the average and chart are recomputed."),
+         "Automatically, four times a day: new polls are collected, checked and added, and the average and chart are recomputed."),
         ("Can I use this data?",
          "Yes. Every poll is free to download as CSV, and every average as JSON, under CC BY 4.0. Please credit ElectionsUSA with a link."),
     ]
@@ -868,7 +868,7 @@ def build_machine_files(dist: Path, summaries: list[dict], race_lastmod: dict[st
     base, name = config.SITE["url"], config.SITE["name"]
     lines = [f"# {name} ({config.SITE['alternate_name']})", "",
              f"> {config.SITE['description']}", "",
-             f"Independent, non-partisan U.S. poll averages with an open method. Launched October 2026; this file was last built {as_of.isoformat()} and data refreshes every six hours.", "",
+             f"Independent, non-partisan U.S. poll averages with an open method. Launched October 2026; this file was last built {as_of.isoformat()} and data refreshes four times a day.", "",
              "## Current averages"]
     for s in summaries:
         r = s["race"]

@@ -30,7 +30,7 @@ data/markets.csv     market snapshots    data/results/2026-house-national.json  
 data/seed/fivethirtyeight/   538 raw-polls + pollster-ratings (CC BY 4.0)
 data/seed/medsl/     state presidential returns 1976-2024 (CC0)   data/seed/census/  House apportionment
 data/seed/us-atlas/  state outlines, Albers USA (ISC)             each folder has a SOURCE.md
-.github/workflows/   fetch every 6h → test → commit data → deploy to Cloudflare Pages → health check; PRs get tests and a preview
+.github/workflows/   fetch 4×/day (U.S. hours) → test → commit data → deploy to Cloudflare Pages → health check; PRs get tests and a preview
                      an unhealthy run opens a "data-alert" issue (pipeline/check_data.py), closed once healthy
 ```
 

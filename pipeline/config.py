@@ -305,7 +305,7 @@ DEFAULT_GRADE_WEIGHT = 0.6
 BOT = {
     "handle": "@ElectionsUSAorg",               # e.g. "@electionsusa" (shown on cards when set)
     "fresh_days": 10,             # only announce polls whose fieldwork ended this recently
-    "max_posts_per_run": 2,       # the workflow runs every 6h -> at most ~8 posts/day
+    "max_posts_per_run": 1,       # four runs a day at U.S. hours -> one post each, spaced out
     "max_posts_per_day": 6,
     "include_links": False,       # X charges ~13x more for posts containing a URL
     "hashtags": [],               # e.g. ["#2028Election"]; keep it to one at most
