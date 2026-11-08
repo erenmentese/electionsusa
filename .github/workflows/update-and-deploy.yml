@@ -2,7 +2,7 @@ name: Update data and post
 
 on:
   schedule:
-    - cron: "17 */6 * * *"   # every 6 hours (UTC)
+    - cron: "17 1,13,17,22 * * *"   # four times a day, at U.S. hours: 8pm, 8am, noon, 5pm Eastern (EST)
   push:
     branches: [main]
   pull_request:              # tests only: nothing is fetched, committed or posted

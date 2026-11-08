@@ -122,7 +122,8 @@ def test_client_falls_back_to_text_when_upload_fails(creds):
     assert post[1]["json"] == {"text": "hi"}
 
 
-def test_campaign_posts_go_out_once_inside_their_window():
+def test_campaign_posts_go_out_once_inside_their_window(monkeypatch):
+    monkeypatch.setitem(config.BOT, "max_posts_per_run", 2)  # Election Day also has a milestone post; room for both
     polls = seed_polls_frame()
     polls, _ = add_poll(polls, "generic-ballot-2026", "2026-11-01", {"Democrats": 49.0, "Republicans": 42.0})
     state = sc.empty_state()
