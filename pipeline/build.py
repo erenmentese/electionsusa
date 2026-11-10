@@ -425,6 +425,11 @@ def breadcrumb_ld(trail: list[tuple[str, str]]) -> dict:
     ]}
 
 
+def place_ld(state: str | None = None) -> dict:
+    """Dataset spatialCoverage. Google accepts Text or Place here, not Country."""
+    return {"@type": "Place", "name": f"{state}, United States" if state else "United States"}
+
+
 def dataset_ld(race: config.Race, path: str, as_of: date, start: date | None = None) -> dict:
     base = config.SITE["url"]
     return {
@@ -433,7 +438,7 @@ def dataset_ld(race: config.Race, path: str, as_of: date, start: date | None = N
         "license": "https://creativecommons.org/licenses/by/4.0/", "isAccessibleForFree": True,
         "creator": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
         "maintainer": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
-        "spatialCoverage": {"@type": "Country", "name": "United States"},
+        "spatialCoverage": place_ld(),
         **({"temporalCoverage": f"{start.isoformat()}/{as_of.isoformat()}"} if start else {}),
         "distribution": [
             {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{base}/api/{race.id}.json"},
@@ -532,7 +537,7 @@ def build_states(render, dist: Path, states: dict[str, history.StateHistory],
         ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"{st.name} presidential election results, 1976–{year}",
               "description": answer, "url": f"{base}{st.path}", "license": "https://creativecommons.org/publicdomain/zero/1.0/",
               "isAccessibleForFree": True, "temporalCoverage": f"1976/{year}",
-              "spatialCoverage": {"@type": "Place", "name": f"{st.name}, United States"},
+              "spatialCoverage": place_ld(st.name),
               "creator": creators, "distribution": [csv_ld]}
         (dist / "og" / "states" / f"{st.slug}.png").write_bytes(og_cards.state_image(st, nation, colors))
         render("state.html", st.path, title=f"{st.name} Presidential Election Results, 1976–{year}", description=answer,
@@ -562,7 +567,8 @@ def build_states(render, dist: Path, states: dict[str, history.StateHistory],
         answer = history.national_sentence(states, nation, yr)
         ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"{yr} U.S. presidential election results by state",
               "description": answer, "url": f"{base}{path}", "license": "https://creativecommons.org/publicdomain/zero/1.0/",
-              "isAccessibleForFree": True, "temporalCoverage": str(yr), "creator": creators, "distribution": [csv_ld]}
+              "isAccessibleForFree": True, "temporalCoverage": str(yr), "spatialCoverage": place_ld(),
+              "creator": creators, "distribution": [csv_ld]}
         og = "/og/states.png" if yr == year else f"/og/states/{yr}.png"
         (dist / og.lstrip("/")).write_bytes(og_cards.states_image(n, colors))
         latest = yr == year
@@ -952,7 +958,7 @@ def build_accuracy_and_analysis(render, dist: Path, polls: pd.DataFrame, average
     ld = {"@context": "https://schema.org", "@type": "Dataset", "name": "2026 generic ballot pollster accuracy",
           "description": answer, "url": f"{base}/2026/pollster-accuracy/", "dateModified": acc_lastmod.isoformat(),
           "license": "https://creativecommons.org/licenses/by/4.0/", "isAccessibleForFree": True, "temporalCoverage": f"{window_start.isoformat()}/2026-11-03",
-          "spatialCoverage": {"@type": "Country", "name": "United States"},
+          "spatialCoverage": place_ld(),
           "creator": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
           "variableMeasured": ["poll margin", "error against the House popular vote", "partisan bias"],
           "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": f"{base}/data/2026-generic-ballot-accuracy.csv"}]}
@@ -1090,7 +1096,7 @@ def pollster_ld(p: pollsters.Pollster, answer: str, lastmod: date, faq: list[tup
         out.append({"@context": "https://schema.org", "@type": "Dataset", "name": f"{p.name} pollster accuracy record",
                     "description": answer, "url": f"{base}{p.path}", "dateModified": lastmod.isoformat(),
                     "license": "https://creativecommons.org/licenses/by/4.0/", "isAccessibleForFree": True,
-                    "creator": org, "temporalCoverage": "2016/2022",
+                    "creator": org, "temporalCoverage": "2016/2022", "spatialCoverage": place_ld(),
                     "variableMeasured": ["mean absolute error on the final margin", "mean signed error (partisan bias)", "share of polls with the winner ahead"],
                     "isBasedOn": "https://github.com/fivethirtyeight/data/tree/master/pollster-ratings",
                     "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": f"{base}/data/pollster-scorecard.csv"}]})
@@ -1314,7 +1320,7 @@ def build(as_of: date | None = None) -> Path:
                             "final-three-weeks polls since 2016, recomputed from FiveThirtyEight's open archive of polls matched to results.",
              "url": f"{base}/pollsters/", "dateModified": min(config.PAGE_REVISED["scorecard"], as_of).isoformat(),
              "license": "https://creativecommons.org/licenses/by/4.0/", "isAccessibleForFree": True, "temporalCoverage": "2016/2022",
-             "spatialCoverage": {"@type": "Country", "name": "United States"},
+             "spatialCoverage": place_ld(),
              "creator": {"@type": "Organization", "@id": f"{base}/#org", "name": config.SITE["name"], "url": base},
              "isBasedOn": "https://github.com/fivethirtyeight/data/tree/master/pollster-ratings",
              "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": f"{base}/data/pollster-scorecard.csv"}]}
