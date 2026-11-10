@@ -202,3 +202,51 @@ def test_home_lead_has_the_final_number():
     from datetime import date
     head = build.home_head(date(2026, 11, 4), False, final="Democrats +8.0 (119 polls)")
     assert head["sub"].startswith("The final generic ballot average had Democrats +8.0 (119 polls).")
+
+
+ISO_DATE = r"\d{4}(-\d{2}(-\d{2})?)?"
+
+
+def check_dataset(ds: dict) -> list[str]:
+    """Problems Google's Dataset rich-result rules would flag on one JSON-LD block."""
+    bad = []
+    if not isinstance(ds.get("name"), str) or not ds["name"]:
+        bad.append("name")
+    if not isinstance(ds.get("description"), str) or not 50 <= len(ds["description"]) <= 5000:
+        bad.append("description")
+    if not str(ds.get("url", "")).startswith("https://"):
+        bad.append("url")
+    creators = ds.get("creator") if isinstance(ds.get("creator"), list) else [ds.get("creator")]
+    if not all(isinstance(c, dict) and c.get("@type") in ("Organization", "Person") and c.get("name") for c in creators):
+        bad.append("creator")
+    if not str(ds.get("license", "")).startswith("https://"):
+        bad.append("license")
+    tc = ds.get("temporalCoverage")
+    if tc is not None and not re.fullmatch(f"{ISO_DATE}(/({ISO_DATE}|\\.\\.))?", str(tc)):
+        bad.append("temporalCoverage")
+    sc = ds.get("spatialCoverage")
+    if not (isinstance(sc, str) or (isinstance(sc, dict) and sc.get("@type") == "Place" and (sc.get("name") or sc.get("geo")))):
+        bad.append("spatialCoverage")
+    dist = ds.get("distribution", [])
+    if not dist or not all(d.get("@type") == "DataDownload" and d.get("encodingFormat") and str(d.get("contentUrl", "")).startswith("https://")
+                           for d in dist):
+        bad.append("distribution")
+    return bad
+
+
+def test_every_dataset_block_is_valid_for_google(site):
+    seen = {}
+    for page in site.rglob("index.html"):
+        for block in re.findall(r'<script type="application/ld\+json">(.*?)</script>', page.read_text(), re.S):
+            ld = json.loads(block)
+            for node in ld.get("@graph", [ld]) if isinstance(ld, dict) else ld:
+                if node.get("@type") == "Dataset":
+                    seen[str(page.relative_to(site))] = node
+    assert len(seen) > 50
+    problems = {path: bad for path, node in seen.items() if (bad := check_dataset(node))}
+    assert not problems, problems
+    # one national race, one state and one single-election page, spelled out
+    assert seen["approval/trump/index.html"]["spatialCoverage"] == {"@type": "Place", "name": "United States"}
+    assert seen["states/pennsylvania/index.html"]["spatialCoverage"] == {"@type": "Place", "name": "Pennsylvania, United States"}
+    assert seen["states/pennsylvania/index.html"]["temporalCoverage"] == "1976/2024"
+    assert '"Country"' not in json.dumps(list(seen.values()))
