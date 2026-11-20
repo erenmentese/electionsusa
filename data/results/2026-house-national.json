@@ -1,11 +1,11 @@
 {
-  "dem_pct": 55.7,
-  "rep_pct": 42.8,
+  "dem_pct": 56.2,
+  "rep_pct": 42.3,
   "status": "preliminary",
   "counted_pct": null,
-  "as_of": "2026-11-08T22:26Z",
+  "as_of": "2026-11-15T23:05Z",
   "source": "Cook Political Report national House vote tracker, as quoted by The Conversation",
-  "source_url": "https://theconversation.com/poor-polls-continue-for-both-federal-and-victorian-labor-295756",
+  "source_url": "https://theconversation.com/us-democrats-win-final-two-senate-seats-coalition-likely-to-easily-win-victorian-election-296423",
   "history": [
     {
       "dem_pct": 55.3,
@@ -14,6 +14,14 @@
       "as_of": "2026-11-05T22:00Z",
       "source": "NBC News",
       "source_url": "https://www.nbcnews.com/politics/politics-news/sizing-blue-wave-politics-desk-rcna607737"
+    },
+    {
+      "dem_pct": 55.7,
+      "rep_pct": 42.8,
+      "counted_pct": null,
+      "as_of": "2026-11-08T22:26Z",
+      "source": "Cook Political Report national House vote tracker, as quoted by The Conversation",
+      "source_url": "https://theconversation.com/poor-polls-continue-for-both-federal-and-victorian-labor-295756"
     }
   ]
 }
