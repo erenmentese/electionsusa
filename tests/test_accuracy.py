@@ -88,7 +88,10 @@ def test_result_file_is_validated_and_timestamped(tmp_path, monkeypatch):
     r = accuracy.load_result(res)
     assert r.margin == 5.2 and r.iso == "2026-11-05T15:00Z" and r.stamp == "November 5, 2026, 10 a.m. ET"
     assert [h.source for h in r.history] == ["Earlier count"] and r.nameable
-    assert accuracy.known_on(r, date(2026, 11, 4)) is None and accuracy.known_on(r, date(2026, 11, 5)) is r
+    assert accuracy.known_on(r, date(2026, 11, 3)) is None and accuracy.known_on(r, date(2026, 11, 5)) is r
+    # a build for an earlier day shows the count that was current then, not nothing
+    then = accuracy.known_on(r, date(2026, 11, 4))
+    assert then.source == "Earlier count" and then.preliminary and then.history == [] and then.iso == "2026-11-04T16:00Z"
     for bad, message in [(dict(COUNT, dem_pct=60, rep_pct=45), "shares of all House votes"),
                          (dict(COUNT, status="final"), "status"),
                          (dict(COUNT, source_url="example.org"), "https://"),

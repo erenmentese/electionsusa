@@ -139,8 +139,15 @@ def load_result(path=RESULT_PATH) -> Result | None:
 
 
 def known_on(result: Result | None, day: date) -> Result | None:
-    """The result a build for `day` may show: a build for an earlier date must not know a later count."""
-    return result if result and result.as_of <= day else None
+    """The count a build for `day` may show: the newest one published by then, so a build for an earlier
+    date never knows a later count but still shows the one that was current on that day."""
+    if not result or result.as_of <= day:
+        return result
+    earlier = [h for h in result.history if h.as_of <= day]
+    if not earlier:
+        return None
+    *before, latest = earlier
+    return Result(**vars(latest), status="preliminary", history=before)
 
 
 def final_polls(polls: pd.DataFrame) -> list[dict]:
