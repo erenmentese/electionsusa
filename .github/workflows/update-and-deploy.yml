@@ -2,7 +2,10 @@ name: Update data and post
 
 on:
   schedule:
-    - cron: "17 1,13,17,22 * * *"   # four times a day, at U.S. hours: 8pm, 8am, noon, 5pm Eastern (EST)
+    # Every two hours. GitHub skips or delays scheduled runs under load (in November 2026 only about two
+    # of the four daily slots ran, hours late), so more slots keep the data fresh. The bot only posts at
+    # U.S. hours (see "Post new polls to X") and never more than BOT max_posts_per_day.
+    - cron: "17 */2 * * *"
   push:
     branches: [main]
   pull_request:              # tests only: nothing is fetched, committed or posted
@@ -89,6 +92,10 @@ jobs:
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
         run: |
+          hour=$(date -u +%-H)
+          if [ "$hour" -ge 4 ] && [ "$hour" -lt 12 ]; then   # 11pm-7am Eastern: nobody is reading
+            echo "Quiet hours ($hour:00 UTC): not posting."; exit 0
+          fi
           git pull --rebase origin "${GITHUB_REF_NAME}" || true   # latest bot_state.json
           python -m pipeline.run_bot --live
         continue-on-error: true
